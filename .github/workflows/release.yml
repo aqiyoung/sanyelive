@@ -65,16 +65,17 @@ jobs:
       - name: Patch android/app/build.gradle for signing
         run: |
           set -e
-          if ! grep -q "loadKeyProperties" android/app/build.gradle; then
+          if ! grep -q "iptvStoreFile" android/app/build.gradle; then
             python3 << 'PYEOF'
           import re
           p = 'android/app/build.gradle'
           with open(p) as f:
               src = f.read()
-          # Add ext.* properties and helper BEFORE "android {" line.
-          # Use ext.* (project extension) so child closures can resolve it.
+          # Insert ext.* load block AFTER plugins {} block (Gradle requires
+          # plugins {} to be first or right after buildscript/pluginManagement).
           inject = '''
-          // Load signing key from android/key.properties (gitignored)
+          // Load signing key from android/key.properties (gitignored).
+          // Must be AFTER plugins {} block (Gradle syntax).
           def keyPropsFile = rootProject.file('key.properties')
           def keyProps = new Properties()
           if (keyPropsFile.exists()) {
@@ -86,8 +87,9 @@ jobs:
           ext.iptvKeyPassword = keyProps['keyPassword'] ?: ''
 
           '''
-          src = inject + src
-          # Add signingConfigs.release block right after "android {" (line)
+          # Insert inject right after the first "plugins { ... }" block
+          src = re.sub(r'(plugins\s*\{[^{}]*\}\n)', r'\1' + inject, src, count=1)
+          # Add signingConfigs.release right after "android {"
           signing = '''
               signingConfigs {
                   release {
@@ -101,7 +103,7 @@ jobs:
               }
           '''
           src = re.sub(r'(\n\s*android\s*\{\n)', r'\1' + signing, src, count=1)
-          # Replace any existing buildTypes.release.signingConfig line
+          # Replace any existing buildTypes.release.signingConfig with our reference
           src = re.sub(
               r'buildTypes\s*\{[^{}]*?release\s*\{[^{}]*?\}',
               lambda m: re.sub(
@@ -122,10 +124,10 @@ jobs:
           print('Patched', p)
           PYEOF
           fi
-          echo "--- signing-related lines ---"
+          echo "--- patched signing-related lines ---"
           grep -nE "iptvStoreFile|signingConfigs|signingConfig" android/app/build.gradle
-          echo "--- buildTypes section ---"
-          awk '/buildTypes \{/,/^    \}/' android/app/build.gradle | head -20
+          echo "--- top 20 lines of build.gradle ---"
+          head -20 android/app/build.gradle
 
       - name: Get dependencies
         run: flutter pub get

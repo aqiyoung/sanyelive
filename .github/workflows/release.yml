@@ -25,6 +25,21 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Bootstrap android/ios/ scaffold if missing
+        run: |
+          set -e
+          # We hand-wrote pubspec.yaml + lib/ + test/, but did NOT hand-write
+          # the android/ and ios/ Gradle/Pod projects. Bootstrap them via
+          # flutter create without overwriting our existing files.
+          if [ ! -d "android" ] || [ ! -d "ios" ]; then
+            flutter create --org com.threely.iptv --project-name iptv_app \
+              --platforms=android,ios .
+          fi
+          # flutter create is additive by default; verify our files are intact
+          test -f pubspec.yaml
+          test -f lib/main.dart
+          test -f test/widget_test.dart
+
       - name: Get dependencies
         run: flutter pub get
 

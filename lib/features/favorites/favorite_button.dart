@@ -114,9 +114,8 @@ class _FavoriteIconState extends ConsumerState<FavoriteIcon> {
         padding: const EdgeInsets.all(4),
         child: Icon(
           _isFav ? Icons.favorite : Icons.favorite_border,
-          color: _isFav
-              ? IptvColors.accentTerracotta
-              : IptvColors.textSecondary,
+          color:
+              _isFav ? IptvColors.accentTerracotta : IptvColors.textSecondary,
           size: widget.size,
         ),
       ),

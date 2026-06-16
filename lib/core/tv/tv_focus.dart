@@ -81,9 +81,8 @@ class _TvFocusState extends State<TvFocus> {
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(widget.borderRadius),
-            border: _focused
-                ? Border.all(color: kTvFocusColor, width: 4)
-                : null,
+            border:
+                _focused ? Border.all(color: kTvFocusColor, width: 4) : null,
           ),
           child: widget.child,
         ),

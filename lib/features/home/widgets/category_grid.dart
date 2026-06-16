@@ -83,11 +83,11 @@ class CategoryGrid extends StatelessWidget {
     // 高/宽比例; 值越小 → 卡片越扁宽
     switch (tier) {
       case DeviceTier.phone:
-        return 1.5; // 竖屏手机 2 列: 每张卡片偏高以容纳 subtitle
+        return 1.3; // 竖屏手机 2 列: 每张卡片稍矮以容纳 subtitle
       case DeviceTier.tablet:
-        return 1.6;
+        return 1.3; // 平板 3 列, 卡片较扁, 远距离看也清晰
       case DeviceTier.tv:
-        return 1.4; // TV 远距离观看, 卡片更宽矮
+        return 1.2; // TV 远距离观看, 卡片更宽矮
     }
   }
 }

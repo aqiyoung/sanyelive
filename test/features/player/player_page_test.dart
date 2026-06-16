@@ -15,7 +15,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 void main() {
   group('PlayerPage widget', () {
     testWidgets('渲染播放页: 频道名 + 下一频道 + 状态栏', (tester) async {
-      final opener = _ScriptedOpener([_ScriptedResult.failure('no media')]);
+      final opener = _ScriptedOpener([_ScriptedResult.failure()]);
       await _pumpPlayerPage(
         tester,
         opener: opener,
@@ -55,8 +55,8 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       final opener = _ScriptedOpener([
-        _ScriptedResult.failure('a'),
-        _ScriptedResult.failure('b'),
+        _ScriptedResult.failure(),
+        _ScriptedResult.failure(),
       ]);
       await _pumpPlayerPage(
         tester,
@@ -136,8 +136,7 @@ const _channels = <Channel>[
 ];
 
 class _ScriptedResult {
-  const _ScriptedResult.success() : _success = true;
-  const _ScriptedResult.failure(String reason) : _success = false;
+  const _ScriptedResult.failure() : _success = false;
 
   final bool _success;
 }

@@ -111,12 +111,14 @@ class PlayerService extends ChangeNotifier {
   }) : _failover = failover ?? SourceFailover(opener: opener);
 
   final SourceFailover _failover;
+  bool _disposed = false;
 
   PlayerState _state = const PlayerState.idle();
   PlayerState get state => _state;
 
   /// 切到 [channel]; 已在播放则先 stop
   Future<void> play(Channel channel) async {
+    if (_disposed) return;
     if (channel.sources.isEmpty) {
       _set(
         _state.copyWith(
@@ -142,9 +144,11 @@ class PlayerService extends ChangeNotifier {
       final source = await _failover.play(
         channel.sources,
         onAttempt: (event) {
+          if (_disposed) return;
           _set(_state.copyWith(attempt: event));
         },
       );
+      if (_disposed) return;
       _set(
         _state.copyWith(
           status: PlayerStatus.playing,
@@ -153,6 +157,7 @@ class PlayerService extends ChangeNotifier {
         ),
       );
     } on AllSourcesFailedException catch (e) {
+      if (_disposed) return;
       _set(
         _state.copyWith(
           status: PlayerStatus.error,
@@ -165,10 +170,18 @@ class PlayerService extends ChangeNotifier {
 
   /// 停止播放
   void stop() {
+    if (_disposed) return;
     _set(const PlayerState.idle());
   }
 
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   void _set(PlayerState next) {
+    if (_disposed) return;
     _state = next;
     notifyListeners();
   }
@@ -196,11 +209,12 @@ final streamOpenerProvider = Provider<StreamOpener>((ref) {
 });
 
 /// [PlayerService] — 全局单例
+///
+/// 注意: [ChangeNotifierProvider] 会自动 dispose ChangeNotifier,
+/// 不要重复加 [ref.onDispose] 否则会 double dispose
 final playerServiceProvider = ChangeNotifierProvider<PlayerService>((ref) {
   final opener = ref.watch(streamOpenerProvider);
-  final service = PlayerService(opener: opener);
-  ref.onDispose(service.dispose);
-  return service;
+  return PlayerService(opener: opener);
 });
 
 /// 当前播放状态 (从 [PlayerService.state] 读)

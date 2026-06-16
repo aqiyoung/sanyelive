@@ -39,7 +39,7 @@ class HomePage extends ConsumerWidget {
     final satellite = _filterSatellite(all).length;
     final local = all.length - cctv - satellite;
 
-    final items = const [
+    const items = [
       CategoryItem(
         id: 'cctv',
         title: '央视',
@@ -125,18 +125,17 @@ class HomePage extends ConsumerWidget {
 
   // 央视: id 以 CCTV 开头 (CCTV1.cn, CCTVPlus1.cn, CCTVBilliards.cn 等)
   static List<Channel> _filterCctv(List<Channel> all) {
-    return all.where((c) => c.id.startsWith(RegExp(r'CCTV', caseSensitive: false))).toList();
+    return all
+        .where((c) => c.id.startsWith(RegExp(r'CCTV', caseSensitive: false)))
+        .toList();
   }
 
-  // 卫视: id 以 SatelliteTV 结尾 或常见卫视名
+  // 卫视: id 包含 SatelliteTV / TVInternational
   static List<Channel> _filterSatellite(List<Channel> all) {
-    const satSuffixes = [
-      'SatelliteTV',
-      'TVInternational', // 某些国际版也算
-    ];
+    const patterns = ['SatelliteTV', 'TVInternational'];
     return all.where((c) {
-      for (final s in satSuffixes) {
-        if (c.id.endsWith(s)) return true;
+      for (final p in patterns) {
+        if (c.id.contains(p)) return true;
       }
       return false;
     }).toList();

@@ -115,8 +115,8 @@ class _ProgramCard extends StatelessWidget {
               next!.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: IptvTypography.body
-                  .copyWith(color: IptvColors.textSecondary),
+              style:
+                  IptvTypography.body.copyWith(color: IptvColors.textSecondary),
             ),
             const SizedBox(height: 2),
             Text(
@@ -223,8 +223,8 @@ class _EmptyState extends StatelessWidget {
           Expanded(
             child: Text(
               isLoading ? '节目单加载中…' : '${channel.name} · 实时直播 (节目单待接入)',
-              style: IptvTypography.body
-                  .copyWith(color: IptvColors.textSecondary),
+              style:
+                  IptvTypography.body.copyWith(color: IptvColors.textSecondary),
             ),
           ),
         ],

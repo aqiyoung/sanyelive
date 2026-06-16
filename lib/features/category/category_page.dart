@@ -117,10 +117,12 @@ class HomePageFilter {
   }
 
   static List<Channel> satellite(List<Channel> all) {
-    const suffixes = ['SatelliteTV', 'TVInternational'];
+    // iptv-org 模式: 省级卫视的 id 都包含 SatelliteTV / TVInternational
+    // 例: BeijingSatelliteTV.cn, HunanTVInternational.cn
+    const patterns = ['SatelliteTV', 'TVInternational'];
     return all.where((c) {
-      for (final s in suffixes) {
-        if (c.id.endsWith(s)) return true;
+      for (final p in patterns) {
+        if (c.id.contains(p)) return true;
       }
       return false;
     }).toList();
@@ -209,7 +211,8 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: 16),
             Text('加载失败', style: IptvTypography.serifTitle),
             const SizedBox(height: 8),
-            Text(message, style: IptvTypography.caption, textAlign: TextAlign.center),
+            Text(message,
+                style: IptvTypography.caption, textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -222,18 +225,18 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32),
+    return const Padding(
+      padding: EdgeInsets.all(32),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.inbox_outlined,
               size: 48,
               color: IptvColors.textSecondary,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text('该分类暂无频道', style: IptvTypography.serifTitle),
           ],
         ),

@@ -65,9 +65,8 @@ jobs:
           test -f lib/main.dart
           test -f test/widget_test.dart
 
-          test -f test/widget_test.dart
-
       - name: Patch screen_brightness_android for Kotlin 1.x compat
+        run: |
           # screen_brightness_android 2.x 用 Kotlin 2.0+ 的 compilerOptions DSL
           # 跟 Flutter 3.24 默认 Kotlin 1.9.22 不兼容. 注释掉 + 改 compileOptions 1.8 -> 17
           # 跟 Kotlin 默认 jvmTarget=17 一致.
@@ -101,7 +100,8 @@ jobs:
 
 
       - name: Patch android/app/build.gradle for signing
-        run: |          set -e
+        run: |
+          set -e
           if ! grep -q "iptvStoreFile" android/app/build.gradle; then
             python3 << 'PYEOF'
           import re

@@ -23,8 +23,7 @@ void main() {
       expect(svc.state.status, PlayerStatus.error);
       expect(svc.state.error, '该频道无可用播放源');
       expect(svc.state.channel?.id, 'NoSources.cn');
-      expect(fakeOpener.callCount, 0,
-          reason: '空 sources 不应触发 player 加载');
+      expect(fakeOpener.callCount, 0, reason: '空 sources 不应触发 player 加载');
     });
 
     test('sources 不空但调用失败 → state.error 反映错误', () async {

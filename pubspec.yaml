@@ -43,3 +43,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/channels_cn.json
+    # 卡 6: 公开 m3u8 兌底 (iptv-org 没过出的频道)
+    - assets/data/known_sources.json

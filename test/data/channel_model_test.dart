@@ -88,4 +88,52 @@ void main() {
     expect(c2.country, c.country);
     expect(c2.categories, c.categories);
   });
+
+  group('sources 字段 (卡 6)', () {
+    test('parses sources list', () {
+      final c = Channel.fromJson(<String, dynamic>{
+        'id': 'CCTV1.cn',
+        'name': 'CCTV-1',
+        'country': 'CN',
+        'categories': <String>['news'],
+        'sources': <String>[
+          'http://example.com/cctv1.m3u8',
+          'https://backup.example.com/cctv1.m3u8',
+        ],
+      });
+      expect(c.sources, hasLength(2));
+      expect(c.sources[0], 'http://example.com/cctv1.m3u8');
+    });
+
+    test('sources 缺省是空 list', () {
+      final c = Channel.fromJson(<String, dynamic>{
+        'id': 'X.cn',
+        'name': 'X',
+        'country': 'CN',
+      });
+      expect(c.sources, isEmpty);
+    });
+
+    test('sources 容忍 null', () {
+      final c = Channel.fromJson(<String, dynamic>{
+        'id': 'X.cn',
+        'name': 'X',
+        'country': 'CN',
+        'sources': null,
+      });
+      expect(c.sources, isEmpty);
+    });
+
+    test('toJson 含 sources', () {
+      const c = Channel(
+        id: 'A.cn',
+        name: 'A',
+        country: 'CN',
+        categories: <String>['news'],
+        sources: <String>['http://a.com/1.m3u8'],
+      );
+      final j = c.toJson();
+      expect(j['sources'], <String>['http://a.com/1.m3u8']);
+    });
+  });
 }

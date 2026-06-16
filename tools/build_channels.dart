@@ -199,7 +199,7 @@ Future<void> main() async {
       for (final url in knownSources[id] ?? const <String>[]) {
         if (added.add(url)) sources.add(url);
       }
-      ch['sources'] = sources;
+      ch['sources'] = sources.take(5).toList();
 
       out.add(ch);
     }

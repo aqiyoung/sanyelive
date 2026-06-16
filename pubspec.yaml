@@ -31,6 +31,9 @@ dependency_overrides:
   # package_info_plus 9.x 跟 Flutter 3.24 Gradle 不兼容 (用 flutter.versionCode 已移除 API)
   # 锁 5.0.0 兼容
   package_info_plus: 5.0.0
+  # screen_brightness_android 2.x 需 Android SDK 36 + Kotlin 1.9.x 新 API, Flutter 3.24 不兼容
+  # 锁 1.0.1 兼容 (2024-04)
+  screen_brightness_android: 1.0.1
 
 dev_dependencies:
   flutter_test:

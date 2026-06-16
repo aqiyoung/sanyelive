@@ -18,10 +18,12 @@ class ChannelRepository {
 
     // 加载 known_sources.json (国内公开 HLS 兑底) 并合并到各 Channel.sources
     try {
-      final knownRaw = await rootBundle.loadString('assets/data/known_sources.json');
+      final knownRaw =
+          await rootBundle.loadString('assets/data/known_sources.json');
       final known = json.decode(knownRaw) as Map<String, dynamic>;
       return channels.map((c) {
-        final sources = (known[c.id] as List?)?.cast<String>() ?? const <String>[];
+        final sources =
+            (known[c.id] as List?)?.cast<String>() ?? const <String>[];
         if (sources.isEmpty) return c;
         return Channel(
           id: c.id,

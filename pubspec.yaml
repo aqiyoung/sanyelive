@@ -20,6 +20,10 @@ dependencies:
   media_kit: ^1.1.10
   # 卡 5: Video 渲染层 (Android/iOS/macOS/Windows/Linux)
   media_kit_video: 1.2.5
+  # 卡 7 (6/17 修复): native video dependencies (libmpv .so for Android).
+  # 之前 v0.2.0 APK 里没有 libmpv.so, MediaKit.ensureInitialized() 加载失败,
+  # catch 住后 Player() 抛 'ensureInitialized must be called'.
+  media_kit_libs_video: ^1.0.7
   # 卡 6: 收藏本地存储
   sqflite: ^2.4.1
   path: ^1.9.0

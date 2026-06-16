@@ -1,7 +1,7 @@
 name: iptv_app
 description: "IPTV 直播 APP - 极简新中式设计 - 家用电视/盒子场景"
 publish_to: "none"
-version: 0.1.7+8
+version: 0.2.0+9
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

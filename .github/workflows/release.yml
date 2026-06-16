@@ -21,7 +21,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.29.3'
           channel: stable
           cache: true
 
@@ -68,7 +68,6 @@ jobs:
           test -f test/widget_test.dart
 
       - name: Patch screen_brightness_android for Kotlin 1.x compat
-        run: |
           # screen_brightness_android 2.x 用 Kotlin 2.0+ 的 compilerOptions DSL
           # 跟 Flutter 3.24 默认 Kotlin 1.9.22 不兼容. 注释掉 + 改 compileOptions 1.8 -> 17
           # 跟 Kotlin 默认 jvmTarget=17 一致.
@@ -102,8 +101,7 @@ jobs:
 
 
       - name: Patch android/app/build.gradle for signing
-        run: |
-          set -e
+        run: |          set -e
           if ! grep -q "iptvStoreFile" android/app/build.gradle; then
             python3 << 'PYEOF'
           import re
@@ -182,28 +180,78 @@ jobs:
         run: flutter pub get
 
       - name: Build APK (release, signed)
-        run: flutter build apk --release
+        # 卡 6: 明确 target-platform android-arm64, 减少体积 (电视/手机都是 arm64).
+        # flutter build apk 默认是 fat APK (arm + arm64 + x64), 体积接近 60MB;
+        # 限定 arm64 后可控制在 20MB 以内.
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
 
       - name: Verify APK signature
         run: |
           set -e
-          APK=build/app/outputs/flutter-apk/app-release.apk
-          ls -la $APK
-          sha256sum $APK
+          # 卡 6: split-per-abi 后会生成 app-arm64-v8a-release.apk, 优先选这个
+          APK=$(ls build/app/outputs/flutter-apk/app-*-release.apk 2>/dev/null | head -1)
+          if [ -z "$APK" ]; then
+            APK=build/app/outputs/flutter-apk/app-release.apk
+          fi
+          echo "APK=$APK"
+          ls -la "$APK"
+          SIZE=$(stat -c '%s' "$APK")
+          SIZE_MB=$(echo "scale=2; $SIZE/1048576" | bc)
+          SHA256=$(sha256sum "$APK" | awk '{print $1}')
+          echo "## APK 验证" >> $GITHUB_STEP_SUMMARY
+          echo "| 项 | 值 |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| 文件 | $APK |" >> $GITHUB_STEP_SUMMARY
+          echo "| 大小 | ${SIZE_MB} MB (${SIZE} bytes) |" >> $GITHUB_STEP_SUMMARY
+          echo "| SHA256 | \`$SHA256\` |" >> $GITHUB_STEP_SUMMARY
+          if [ -n "$SHA256" ]; then
+            echo "$SHA256  $(basename $APK)" > "$APK.sha256"
+          fi
+          cat $GITHUB_STEP_SUMMARY
           APKSIGNER=$(find /opt -name 'apksigner' 2>/dev/null | head -1)
           if [ -n "$APKSIGNER" ]; then
             echo "Using apksigner: $APKSIGNER"
-            $APKSIGNER verify --verbose $APK
-            $APKSIGNER verify --print-certs $APK
+            $APKSIGNER verify --verbose "$APK"
+            $APKSIGNER verify --print-certs "$APK"
           else
             echo "apksigner not on PATH; falling back to jarsigner"
-            jarsigner -verify -verbose:summary -certs $APK 2>&1 | head -10
+            jarsigner -verify -verbose:summary -certs "$APK" 2>&1 | head -10
           fi
+          echo "APK_PATH=$APK" >> $GITHUB_ENV
+          echo "APK_SHA256=$SHA256" >> $GITHUB_ENV
+          echo "APK_SIZE_MB=$SIZE_MB" >> $GITHUB_ENV
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: iptv-app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: |
+            build/app/outputs/flutter-apk/app-*-release.apk
+            build/app/outputs/flutter-apk/app-*-release.apk.sha256
           if-no-files-found: error
 
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/app/outputs/flutter-apk/app-*-release.apk
+            build/app/outputs/flutter-apk/app-*-release.apk.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          body: |
+            ## 三页直播 v${{ github.ref_name }}
+
+            ### APK 信息
+            - **架构**: arm64-v8a (Android TV / 手机 / 盒子)
+            - **大小**: ${{ env.APK_SIZE_MB }} MB
+            - **SHA256**: `${{ env.APK_SHA256 }}`
+
+            ### 下载
+            下载下方 `app-arm64-v8a-release.apk` 即可在 Android 设备上安装。
+            `.sha256` 文件包含校验值, 可用 `sha256sum` 验证。
+
+            ### 构建信息
+            - Flutter: 3.29.3
+            - Target: android-arm64, release, split-per-abi
+            - Workflow: `.github/workflows/release.yml`

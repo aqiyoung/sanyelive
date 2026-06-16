@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/colors.dart';
 import '../core/theme/typography.dart';
+import '../data/models/channel.dart';
+import '../features/favorites/favorite_button.dart';
 
 /// 频道整行 tile — 用于频道列表
 class ChannelTile extends StatelessWidget {
@@ -9,6 +11,7 @@ class ChannelTile extends StatelessWidget {
     super.key,
     required this.channelNumber,
     required this.channelName,
+    this.channel,
     this.country,
     this.isLive = true,
     this.onTap,
@@ -16,6 +19,7 @@ class ChannelTile extends StatelessWidget {
 
   final String channelNumber;
   final String channelName;
+  final Channel? channel;
   final String? country;
   final bool isLive;
   final VoidCallback? onTap;
@@ -57,8 +61,15 @@ class ChannelTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (channel != null)
+                FavoriteIcon(
+                  channelId: channel!.id,
+                  channelName: channel!.name,
+                  size: 20,
+                ),
               if (isLive)
                 Container(
+                  margin: const EdgeInsets.only(left: 8),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 4,

@@ -7,12 +7,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iptv_app/data/models/channel.dart';
 import 'package:iptv_app/data/repositories/channel_repository.dart';
+import 'package:iptv_app/features/favorites/favorites_service.dart';
 import 'package:iptv_app/features/player/player_page.dart';
 import 'package:iptv_app/services/player_service.dart';
 import 'package:iptv_app/services/source_failover.dart';
+import 'package:iptv_app/services/startup_service.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('PlayerPage widget', () {
     testWidgets('渲染播放页: 频道名 + 下一频道 + 状态栏', (tester) async {
       final opener = _ScriptedOpener([_ScriptedResult.failure()]);
@@ -105,6 +112,11 @@ Future<void> _pumpPlayerPage(
         // 卡 5: 测试环境无 libmpv, 覆盖 video controller 为空 fake
         mediaKitVideoControllerProvider
             .overrideWithValue(_FakeVideoController()),
+        // 卡 6: PlayerPage 调 StartupService + FavoritesService
+        startupServiceProvider.overrideWithValue(StartupService()),
+        favoritesServiceProvider.overrideWithValue(
+          FavoritesService(store: InMemoryFavoritesStore()),
+        ),
       ],
       child: MaterialApp.router(routerConfig: router),
     ),

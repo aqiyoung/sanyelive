@@ -6,9 +6,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_app/core/responsive/breakpoints.dart';
 import 'package:iptv_app/data/models/channel.dart';
 import 'package:iptv_app/data/repositories/channel_repository.dart';
+import 'package:iptv_app/features/favorites/favorites_service.dart';
 import 'package:iptv_app/main.dart';
+import 'package:iptv_app/services/startup_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('IptvApp boots and home page renders (offline)', (tester) async {
     // 卡 5: 用 [bootstrap] 跳过 media_kit native init, 并 override 频道源
     await tester.pumpWidget(
@@ -17,6 +24,11 @@ void main() {
           // 空频道列表, 避免 assets 加载
           channelsProvider.overrideWith(
             (ref) async => <Channel>[],
+          ),
+          // 卡 6: HomePage 需要 StartupService + FavoritesService
+          startupServiceProvider.overrideWithValue(StartupService()),
+          favoritesServiceProvider.overrideWithValue(
+            FavoritesService(store: InMemoryFavoritesStore()),
           ),
         ],
         child: const IptvApp(),

@@ -65,6 +65,7 @@ class CategoryPage extends ConsumerWidget {
             itemBuilder: (context, i) {
               final ch = filtered[i];
               return ChannelTile(
+                channel: ch,
                 channelNumber: (i + 1).toString().padLeft(2, '0'),
                 channelName: ch.name,
                 country: ch.country,

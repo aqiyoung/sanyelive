@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/category/category_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/player/player_page.dart';
+import '../../features/search/search_page.dart';
 
 /// 路由路径常量 — 集中管理
 class AppRoutes {
@@ -12,6 +13,7 @@ class AppRoutes {
   static const String home = '/';
   static const String category = '/category/:catId';
   static const String player = '/player/:channelId';
+  static const String search = '/search';
 
   static String categoryPath(String catId, {String? title, int? count}) {
     final query = <String, String>{};
@@ -57,6 +59,12 @@ GoRouter buildRouter() {
               final channelId = state.pathParameters['channelId']!;
               return PlayerPage(channelId: channelId);
             },
+          ),
+          // 搜索页: /search
+          GoRoute(
+            path: 'search',
+            name: 'search',
+            builder: (context, state) => const SearchPage(),
           ),
         ],
       ),

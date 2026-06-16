@@ -9,8 +9,11 @@ import 'package:iptv_app/core/router/router.dart';
 import 'package:iptv_app/core/theme/theme.dart';
 import 'package:iptv_app/data/models/channel.dart';
 import 'package:iptv_app/data/repositories/channel_repository.dart';
+import 'package:iptv_app/features/favorites/favorites_service.dart';
 import 'package:iptv_app/services/player_service.dart';
 import 'package:iptv_app/services/source_failover.dart';
+import 'package:iptv_app/services/startup_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const List<Channel> _kFixtureChannels = <Channel>[
   Channel(
@@ -69,6 +72,11 @@ List<Override> _testOverrides() => <Override>[
           .overrideWithValue(const _FakeRepo(_kFixtureChannels)),
       mediaKitVideoControllerProvider.overrideWithValue(_FakeVideoController()),
       streamOpenerProvider.overrideWithValue(_NoopOpener()),
+      // 卡 6: HomePage 现在需要 StartupService + FavoritesService
+      startupServiceProvider.overrideWithValue(StartupService()),
+      favoritesServiceProvider.overrideWithValue(
+        FavoritesService(store: InMemoryFavoritesStore()),
+      ),
     ];
 
 Widget _app() => MaterialApp.router(
@@ -77,6 +85,10 @@ Widget _app() => MaterialApp.router(
     );
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('home renders 3 category cards', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

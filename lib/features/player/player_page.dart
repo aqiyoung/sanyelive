@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +10,9 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../data/models/channel.dart';
 import '../../data/repositories/channel_repository.dart';
+import '../../features/favorites/favorite_button.dart';
 import '../../services/player_service.dart';
+import '../../services/startup_service.dart';
 import 'widgets/next_channels_strip.dart';
 import 'widgets/now_next_program.dart';
 
@@ -55,6 +59,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       return;
     }
     if (!mounted) return; // 再检查一次, 避免 dispose 之后调用
+    // 卡 6: 保存 last channel id, 主页下次进入会显示「继续观看」
+    unawaited(ref.read(startupServiceProvider).saveLastChannel(ch.id));
     try {
       await ref.read(playerServiceProvider).play(ch);
     } catch (_) {
@@ -198,6 +204,20 @@ class _TopBar extends StatelessWidget {
             icon: const Icon(Icons.more_vert, color: Colors.white),
             onPressed: () {},
           ),
+          if (channel != null) ...[
+            const SizedBox(width: 4),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: FavoriteIcon(
+                channelId: channel.id,
+                channelName: channel.name,
+                size: 24,
+                onChanged: (isFav) {
+                  // 收藏状态变化不需要额外动作, sqflite 已持久化
+                },
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -6,10 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/models/epg.dart';
 
-/// EPG 服务 — 懒加载 + 7 天缓存 + 当前/下一档展示
+/// EPG 服务 — 懒加载 + 7 天缓存 + 当前/下一档节目展示
 class EpgService {
   EpgService({http.Client? client}) : _client = client ?? http.Client();
 
+  /// 注入 http client (test 用); 保留字段以备未来 XMLTV 接入
   // ignore: unused_field
   final http.Client _client;
 
@@ -103,9 +104,9 @@ class EpgService {
 
   // ─── 网络层 ───
 
-  /// 从 iptv-org EPG API 拉取 (XMLTV 格式, 此处用 JSON 简化)
+  /// 从 iptv-org EPG API 拉取 (XMLTV 格式)
   /// 实际 API: https://iptv-org.github.io/epg/guides/{cc}.xml.gz
-  /// 这里用 channels.json 的 epg 字段做演示, 真实项目需要 XMLTV 解析
+  /// 这里 stub 返回空列表, 真实项目需要 XMLTV 解析.
   Future<List<EpgEntry>> _fetchRemote(String channelId) async {
     // iptv-org 不直接提供 per-channel JSON EPG
     // 真实实现需要下载 XMLTV gz 并解析

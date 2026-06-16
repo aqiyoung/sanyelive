@@ -6,19 +6,45 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../data/models/channel.dart';
 import '../../data/repositories/channel_repository.dart';
+import '../../services/startup_service.dart';
 import '../../widgets/serif_headline.dart';
 import 'widgets/category_grid.dart';
 
-/// 主页 — 3 大分类 (央视/卫视/地方) + 上次观看 CTA
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key, this.lastChannelId, this.onClearLastWatched});
+/// 主页 — 3 大分类 (央视/卫视/地方) + 上次观看 CTA + 搜索入口
+class HomePage extends ConsumerStatefulWidget {
+  const HomePage({super.key, this.onClearLastWatched});
 
-  /// 上次观看的频道 ID — 由卡 6 注入 (此处只展示 CTA, 不持久化)
-  final String? lastChannelId;
+  /// 清除上次观看的回调 (留给父级实现)
   final VoidCallback? onClearLastWatched;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  String? _lastChannelId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastChannel();
+  }
+
+  Future<void> _loadLastChannel() async {
+    final svc = ref.read(startupServiceProvider);
+    final id = await svc.loadLastChannel();
+    if (mounted) setState(() => _lastChannelId = id);
+  }
+
+  Future<void> _clearLast() async {
+    final svc = ref.read(startupServiceProvider);
+    await svc.clearLastChannel();
+    if (mounted) setState(() => _lastChannelId = null);
+    widget.onClearLastWatched?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final asyncChannels = ref.watch(channelsProvider);
 
     return Scaffold(
@@ -61,9 +87,9 @@ class HomePage extends ConsumerWidget {
     ];
 
     // 找上次的频道 (轻量查找, 500 条不算多)
-    final lastChannel = lastChannelId == null
+    final lastChannel = _lastChannelId == null
         ? null
-        : all.where((c) => c.id == lastChannelId).cast<Channel?>().firstOrNull;
+        : all.where((c) => c.id == _lastChannelId).cast<Channel?>().firstOrNull;
 
     return CustomScrollView(
       slivers: [
@@ -71,7 +97,9 @@ class HomePage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _AppHeader(),
+              _AppHeader(
+                onSearchTap: () => context.push('/search'),
+              ),
               // 上次观看 (有记录才显示)
               if (lastChannel != null) ...[
                 ContinueWatchingCard(
@@ -79,7 +107,7 @@ class HomePage extends ConsumerWidget {
                   channelLogo: lastChannel.logoUrl,
                   subtitle: '继续播放',
                   onTap: () => context.push('/player/${lastChannel.id}'),
-                  onClear: onClearLastWatched,
+                  onClear: _clearLast,
                 ),
                 const SizedBox(height: 24),
               ],
@@ -143,12 +171,14 @@ class HomePage extends ConsumerWidget {
 }
 
 class _AppHeader extends StatelessWidget {
-  const _AppHeader();
+  const _AppHeader({this.onSearchTap});
+
+  final VoidCallback? onSearchTap;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
       child: Row(
         children: [
           Container(
@@ -168,6 +198,13 @@ class _AppHeader extends StatelessWidget {
           const Text(
             '三页直播',
             style: IptvTypography.serifTitle,
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.search),
+            color: IptvColors.textPrimary,
+            tooltip: '搜索频道',
+            onPressed: onSearchTap,
           ),
         ],
       ),

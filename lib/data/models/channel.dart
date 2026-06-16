@@ -1,35 +1,67 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'channel.freezed.dart';
-part 'channel.g.dart';
-
 /// iptv-org 频道模型
-/// Schema: https://iptv-org.github.io/api/channels.json
-@freezed
-class Channel with _$Channel {
-  const factory Channel({
-    /// iptv-org stable id, e.g. "CCTV1.cn"
-    required String id,
+class Channel {
+  const Channel({
+    required this.id,
+    required this.name,
+    required this.country,
+    required this.categories,
+    this.altNames = const <String>[],
+    this.website,
+    this.logoUrl,
+    this.isNsfw = false,
+  });
 
-    /// 显示名（英文/罗马字）
-    required String name,
+  final String id;
+  final String name;
+  final String country;
+  final List<String> categories;
+  final List<String> altNames;
+  final String? website;
+  final String? logoUrl;
+  final bool isNsfw;
 
-    /// 国家 ISO 3166-1 alpha-2, e.g. "CN"
-    required String country,
+  /// 主分类（取第一个）
+  String get primaryCategory =>
+      categories.isNotEmpty ? categories.first : 'general';
 
-    /// 主分类（取第一个）
-    @Default(<String>[]) List<String> categories,
+  /// 中文 channel 筛选（中文字符 OR country=CN/TW/HK/MO）
+  bool get isChinese {
+    if (country == 'CN' || country == 'TW' || country == 'HK' || country == 'MO') {
+      return true;
+    }
+    if (_hasChinese(name)) return true;
+    for (final a in altNames) {
+      if (_hasChinese(a)) return true;
+    }
+    return false;
+  }
 
-    /// Logo URL (从 logos.json 关联)
-    String? logoUrl,
+  static final RegExp _chineseRe = RegExp(r'[\u4e00-\u9fff]');
+  static bool _hasChinese(String s) => _chineseRe.hasMatch(s);
 
-    /// 可用播放源（从 streams.json 关联）
-    @Default(<String>[]) List<String> sources,
+  factory Channel.fromJson(Map<String, dynamic> j) {
+    return Channel(
+      id: j['id'] as String,
+      name: (j['name'] as String?) ?? (j['id'] as String),
+      country: (j['country'] as String?) ?? '',
+      categories: ((j['categories'] as List?)?.cast<String>()) ??
+          const <String>[],
+      altNames:
+          ((j['alt_names'] as List?)?.cast<String>()) ?? const <String>[],
+      website: j['website'] as String?,
+      logoUrl: j['logo'] as String?,
+      isNsfw: (j['is_nsfw'] as bool?) ?? false,
+    );
+  }
 
-    /// 替代名（多语言），如 ["CCTV-1", "央视一套"]
-    @Default(<String>[]) List<String> altNames,
-  }) = _Channel;
-
-  factory Channel.fromJson(Map<String, dynamic> json) =>
-      _$ChannelFromJson(json);
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
+        'name': name,
+        'country': country,
+        'categories': categories,
+        'alt_names': altNames,
+        'website': website,
+        'logo': logoUrl,
+        'is_nsfw': isNsfw,
+      };
 }

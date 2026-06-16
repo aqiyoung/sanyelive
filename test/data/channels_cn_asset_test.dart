@@ -33,8 +33,9 @@ void main() {
     });
 
     test('卡 6 注入: 至少 30 个频道有 sources (iptv-org 覆盖率 ~20%)', () {
-      final withSources =
-          list.where((c) => (c['sources'] as List?)?.isNotEmpty ?? false).length;
+      final withSources = list
+          .where((c) => (c['sources'] as List?)?.isNotEmpty ?? false)
+          .length;
       expect(
         withSources,
         greaterThanOrEqualTo(30),

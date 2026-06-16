@@ -19,8 +19,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-const String _channelsEndpoint =
-    'https://iptv-org.github.io/api/channels.json';
+const String _channelsEndpoint = 'https://iptv-org.github.io/api/channels.json';
 const String _streamsEndpoint = 'https://iptv-org.github.io/api/streams.json';
 const String _knownSourcesPath = 'assets/data/known_sources.json';
 const String _outPath = 'assets/data/channels_cn.json';
@@ -136,8 +135,7 @@ Future<Map<String, List<String>>> loadKnownSources() async {
   final raw = await file.readAsString();
   final map = json.decode(raw) as Map<String, dynamic>;
   return map.map(
-    (k, v) =>
-        MapEntry(k, ((v as List).cast<String>()).toList(growable: false)),
+    (k, v) => MapEntry(k, ((v as List).cast<String>()).toList(growable: false)),
   );
 }
 
@@ -172,7 +170,8 @@ Future<void> main() async {
 
     // 3. 加载硬编码兜底源
     final knownSources = await loadKnownSources();
-    stdout.writeln('Loaded known_sources fallback: ${knownSources.length} channels');
+    stdout.writeln(
+        'Loaded known_sources fallback: ${knownSources.length} channels');
 
     final seen = <String>{};
     final out = <Map<String, dynamic>>[];
@@ -243,8 +242,7 @@ Future<void> main() async {
       exit(2);
     }
     if (withSources < 50) {
-      stderr.writeln(
-          'FAIL: only $withSources channels have sources (min 50)');
+      stderr.writeln('FAIL: only $withSources channels have sources (min 50)');
       exit(2);
     }
     stdout.writeln('OK: under 500 channels and 200KB, with ≥50 sources');

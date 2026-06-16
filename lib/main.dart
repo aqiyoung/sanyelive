@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 
 import 'core/router/router.dart';
+import 'core/theme/colors.dart';
 import 'core/theme/theme.dart';
 
 void main() async {
@@ -14,8 +16,24 @@ void main() async {
   // 现在改成 main 同步等 init 完成再 runApp. WidgetsFlutterBinding
   // 也必须 await, 因为 ensureInitialized 要用到 binding.
   WidgetsFlutterBinding.ensureInitialized();
+  // 卡 7 (6/17 老板需求): 状态栏需要手动设置, 否则默认黑色文字 + 透明背景
+  // 会在浅米色页面背景下看不清.  需求是浅色页面用黑状态栏文字, 深色页面
+  // 反转为白文字.  PlayerPage 自己会主动改 (黑屏看视频用白文字).
+  _applySystemUiOverlay();
   await _ensureMediaKitOrLog();
   runApp(const ProviderScope(child: IptvApp()));
+}
+
+void _applySystemUiOverlay() {
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: IptvColors.bgParchment,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
 }
 
 Future<void> _ensureMediaKitOrLog() async {

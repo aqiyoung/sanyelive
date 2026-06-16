@@ -36,8 +36,19 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   @override
   void initState() {
     super.initState();
-    // 卡 6: 进入播放页 → 沉浸式状态栏
+    // 卡 6: 进入播放页 → 沉浸式状态栏 (隐藏状态栏 + 导航栏, 拉上去才出)
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // 卡 7 (6/17 老板需求): 播放页背景黑, 如果状态栏没隐藏 (拉下来时) 也要
+    // 保证白字可见.  退出时 dispose 还原.
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,  // 白图标
+        statusBarBrightness: Brightness.dark,       // iOS: 暗背景 -> 白文字
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
     _channelsFuture = ref.read(channelRepositoryProvider).loadBundled();
     // 进入页面时尝试播放
     WidgetsBinding.instance.addPostFrameCallback((_) => _tryAutoPlay());
@@ -47,6 +58,14 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   void dispose() {
     // 卡 6: 退出播放页 → 还原状态栏
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // 卡 7: 还原成全 APP 默认 (黑图标, 跟浅米色页面配套)
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+    );
     super.dispose();
   }
 

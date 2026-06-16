@@ -140,18 +140,24 @@ class ContinueWatchingCard extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                Container(
+                // 左侧 logo / 播放图标
+                SizedBox(
                   width: 56,
                   height: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+                  child: channelLogo != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          // FIX 容器超出: 限定 logo 最大尺寸, 防止上游传超大 URL
+                          // 撑爆布局.  Fit cover + 固定 box.
+                          child: Image.network(
+                            channelLogo!,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _defaultIcon(),
+                          ),
+                        )
+                      : _defaultIcon(),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -179,14 +185,16 @@ class ContinueWatchingCard extends StatelessWidget {
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
-                        Text(
-                          subtitle!,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
+                        Flexible(
+                          child: Text(
+                            subtitle!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ],
@@ -201,11 +209,34 @@ class ContinueWatchingCard extends StatelessWidget {
                     ),
                     onPressed: onClear,
                     tooltip: '清除记录',
+                    // FIX 容器超出: 限定 IconButton padding, 默认 48dp
+                    // 会挤压文字.  用 visualDensity 缩减, 保留可点击区.
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                   ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _defaultIcon() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.play_arrow_rounded,
+        color: Colors.white,
+        size: 32,
       ),
     );
   }

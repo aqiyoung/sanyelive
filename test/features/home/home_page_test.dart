@@ -227,8 +227,8 @@ void main() {
         router: _router(),
         overrides: [
           ..._baseOverrides(),
-          channelsProvider
-              .overrideWith((ref) async => await Completer<List<Channel>>().future),
+          channelsProvider.overrideWith(
+              (ref) async => await Completer<List<Channel>>().future),
         ],
       );
       // 只 pump 一次, 不等 settle (让 Future 保持 pending)

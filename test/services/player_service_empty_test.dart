@@ -47,8 +47,7 @@ void main() {
 
   // 6/17 v0.2.3 P0-4: 错误 overlay 「换源」按钮调 playSingleSource
   group('PlayerService.playSingleSource', () {
-    test('opener 成功 → state.status = playing, currentSource = url',
-        () async {
+    test('opener 成功 → state.status = playing, currentSource = url', () async {
       final opener = _CountingOpener();
       final svc = PlayerService(opener: opener);
 

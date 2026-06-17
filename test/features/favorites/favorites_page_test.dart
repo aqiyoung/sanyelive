@@ -42,8 +42,7 @@ void main() {
       expect(find.text('03'), findsOneWidget);
     });
 
-    testWidgets('收藏了不存在的 channel id: 只显示有的,  不会崩',
-        (tester) async {
+    testWidgets('收藏了不存在的 channel id: 只显示有的,  不会崩', (tester) async {
       // 模拟 sqflite 返回了 ID, 但 channels_cn.json 里已经被剔除
       await _pump(
         tester,
@@ -80,7 +79,8 @@ Future<void> _pump(
       GoRoute(
         path: '/player/:channelId',
         builder: (_, state) => Scaffold(
-          body: Center(child: Text('Player:${state.pathParameters['channelId']}')),
+          body: Center(
+              child: Text('Player:${state.pathParameters['channelId']}')),
         ),
       ),
     ],

@@ -423,9 +423,7 @@ class _ErrorOverlay extends ConsumerWidget {
                     onPressed: channel == null
                         ? null
                         : () {
-                            ref
-                                .read(playerServiceProvider)
-                                .play(channel);
+                            ref.read(playerServiceProvider).play(channel);
                           },
                     icon: const Icon(Icons.refresh, size: 18),
                     label: const Text('重试'),
@@ -440,8 +438,7 @@ class _ErrorOverlay extends ConsumerWidget {
                       onPressed: channel == null
                           ? null
                           : () async {
-                              final url =
-                                  await pickSourceUrl(context, channel);
+                              final url = await pickSourceUrl(context, channel);
                               if (url == null) return; // 取消
                               ref
                                   .read(playerServiceProvider)

@@ -171,55 +171,55 @@ class ContinueWatchingCard extends StatelessWidget {
           child: Row(
             children: [
               SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: channelLogo != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            channelLogo!,
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _defaultIcon(),
-                          ),
-                        )
-                      : _defaultIcon(),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    '继续观看  ·  $channelName',
-                    style: IptvTypography.sansTitle.copyWith(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                width: 40,
+                height: 40,
+                child: channelLogo != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          channelLogo!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _defaultIcon(),
+                        ),
+                      )
+                    : _defaultIcon(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '继续观看  ·  $channelName',
+                  style: IptvTypography.sansTitle.copyWith(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (onClear != null)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: Colors.white70,
-                      size: 18,
-                    ),
-                    onPressed: onClear,
-                    tooltip: '清除记录',
-                    visualDensity: VisualDensity.compact,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                    padding: EdgeInsets.zero,
+              ),
+              if (onClear != null)
+                IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white70,
+                    size: 18,
                   ),
-              ],
-            ),
+                  onPressed: onClear,
+                  tooltip: '清除记录',
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  padding: EdgeInsets.zero,
+                ),
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _defaultIcon() {

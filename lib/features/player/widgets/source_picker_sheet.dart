@@ -71,8 +71,8 @@ class _SourcePickerContent extends StatelessWidget {
                         final url = sources[i];
                         return ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: IptvColors.accentTerracotta
-                                .withOpacity(0.12),
+                            backgroundColor:
+                                IptvColors.accentTerracotta.withOpacity(0.12),
                             foregroundColor: IptvColors.accentTerracotta,
                             child: Text('${i + 1}'),
                           ),

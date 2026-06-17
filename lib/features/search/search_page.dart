@@ -274,7 +274,8 @@ class _SearchResultTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: isSelected
-          ? IptvColors.accentTerracotta.withValues(alpha: 0.08)
+          // ignore: deprecated_member_use
+          ? IptvColors.accentTerracotta.withOpacity(0.08)
           : Colors.transparent,
       child: Material(
         color: Colors.transparent,
@@ -291,7 +292,8 @@ class _SearchResultTile extends StatelessWidget {
                     style: IptvTypography.serifTitle.copyWith(
                       color: isSelected
                           ? IptvColors.accentTerracotta
-                          : IptvColors.accentTerracotta.withValues(alpha: 0.5),
+                          // ignore: deprecated_member_use
+                          : IptvColors.accentTerracotta.withOpacity(0.5),
                     ),
                   ),
                 ),

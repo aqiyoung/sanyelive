@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,8 +69,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   }
 
   Future<void> _tryAutoPlay() async {
-    final asyncChannels = ref.read(channelsProvider);
-    final channels = await asyncChannels.future;
+    final channels = await ref.read(channelsProvider.future);
     if (!mounted) return;
     final ch = _findChannel(channels, widget.channelId);
     if (ch == null) {
@@ -213,7 +211,7 @@ class _TopBarState extends State<_TopBar> {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: onBack,
+            onPressed: widget.onBack,
           ),
           const SizedBox(width: 4),
           Expanded(

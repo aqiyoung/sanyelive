@@ -202,7 +202,8 @@ class ContinueWatchingCard extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        // ignore: deprecated_member_use
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(10),
       ),
       child: const Icon(

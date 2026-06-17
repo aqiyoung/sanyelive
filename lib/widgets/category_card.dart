@@ -40,7 +40,8 @@ class CategoryCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: IptvColors.accentTerracotta.withValues(alpha: 0.12),
+                  // ignore: deprecated_member_use
+                  color: IptvColors.accentTerracotta.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: IptvColors.accentTerracotta, size: 24),

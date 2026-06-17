@@ -6,8 +6,9 @@ import '../../../core/theme/typography.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/epg.dart';
 import '../../../data/repositories/epg_repository.dart';
+import '../../../widgets/glass_container.dart';
 
-/// "现在播什么 + 接下来" 节目卡
+/// "现在播什么 + 接下来" 节目卡 — P1-1 轻玻璃 (blur 12 + 白边)
 ///
 /// 数据来源: [epgForChannelProvider]
 /// - 有 EPG 数据: 显示当前节目 (title + 进度条 + 剩余时间) + 下一档
@@ -73,59 +74,57 @@ class _ProgramCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: IptvColors.bgElevated,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionLabel(text: '正在直播', accent: IptvColors.accentTerracotta),
-          const SizedBox(height: 6),
-          Text(
-            current?.title ?? '暂无节目信息',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: IptvTypography.serifTitle.copyWith(fontSize: 18),
-          ),
-          if (current != null) ...[
-            const SizedBox(height: 8),
-            _ProgressBar(
-              start: current!.start,
-              end: current!.end,
-              now: now,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${_fmt(current!.start.toLocal())} – ${_fmt(current!.end.toLocal())}  '
-              '·  剩余 ${_remaining(current!.end, now)}',
-              style: IptvTypography.caption
-                  .copyWith(color: IptvColors.textSecondary),
-            ),
-          ],
-          if (next != null) ...[
-            const SizedBox(height: 12),
+      child: GlassContainer(
+        borderRadius: 12,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             _SectionLabel(
-              text: '即将播出',
-              accent: IptvColors.accentClay,
-            ),
-            const SizedBox(height: 4),
+                text: '正在直播', accent: IptvColors.accentTerracotta),
+            const SizedBox(height: 6),
             Text(
-              next!.title,
-              maxLines: 1,
+              current?.title ?? '暂无节目信息',
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style:
-                  IptvTypography.body.copyWith(color: IptvColors.textSecondary),
+              style: IptvTypography.serifTitle.copyWith(fontSize: 18),
             ),
-            const SizedBox(height: 2),
-            Text(
-              '${_fmt(next!.start.toLocal())} – ${_fmt(next!.end.toLocal())}',
-              style: IptvTypography.caption
-                  .copyWith(color: IptvColors.textSecondary),
-            ),
+            if (current != null) ...[
+              const SizedBox(height: 8),
+              _ProgressBar(
+                start: current!.start,
+                end: current!.end,
+                now: now,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${_fmt(current!.start.toLocal())} – '
+                '${_fmt(current!.end.toLocal())}  '
+                '·  剩余 ${_remaining(current!.end, now)}',
+                style: IptvTypography.caption
+                    .copyWith(color: IptvColors.textSecondary),
+              ),
+            ],
+            if (next != null) ...[
+              const SizedBox(height: 12),
+              _SectionLabel(text: '即将播出', accent: IptvColors.accentClay),
+              const SizedBox(height: 4),
+              Text(
+                next!.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: IptvTypography.body
+                    .copyWith(color: IptvColors.textSecondary),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${_fmt(next!.start.toLocal())} – ${_fmt(next!.end.toLocal())}',
+                style: IptvTypography.caption
+                    .copyWith(color: IptvColors.textSecondary),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -207,27 +206,25 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: IptvColors.bgElevated,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.live_tv,
-            size: 18,
-            color: IptvColors.accentTerracotta,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              isLoading ? '节目单加载中…' : '${channel.displayName} · 实时直播 (节目单待接入)',
-              style:
-                  IptvTypography.body.copyWith(color: IptvColors.textSecondary),
+      child: GlassContainer(
+        borderRadius: 12,
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            const Icon(Icons.live_tv,
+                size: 18, color: IptvColors.accentTerracotta),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                isLoading
+                    ? '节目单加载中…'
+                    : '${channel.displayName} · 实时直播 (节目单待接入)',
+                style: IptvTypography.body
+                    .copyWith(color: IptvColors.textSecondary),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

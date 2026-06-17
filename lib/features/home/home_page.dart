@@ -54,15 +54,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       // ContinueWatchingCard 内部已经各自包了 TvFocus (deviceTier == tv
       // 才包),  这里是方向键导航容器.  手机端 child 就是原 CustomScrollView,
       //  零成本.
+      // 6/17 v0.3.0: 移除 AppBar title — 身体 _AppHeader 已带 logo+标题+搜索
+      // 收藏, AppBar 重复显示.  保留 AppBar 用于返回 / 状态栏 spacing.
       appBar: AppBar(
-        title: const Text(
-          '三页直播',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),

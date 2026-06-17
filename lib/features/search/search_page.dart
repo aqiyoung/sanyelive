@@ -53,7 +53,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     _debounceTimer = Timer(const Duration(milliseconds: 300), () => _search(q));
   }
 
-  void _search(String q) {
+  Future<void> _search(String q) async {
     if (q.isEmpty) {
       setState(() {
         _results = [];
@@ -62,17 +62,17 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       return;
     }
 
-    // 从已加载的频道中搜索
-    final asyncChannels = ref.read(channelsProvider);
-    asyncChannels.whenData((channels) {
-      final results = _fuzzySearch(channels, q);
-      if (mounted) {
-        setState(() {
-          _results = results;
-          _hasSearched = true;
-          _selectedIndex = 0;
-        });
-      }
+    // 6/17 fix: await channelsProvider.future — Riverpod 的 FutureProvider
+    // 是 lazy 的, SearchPage 没有 watch 它, 用 ref.read 拿到的可能还是
+    // AsyncLoading, whenData 是 no-op, setState 永远不触发.
+    // 改成 await future, 确保数据到了再 setState.
+    final channels = await ref.read(channelsProvider.future);
+    if (!mounted) return;
+    final results = _fuzzySearch(channels, q);
+    setState(() {
+      _results = results;
+      _hasSearched = true;
+      _selectedIndex = 0;
     });
   }
 

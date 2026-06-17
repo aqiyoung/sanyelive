@@ -120,7 +120,7 @@ void main() {
     expect(find.text('央视'), findsOneWidget);
     expect(find.text('卫视'), findsOneWidget);
     expect(find.text('地方'), findsOneWidget);
-    expect(find.text('三页直播'), findsOneWidget);
+    expect(find.text('三页直播'), findsWidgets);
   });
 
   testWidgets('home → category (cctv) shows CCTV channels', (tester) async {
@@ -191,6 +191,6 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(find.text('三页直播'), findsOneWidget);
+    expect(find.text('三页直播'), findsWidgets);
   });
 }

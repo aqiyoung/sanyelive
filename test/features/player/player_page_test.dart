@@ -104,15 +104,14 @@ void main() {
         channelId: 'CCTV1.cn',
       );
       await tester.pump();
-      await tester
-          .runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      await tester.pump();
 
       // 初始: 频道名可见
       expect(find.text('CCTV-1 综合'), findsOneWidget);
 
-      // 等 4s 让 timer 触发 (_hideAfter=3s, CI 慢给足余量)
-      await tester
-          .runAsync(() => Future.delayed(const Duration(milliseconds: 4000)));
+      // 6/17 fix: pump(Duration) 推进 fake clock 过 3s hideAfter timer.
+      // runAsync 走真实时, fake clock 没动, Timer 不会触发.
+      await tester.pump(const Duration(milliseconds: 4000));
       // 多 pump 几轮确保 setState + 动画完成
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 200));
@@ -130,15 +129,13 @@ void main() {
         channelId: 'CCTV1.cn',
       );
       await tester.pump();
-      await tester
-          .runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      await tester.pump();
 
       // 初始: 控件可见
       expect(_firstOpacity(tester), 1.0);
 
-      // 等 4s 让控件自动隐藏
-      await tester
-          .runAsync(() => Future.delayed(const Duration(milliseconds: 4000)));
+      // 6/17 fix: pump(Duration) 推进 fake clock 过 3s hideAfter timer.
+      await tester.pump(const Duration(milliseconds: 4000));
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 200));
       expect(_firstOpacity(tester), 0.0, reason: '等待后控件应该隐藏');

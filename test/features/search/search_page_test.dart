@@ -91,7 +91,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'CCTV');
       // 触发 listen + 重建
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 400));
       sw.stop();
 
       expect(sw.elapsedMilliseconds, lessThan(1000),
@@ -106,7 +106,7 @@ void main() {
       await tester.pump();
       await tester.enterText(find.byType(TextField), '湖南');
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('湖南卫视'), findsOneWidget);
     });
 
@@ -115,7 +115,7 @@ void main() {
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'XxxNotFound');
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.textContaining('未找到匹配'), findsOneWidget);
     });
   });

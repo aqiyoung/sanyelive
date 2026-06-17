@@ -78,8 +78,8 @@ void main() {
     testWidgets('打开搜索页: 显示输入框 + 占位', (tester) async {
       await _pump(tester, router: _buildRouter());
       await tester.pump();
-      expect(find.byIcon(Icons.search), findsWidgets);
-      expect(find.text('输入关键词搜索频道'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back), findsWidgets);
+      expect(find.text('搜索频道名或频道号…'), findsOneWidget);
     });
 
     testWidgets('输入 "CCTV" → 1s 内出结果, 列出 CCTV-1/2', (tester) async {

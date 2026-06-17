@@ -1,7 +1,9 @@
 name: iptv_app
 description: "IPTV 直播 APP - 极简新中式设计 - 家用电视/盒子场景"
 publish_to: "none"
-version: 0.2.0+9
+# 0.2.1: UI 优化 + libmpv native + 频道中文化 + CCTV5 源 + 状态栏修复
+# 0.2.1+10: 包名 com.aqiyoung.iptv_app → com.threelive.iptv
+version: 0.2.1+10
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

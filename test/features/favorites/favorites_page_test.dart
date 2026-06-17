@@ -8,11 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iptv_app/data/models/channel.dart';
-import 'package:iptv_app/data/repositories/channel_repository.dart';
-import 'package:iptv_app/features/favorites/favorites_page.dart';
-import 'package:iptv_app/features/favorites/favorites_service.dart';
-import 'package:iptv_app/services/startup_service.dart';
+import 'package:threelive/data/models/channel.dart';
+import 'package:threelive/data/repositories/channel_repository.dart';
+import 'package:threelive/features/favorites/favorites_page.dart';
+import 'package:threelive/features/favorites/favorites_service.dart';
+import 'package:threelive/services/startup_service.dart';
 
 void main() {
   group('FavoritesPage widget', () {

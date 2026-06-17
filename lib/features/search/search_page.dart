@@ -22,6 +22,7 @@ class SearchPage extends ConsumerStatefulWidget {
 class _SearchPageState extends ConsumerState<SearchPage> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final _keyboardFocusNode = FocusNode();
   String _query = '';
   List<Channel> _results = [];
   int _selectedIndex = 0;
@@ -39,6 +40,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     _debounceTimer?.cancel();
     _controller.dispose();
     _focusNode.dispose();
+    _keyboardFocusNode.dispose();
     super.dispose();
   }
 
@@ -151,7 +153,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     return Scaffold(
       body: SafeArea(
         child: KeyboardListener(
-          focusNode: _focusNode,
+          focusNode: _keyboardFocusNode,
           autofocus: true,
           onKeyEvent: _handleKeyEvent,
           child: CustomScrollView(

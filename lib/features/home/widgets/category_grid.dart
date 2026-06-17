@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/responsive/breakpoints.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
+import '../../../core/tv/tv_focus.dart';
 import '../../../widgets/category_card.dart';
 
 /// 主页 3 大分类卡片的自适应网格
@@ -40,11 +41,23 @@ class CategoryGrid extends StatelessWidget {
           itemCount: items.length,
           itemBuilder: (context, i) {
             final item = items[i];
-            return CategoryCard(
+            // 6/17 v0.2.3 P1-5: TV 端套 TvFocus 拿焦点环,  手机端原
+            // InkWell 不受影响 (TvFocus 内部是 Focus + GestureDetector,  不
+            // 拦截 touch 事件).
+            final isTv = context.deviceTier == DeviceTier.tv;
+            final card = CategoryCard(
               title: item.title,
               subtitle: item.subtitle,
               icon: item.icon,
               onTap: onItemTap == null ? null : () => onItemTap!(item),
+            );
+            if (!isTv) return card;
+            return TvFocus(
+              // 6/17: 第一个卡片 autofocus,  TV 端进去就高亮
+              autofocus: i == 0,
+              onTap: onItemTap == null ? null : () => onItemTap!(item),
+              borderRadius: 16,
+              child: card,
             );
           },
         );
@@ -132,19 +145,32 @@ class ContinueWatchingCard extends StatelessWidget {
     // 显得太抢眼.  厊到 1/8 屏高: logo 40, padding 14,
     // 删掉 subtitle 文字, 'continue watching' label 和 channelName 合并到
     // 一行 (用 ' · ' 分隔).
+    // 6/17 v0.2.3 P1-5: TV 端套 TvFocus 拿焦点环,  手机端原 InkWell 不变.
+    final isTv = context.deviceTier == DeviceTier.tv;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Material(
-        color: IptvColors.accentTerracotta,
+      child: isTv
+          ? TvFocus(
+              onTap: onTap,
+              borderRadius: 14,
+              child: _buildContent(),
+            )
+          : _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
+    return Material(
+      color: IptvColors.accentTerracotta,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-            child: Row(
-              children: [
-                SizedBox(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+          child: Row(
+            children: [
+              SizedBox(
                   width: 40,
                   height: 40,
                   child: channelLogo != null

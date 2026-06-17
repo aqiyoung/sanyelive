@@ -15,6 +15,7 @@ import '../../services/player_service.dart';
 import '../../services/startup_service.dart';
 import 'widgets/next_channels_strip.dart';
 import 'widgets/now_next_program.dart';
+import 'widgets/source_picker_sheet.dart';
 
 /// 播放页 — 卡 5 实现
 ///   - 顶部: 返回 + 频道名 + 节目时间
@@ -370,12 +371,19 @@ class _LoadingOverlay extends StatelessWidget {
   }
 }
 
-class _ErrorOverlay extends StatelessWidget {
+class _ErrorOverlay extends ConsumerWidget {
   const _ErrorOverlay({required this.message});
   final String message;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 6/17 v0.2.3 P0-4: 错误时给用户「重试 + 换源」按钮.
+    // current channel 从 currentPlayerStateProvider 拿.  避免外部多传一个
+    // channel 参数导致状态不一致.
+    final state = ref.watch(currentPlayerStateProvider);
+    final channel = state.channel;
+    final hasMultipleSources = (channel?.sources.length ?? 0) > 1;
+
     return ColoredBox(
       color: Colors.black87,
       child: Center(
@@ -403,6 +411,50 @@ class _ErrorOverlay extends StatelessWidget {
                 message,
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white60, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              // 重试 + 换源 两个按钮.  重试: 重调 play(当前 channel), 走
+              // SourceFailover 自动选源.  换源: 弹底部 sheet, 选单源调
+              // playSingleSource.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: channel == null
+                        ? null
+                        : () {
+                            ref
+                                .read(playerServiceProvider)
+                                .play(channel);
+                          },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('重试'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white54),
+                    ),
+                  ),
+                  if (hasMultipleSources) ...[
+                    const SizedBox(width: 12),
+                    FilledButton.icon(
+                      onPressed: channel == null
+                          ? null
+                          : () async {
+                              final url =
+                                  await pickSourceUrl(context, channel);
+                              if (url == null) return; // 取消
+                              ref
+                                  .read(playerServiceProvider)
+                                  .playSingleSource(url, channel: channel);
+                            },
+                      icon: const Icon(Icons.swap_horiz, size: 18),
+                      label: const Text('换源'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: IptvColors.accentTerracotta,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),

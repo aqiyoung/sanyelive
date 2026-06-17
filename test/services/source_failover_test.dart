@@ -176,6 +176,33 @@ void main() {
       expect(service.state.error, contains('http://b'));
     });
   });
+
+  // 6/17 v0.2.3 P0-4: playSingle 为「换源」按钮提供单源播放能力
+  group('SourceFailover.playSingle', () {
+    test('单源成功 → 返回 true', () async {
+      final opener = _ScriptedOpener([_ScriptedResult.success()]);
+      final failover = SourceFailover(
+        opener: opener,
+        perSourceTimeout: const Duration(milliseconds: 500),
+      );
+      expect(await failover.playSingle('http://x'), isTrue);
+      expect(opener.calls, ['http://x']);
+    });
+
+    test('单源 opener 返回 false → 返回 false (不抛)', () async {
+      final opener = _ScriptedOpener([_ScriptedResult.failure()]);
+      final failover = SourceFailover(opener: opener);
+      expect(await failover.playSingle('http://x'), isFalse);
+    });
+
+    test('单源 opener 抛异常 → 返回 false (不向上传)', () async {
+      final opener = _ScriptedOpener(
+        [_ScriptedResult.throwError(Exception('http 500'))],
+      );
+      final failover = SourceFailover(opener: opener);
+      expect(await failover.playSingle('http://x'), isFalse);
+    });
+  });
 }
 
 // ───────────────────────────── Test doubles ─────────────────────────────

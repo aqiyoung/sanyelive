@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/category/category_page.dart';
+import '../../features/favorites/favorites_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/player/player_page.dart';
 import '../../features/search/search_page.dart';
@@ -14,6 +15,7 @@ class AppRoutes {
   static const String category = '/category/:catId';
   static const String player = '/player/:channelId';
   static const String search = '/search';
+  static const String favorites = '/favorites';
 
   static String categoryPath(String catId, {String? title, int? count}) {
     final query = <String, String>{};
@@ -65,6 +67,12 @@ GoRouter buildRouter() {
             path: 'search',
             name: 'search',
             builder: (context, state) => const SearchPage(),
+          ),
+          // 6/17 v0.2.3 P1-2: 收藏页: /favorites
+          GoRoute(
+            path: 'favorites',
+            name: 'favorites',
+            builder: (context, state) => const FavoritesPage(),
           ),
         ],
       ),

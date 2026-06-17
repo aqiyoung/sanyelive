@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/responsive/breakpoints.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
+import '../../core/tv/tv_focus.dart';
 import '../../data/channel_filter.dart';
 import '../../data/models/channel.dart';
 import '../../data/repositories/channel_repository.dart';
@@ -61,17 +63,30 @@ class CategoryPage extends ConsumerWidget {
             child: _EmptyState(),
           )
         else
-          SliverList.builder(
-            itemCount: filtered.length,
-            itemBuilder: (context, i) {
-              final ch = filtered[i];
-              return ChannelTile(
-                channel: ch,
-                channelNumber: (i + 1).toString().padLeft(2, '0'),
-                channelName: ch.name,
-                country: ch.country,
-                isLive: ch.sources.isNotEmpty,
-                onTap: () => context.push('/player/${ch.id}'),
+          Builder(
+            builder: (context) {
+              // 6/17 v0.2.3 P1-5: TV 端 TvFocus 套住 ChannelTile
+              final isTv = context.deviceTier == DeviceTier.tv;
+              return SliverList.builder(
+                itemCount: filtered.length,
+                itemBuilder: (context, i) {
+                  final ch = filtered[i];
+                  final tile = ChannelTile(
+                    channel: ch,
+                    channelNumber: (i + 1).toString().padLeft(2, '0'),
+                    channelName: ch.name,
+                    country: ch.country,
+                    isLive: ch.sources.isNotEmpty,
+                    onTap: () => context.push('/player/${ch.id}'),
+                  );
+                  if (!isTv) return tile;
+                  return TvFocus(
+                    autofocus: i == 0,
+                    onTap: () => context.push('/player/${ch.id}'),
+                    borderRadius: 0,
+                    child: tile,
+                  );
+                },
               );
             },
           ),

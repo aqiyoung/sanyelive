@@ -130,4 +130,15 @@ class SourceFailover {
       attempts.map((a) => (url: a.url, error: a.error)).toList(growable: false),
     );
   }
+
+  /// 6/17 v0.2.3 P0-4: 手动指定单源播放,  不走自动切换
+  ///
+  /// 返回是否成功.  成功条件跟 [play] 一致: opener 返回 true.
+  Future<bool> playSingle(String url) async {
+    try {
+      return await _opener.open(url, timeout: perSourceTimeout);
+    } catch (_) {
+      return false;
+    }
+  }
 }

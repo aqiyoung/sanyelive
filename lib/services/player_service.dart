@@ -181,6 +181,74 @@ class PlayerService extends ChangeNotifier {
     }
   }
 
+  /// 6/17 v0.2.3 P0-4: 错误时给用户「换源」入口 — 直接播放指定 URL, 不走
+  /// SourceFailover 自动选源.  适用: 央视源抽风时手动指定备份源.
+  ///
+  /// 当前 channel 用 [channel] 表示; 如果没传, 保持原 channel (例如切到
+  /// 同一频道的另一路源,  channel 不变).
+  Future<void> playSingleSource(String url, {Channel? channel}) async {
+    if (_disposed) return;
+    final ch = channel ?? _state.channel;
+    if (ch == null) {
+      // 没有 channel 上下文, 只能假定这是个 raw URL,  跳过错 channel 的检查
+      _set(
+        _state.copyWith(
+          status: PlayerStatus.error,
+          error: 'playSingleSource: 无频道上下文',
+          clearAttempt: true,
+        ),
+      );
+      return;
+    }
+
+    // 6/17 修声音残留: 跟 [play] 一样, 先 stop 旧 player 避免双声
+    if (_player != null) {
+      await _player.stop();
+    }
+
+    _set(
+      _state.copyWith(
+        status: PlayerStatus.loading,
+        channel: ch,
+        clearError: true,
+        clearAttempt: true,
+      ),
+    );
+
+    try {
+      final ok = await _failover.playSingle(url);
+      if (_disposed) return;
+      if (ok) {
+        _set(
+          _state.copyWith(
+            status: PlayerStatus.playing,
+            currentSource: url,
+            clearAttempt: true,
+          ),
+        );
+      } else {
+        _set(
+          _state.copyWith(
+            status: PlayerStatus.error,
+            error: '该源无法打开: $url',
+            currentSource: url,
+            clearAttempt: true,
+          ),
+        );
+      }
+    } catch (e) {
+      if (_disposed) return;
+      _set(
+        _state.copyWith(
+          status: PlayerStatus.error,
+          error: '单源播放失败: $e',
+          currentSource: url,
+          clearAttempt: true,
+        ),
+      );
+    }
+  }
+
   /// 停止播放
   Future<void> stop() async {
     if (_disposed) return;

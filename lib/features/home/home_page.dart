@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
+import '../../core/tv/tv_focus.dart';
 import '../../data/channel_filter.dart';
 import '../../data/models/channel.dart';
 import '../../data/repositories/channel_repository.dart';
@@ -49,11 +50,17 @@ class _HomePageState extends ConsumerState<HomePage> {
     final asyncChannels = ref.watch(channelsProvider);
 
     return Scaffold(
+      // 6/17 v0.2.3 P1-5: TV 端 root 包 TvFocusGroup,  CategoryCard /
+      // ContinueWatchingCard 内部已经各自包了 TvFocus (deviceTier == tv
+      // 才包),  这里是方向键导航容器.  手机端 child 就是原 CustomScrollView,
+      //  零成本.
       body: SafeArea(
-        child: asyncChannels.when(
-          loading: () => const _LoadingState(),
-          error: (e, _) => _ErrorState(message: e.toString()),
-          data: (channels) => _buildContent(context, channels),
+        child: TvFocusGroup(
+          child: asyncChannels.when(
+            loading: () => const _LoadingState(),
+            error: (e, _) => _ErrorState(message: e.toString()),
+            data: (channels) => _buildContent(context, channels),
+          ),
         ),
       ),
     );
@@ -114,7 +121,10 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
               const SerifHeadline(
                 '频道分类',
-                subtitle: '7,800+ 频道 · iptv-org 数据源',
+                // 6/17 v0.2.3 P0-1: 实事求是,  实际 bake 了 484 个 CN 频道.
+                // 7800+ 是 iptv-org 全量,  未进 APP.  改 500+.
+                // 未来 v0.3.0 会重 bake + 二级分类.
+                subtitle: '500+ 国内频道 · iptv-org 数据源',
               ),
               const SizedBox(height: 4),
             ],
@@ -178,6 +188,13 @@ class _AppHeader extends StatelessWidget {
             color: IptvColors.textPrimary,
             tooltip: '搜索频道',
             onPressed: onSearchTap,
+          ),
+          // 6/17 v0.2.3 P1-2: 收藏页入口,  在 search 旁加 ❤️ icon
+          IconButton(
+            icon: const Icon(Icons.favorite_border),
+            color: IptvColors.textPrimary,
+            tooltip: '我的收藏',
+            onPressed: () => context.push('/favorites'),
           ),
         ],
       ),

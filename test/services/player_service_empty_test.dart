@@ -44,6 +44,46 @@ void main() {
       expect(svc.state.channel?.id, 'Bad.cn');
     });
   });
+
+  // 6/17 v0.2.3 P0-4: 错误 overlay 「换源」按钮调 playSingleSource
+  group('PlayerService.playSingleSource', () {
+    test('opener 成功 → state.status = playing, currentSource = url',
+        () async {
+      final opener = _CountingOpener();
+      final svc = PlayerService(opener: opener);
+
+      const ch = Channel(
+        id: 'Good.cn',
+        name: 'Good',
+        country: 'CN',
+        categories: <String>['news'],
+        sources: <String>['http://primary', 'http://backup'],
+      );
+      await svc.playSingleSource('http://backup', channel: ch);
+
+      expect(svc.state.status, PlayerStatus.playing);
+      expect(svc.state.currentSource, 'http://backup');
+      expect(svc.state.channel?.id, 'Good.cn');
+    });
+
+    test('opener 失败 → state.status = error, currentSource 仍为 url', () async {
+      final opener = _CountingOpener(shouldFail: true);
+      final svc = PlayerService(opener: opener);
+
+      const ch = Channel(
+        id: 'Bad.cn',
+        name: 'Bad',
+        country: 'CN',
+        categories: <String>['news'],
+        sources: <String>['http://primary', 'http://backup'],
+      );
+      await svc.playSingleSource('http://backup', channel: ch);
+
+      expect(svc.state.status, PlayerStatus.error);
+      expect(svc.state.currentSource, 'http://backup');
+      expect(svc.state.error, contains('该源无法打开'));
+    });
+  });
 }
 
 class _CountingOpener implements StreamOpener {

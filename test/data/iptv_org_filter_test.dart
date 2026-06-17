@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:iptv_app/data/models/channel.dart';
-import 'package:iptv_app/data/sources/iptv_org_filter.dart';
+import 'package:threelive/data/models/channel.dart';
+import 'package:threelive/data/sources/iptv_org_filter.dart';
 
 Channel _c(
   String id,

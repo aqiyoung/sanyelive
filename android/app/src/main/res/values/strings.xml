@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 6/16 老板拍板: APP 显示名 "三页直播" (跟 MaterialApp.title 对齐) -->
-    <string name="app_name">三页直播</string>
+    <string name="app_name">Threelive</string>
 </resources>

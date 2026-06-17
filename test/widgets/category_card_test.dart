@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:iptv_app/widgets/category_card.dart';
+import 'package:threelive/widgets/category_card.dart';
 
 void main() {
   testWidgets('CategoryCard renders title and subtitle', (tester) async {

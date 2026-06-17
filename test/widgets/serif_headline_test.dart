@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:iptv_app/widgets/serif_headline.dart';
+import 'package:threelive/widgets/serif_headline.dart';
 
 void main() {
   testWidgets('SerifHeadline renders text', (tester) async {

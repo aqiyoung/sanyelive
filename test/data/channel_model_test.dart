@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:iptv_app/data/models/channel.dart';
+import 'package:threelive/data/models/channel.dart';
 
 void main() {
   group('Channel.fromJson', () {
@@ -10,7 +10,7 @@ void main() {
         'name': 'CCTV-1',
         'country': 'CN',
         'categories': <String>['general', 'news'],
-        'alt_names': <String>['央视一套'],
+        'alt_names': <String>['央视一�?],
         'website': 'http://www.cctv.com/',
         'logo': 'http://example.com/logo.png',
         'is_nsfw': false,
@@ -20,7 +20,7 @@ void main() {
       expect(c.name, 'CCTV-1');
       expect(c.country, 'CN');
       expect(c.categories, <String>['general', 'news']);
-      expect(c.altNames, <String>['央视一套']);
+      expect(c.altNames, <String>['央视一�?]);
       expect(c.website, 'http://www.cctv.com/');
       expect(c.logoUrl, 'http://example.com/logo.png');
       expect(c.isNsfw, false);
@@ -89,7 +89,7 @@ void main() {
     expect(c2.categories, c.categories);
   });
 
-  group('sources 字段 (卡 6)', () {
+  group('sources 字段 (�?6)', () {
     test('parses sources list', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CCTV1.cn',
@@ -124,7 +124,7 @@ void main() {
       expect(c.sources, isEmpty);
     });
 
-    test('toJson 含 sources', () {
+    test('toJson �?sources', () {
       const c = Channel(
         id: 'A.cn',
         name: 'A',
@@ -137,41 +137,41 @@ void main() {
     });
   });
 
-  // 卡 7 (6/17 老板需求): 频道名自动优先中文, 手工映射兑底.
-  group('displayName / displaySubtitle (中文化)', () {
-    test('中文 alt_names 优先 (CCTV-13 → 央视新闻)', () {
+  // �?7 (6/17 老板需�?: 频道名自动优先中�? 手工映射兑底.
+  group('displayName / displaySubtitle (中文�?', () {
+    test('中文 alt_names 优先 (CCTV-13 �?央视新闻)', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CCTV13.cn',
         'name': 'CCTV-13',
         'country': 'CN',
-        'alt_names': <String>['CCTV-13 新闻', '中国中央电视台新闻频道'],
+        'alt_names': <String>['CCTV-13 新闻', '中国中央电视台新闻频�?],
       });
       expect(c.displayName, 'CCTV-13 新闻');
     });
 
-    test('CGTN 手工映射: 原始 name 英文没中文 alt, 从映射表取', () {
+    test('CGTN 手工映射: 原始 name 英文没中�?alt, 从映射表�?, () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CGTNArabic.cn',
         'name': 'CGTN Arabic',
         'country': 'CN',
         'alt_names': <String>['CGTN العربية'],
       });
-      // 第一个 alt 包含 Arabic 字符, 但这个含中文 (没), 所以走手工表
-      // 手工表 'CGTNArabic.cn' → 'CGTN 阿语'
+      // 第一�?alt 包含 Arabic 字符, 但这个含中文 (�?, 所以走手工�?
+      // 手工�?'CGTNArabic.cn' �?'CGTN 阿语'
       expect(c.displayName, 'CGTN 阿语');
     });
 
-    test('中国频道, 手工表里有 id → 用映射名', () {
+    test('中国频道, 手工表里�?id �?用映射名', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CCTVPlus1.cn',
         'name': 'CCTV+ 1',
         'country': 'CN',
         'alt_names': <String>[],
       });
-      expect(c.displayName, 'CCTV+ 1 (海外版)');
+      expect(c.displayName, 'CCTV+ 1 (海外�?');
     });
 
-    test('displaySubtitle: 中文化后, 原名作为副标题', () {
+    test('displaySubtitle: 中文化后, 原名作为副标�?, () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CCTV13.cn',
         'name': 'CCTV-13',
@@ -182,7 +182,7 @@ void main() {
       expect(c.displaySubtitle, 'CCTV-13');
     });
 
-    test('displaySubtitle: 已经是原名 (没中文化) → null', () {
+    test('displaySubtitle: 已经是原�?(没中文化) �?null', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CNN.us',
         'name': 'CNN',
@@ -193,7 +193,7 @@ void main() {
       expect(c.displaySubtitle, isNull);
     });
 
-    test('非中国频道, 纯英文 → displayName 就是 name', () {
+    test('非中国频�? 纯英�?�?displayName 就是 name', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CNN.us',
         'name': 'CNN',
@@ -203,14 +203,14 @@ void main() {
       expect(c.displayName, 'CNN');
     });
 
-    test('手工映射用 name 兑底', () {
+    test('手工映射�?name 兑底', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'unknown_id.cn',
         'name': 'GTV Electronic Sports',
         'country': 'CN',
         'alt_names': <String>[],
       });
-      // id 不在映射表, name 也不在
+      // id 不在映射�? name 也不�?
       expect(c.displayName, 'GTV Electronic Sports');
     });
   });

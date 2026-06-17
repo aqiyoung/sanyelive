@@ -1,8 +1,8 @@
-// 卡 6 验证: mergeKnownSources 把 known_sources 追加到 channel.sources 后面,
-// 不覆盖.  iptv-org 高画质源 (channels_cn.json 已 bake) 必须保留在前面.
+// �?6 验证: mergeKnownSources �?known_sources 追加�?channel.sources 后面,
+// 不覆�?  iptv-org 高画质源 (channels_cn.json �?bake) 必须保留在前�?
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iptv_app/data/models/channel.dart';
-import 'package:iptv_app/data/repositories/channel_repository.dart';
+import 'package:threelive/data/models/channel.dart';
+import 'package:threelive/data/repositories/channel_repository.dart';
 
 void main() {
   group('mergeKnownSources', () {
@@ -20,7 +20,7 @@ void main() {
       categories: <String>['news'],
     );
 
-    test('channels_cn.json 已有 sources → known 追加在后面', () {
+    test('channels_cn.json 已有 sources �?known 追加在后�?, () {
       final result = mergeKnownSources(
         <Channel>[xWithSources, yNoSources],
         <String, dynamic>{
@@ -40,7 +40,7 @@ void main() {
       expect(y.sources, <String>['http://known.example/y.m3u8']);
     });
 
-    test('known 里的 url 已存在于 channel.sources → 去重, 不重复', () {
+    test('known 里的 url 已存在于 channel.sources �?去重, 不重�?, () {
       final result = mergeKnownSources(
         <Channel>[xWithSources],
         <String, dynamic>{
@@ -52,11 +52,11 @@ void main() {
       expect(x.sources, <String>[
         'http://a.com/1.m3u8', // 首次出现位置保持
         'https://b.com/2.m3u8',
-        'http://new.com/2.m3u8', // 新增在末尾
+        'http://new.com/2.m3u8', // 新增在末�?
       ]);
     });
 
-    test('known 里没有 channel.id → 保持原样, 不丢源', () {
+    test('known 里没�?channel.id �?保持原样, 不丢�?, () {
       final result = mergeKnownSources(
         <Channel>[xWithSources],
         <String, dynamic>{
@@ -65,13 +65,13 @@ void main() {
       );
 
       final x = result.firstWhere((c) => c.id == 'X.cn');
-      // 保持原 channel 实例 (== 引用), sources 不变
+      // 保持�?channel 实例 (== 引用), sources 不变
       expect(x.sources, xWithSources.sources);
       expect(identical(x, xWithSources), true,
           reason: '没有 known match 时应该返回原 channel 引用');
     });
 
-    test('空 known → 等同 identity (返回原 channel 引用)', () {
+    test('�?known �?等同 identity (返回�?channel 引用)', () {
       final result = mergeKnownSources(
         <Channel>[xWithSources, yNoSources],
         <String, dynamic>{},
@@ -80,7 +80,7 @@ void main() {
       expect(identical(result[1], yNoSources), true);
     });
 
-    test('known 里某 channel 字段是空 list → 不变, 跳过', () {
+    test('known 里某 channel 字段是空 list �?不变, 跳过', () {
       final result = mergeKnownSources(
         <Channel>[xWithSources],
         <String, dynamic>{'X.cn': <String>[]},

@@ -62,7 +62,7 @@ class IptvApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: '三页直播',
+      title: 'Threelive',
       debugShowCheckedModeBanner: false,
       theme: IptvTheme.light(),
       routerConfig: buildRouter(),
@@ -98,7 +98,7 @@ class _CrashScreen extends StatelessWidget {
               const Icon(Icons.error_outline, color: Colors.red, size: 64),
               const SizedBox(height: 12),
               const Text(
-                '三页直播 - 启动错误',
+                'Threelive - 启动错误',
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,

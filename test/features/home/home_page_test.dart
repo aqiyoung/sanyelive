@@ -1,15 +1,15 @@
-// 卡 6 单元测试: HomePage 集成 — 上次观看 / 搜索入口 / 频道分类
-// 验收 (proof): 收藏 5 个频道, 重启 APP 仍在; 搜索 "CCTV" 1s 内出结果
+// �?6 单元测试: HomePage 集成 �?上次观看 / 搜索入口 / 频道分类
+// 验收 (proof): 收藏 5 个频�? 重启 APP 仍在; 搜索 "CCTV" 1s 内出结果
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iptv_app/core/theme/theme.dart';
-import 'package:iptv_app/data/models/channel.dart';
-import 'package:iptv_app/data/repositories/channel_repository.dart';
-import 'package:iptv_app/features/favorites/favorites_service.dart';
-import 'package:iptv_app/features/home/home_page.dart';
-import 'package:iptv_app/services/startup_service.dart';
+import 'package:threelive/core/theme/theme.dart';
+import 'package:threelive/data/models/channel.dart';
+import 'package:threelive/data/repositories/channel_repository.dart';
+import 'package:threelive/features/favorites/favorites_service.dart';
+import 'package:threelive/features/home/home_page.dart';
+import 'package:threelive/services/startup_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _channels = <Channel>[
@@ -99,7 +99,7 @@ void main() {
   });
 
   group('HomePage', () {
-    testWidgets('渲染: 3 大分类 + 标题 + 搜索入口', (tester) async {
+    testWidgets('渲染: 3 大分�?+ 标题 + 搜索入口', (tester) async {
       await _pump(
         tester,
         router: _router(),
@@ -118,7 +118,7 @@ void main() {
       expect(find.byIcon(Icons.search), findsWidgets);
     });
 
-    testWidgets('无 lastChannelId → 不显示「继续观看」卡片', (tester) async {
+    testWidgets('�?lastChannelId �?不显示「继续观看」卡�?, (tester) async {
       await _pump(
         tester,
         router: _router(),
@@ -132,8 +132,8 @@ void main() {
       expect(find.textContaining('继续观看'), findsNothing);
     });
 
-    testWidgets('有 lastChannelId → 显示「继续观看」卡片 + 清除按钮', (tester) async {
-      // 预先在 SharedPreferences 写入 last channel
+    testWidgets('�?lastChannelId �?显示「继续观看」卡�?+ 清除按钮', (tester) async {
+      // 预先�?SharedPreferences 写入 last channel
       SharedPreferences.setMockInitialValues({
         'last_channel_id': 'CCTV1.cn',
       });
@@ -148,14 +148,14 @@ void main() {
       );
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
 
-      // "继续观看" 标签 + 频道名都在 (文本格式: "继续观看  ·  CCTV-1")
+      // "继续观看" 标签 + 频道名都�?(文本格式: "继续观看  ·  CCTV-1")
       expect(find.textContaining('继续观看'), findsOneWidget);
       expect(find.textContaining('CCTV-1'), findsWidgets);
       // 关闭按钮 (清除上次观看)
       expect(find.byIcon(Icons.close), findsOneWidget);
     });
 
-    testWidgets('点击清除按钮 → 移除「继续观看」卡片', (tester) async {
+    testWidgets('点击清除按钮 �?移除「继续观看」卡�?, (tester) async {
       SharedPreferences.setMockInitialValues({
         'last_channel_id': 'CCTV1.cn',
       });
@@ -181,7 +181,7 @@ void main() {
       expect(prefs.getString('last_channel_id'), isNull);
     });
 
-    testWidgets('点击搜索按钮 → 跳转到 /search', (tester) async {
+    testWidgets('点击搜索按钮 �?跳转�?/search', (tester) async {
       await _pump(
         tester,
         router: _router(),
@@ -199,7 +199,7 @@ void main() {
       expect(find.text('SEARCH_PAGE'), findsOneWidget);
     });
 
-    testWidgets('点击「央视」卡片 → 跳到分类页', (tester) async {
+    testWidgets('点击「央视」卡�?�?跳到分类�?, (tester) async {
       await _pump(
         tester,
         router: _router(),

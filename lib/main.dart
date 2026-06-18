@@ -9,7 +9,9 @@ import 'core/router/router.dart';
 import 'core/theme/colors.dart';
 import 'core/theme/theme.dart';
 import 'features/settings/theme_provider.dart';
+import 'features/update/force_update_dialog.dart';
 import 'services/player_service.dart';
+import 'services/version_checker.dart';
 
 void main() async {
   // 卡 7 (6/17 修复): 之前 v0.2.0 启动崩
@@ -33,9 +35,17 @@ void main() async {
   // 跳过逻辑:  flutter_test 模式下 SharedPreferences 抛 MissingPluginException,
   //  改成 noop override (用空内存版),  行为退化为默认 system theme.
   final prefs = await _loadSharedPreferencesOrMock();
+  // 0.3.7+20 (6/18): 后台强制更新 — 注入当前 versionCode + versionString.
+  // 编译期 const 来自 pubspec.yaml,  跟 release workflow 跑出来的 APK
+  // tag +versionCode 一致.  也跟 services/version_checker.dart 里 parse
+  // APK asset 名的 +N 格式对齐.
+  const currentVersion = '0.3.7';
+  const currentVersionCode = 20;
   final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
+      currentVersionCodeProvider.overrideWithValue(currentVersionCode),
+      currentVersionStringProvider.overrideWithValue(currentVersion),
     ],
   );
   final playerService = container.read(playerServiceProvider);
@@ -50,6 +60,17 @@ void main() async {
       child: IptvApp(playerObserver: playerObserver),
     ),
   );
+  // 0.3.7+20 (6/18): 后台强制更新 — runApp 后 microtask 异步 check,  不阻塞
+  // 启动.  1h 内有 cache 走 cache,  失败静默吞掉,  弹窗只对 outdated 触发.
+  // 用 Future.microtask 而不是 scheduleMicrotask 是为了 async/await 一致.
+  Future.microtask(() async {
+    try {
+      await container.read(versionCheckerProvider.notifier).checkOnStartup();
+    } catch (e) {
+      // 静默 — 后台任务, 失败不骚扰用户.
+      debugPrint('=== version check failed (silenced): $e ===');
+    }
+  });
 }
 
 void _applySystemUiOverlay() {
@@ -98,6 +119,17 @@ class IptvApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // 0.3.6+19: 监听 themeModeProvider, 切换后 MaterialApp 立刻用新 themeMode.
     final themeMode = ref.watch(themeModeProvider);
+    // 0.3.7+20 (6/18): 后台强制更新 — 监听 versionCheckerProvider,
+    // 检测到 outdated 时弹 ForceUpdateDialog.  ref.listen 的 context
+    // 是 MaterialApp 内部 context,  Navigator.of(context, rootNavigator:true)
+    // 拿 root Navigator 弹 dialog,  不会被路由栈里其他页面 (player / settings)
+    // 盖住.  对话框本身是 barrierDismissible:false,  不点 "立刻更新" / "稍后"
+    // 关不掉.  main() runApp 后用 Future.microtask 异步调 checkOnStartup.
+    ref.listen<VersionCheckState>(versionCheckerProvider, (prev, next) {
+      if (next is VersionCheckOutdated) {
+        ForceUpdateDialog.show(context, ref);
+      }
+    });
     return MaterialApp.router(
       title: '三页直播',
       debugShowCheckedModeBanner: false,

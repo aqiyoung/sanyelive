@@ -40,6 +40,7 @@ class ForceUpdateDialog {
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // 不可点外部 / 返回键关闭
+      useRootNavigator: true, // 路由栈里其他页面 (player / settings) 不会盖住
       builder: (ctx) => _ForceUpdateDialogContent(state: state),
     );
   }

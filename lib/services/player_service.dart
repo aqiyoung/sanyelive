@@ -249,6 +249,19 @@ class PlayerService extends ChangeNotifier {
     }
   }
 
+  /// 暂停 (切后台 / 多窗口 / 来电时调)
+  /// 6/18 P3-1: AppLifecycleState.paused/inactive/hidden 都调这个.
+  /// 媒体 native 端只 stop 推 PCM, 不释放 libmpv 实例,  速度快 ( < 50ms),
+  /// 回到前台调 play() 即可恢复.
+  Future<void> pause() async {
+    if (_disposed) return;
+    if (_player != null) {
+      await _player.pause();
+    }
+    // 不改 _state.status: 业务层觉得还在 "playing",  只是底层暂停
+    // 推流.  UI 显示可以靠 AppLifecycle 自己处理.
+  }
+
   /// 停止播放
   Future<void> stop() async {
     if (_disposed) return;

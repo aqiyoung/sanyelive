@@ -20,7 +20,15 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:stopWithTask="true">
+            <!-- android:stopWithTask="true"  (P3-1 6/18):
+                 任务栏划掉 APP / 系统回收任务时, 强制结束 native Activity
+                 进程.  默认 false → 用户杀任务时 Activity 继续跑, 播放
+                 (libmpv) 还在解码推 PCM, 声音就不释放.  设 true 后系统
+                 杀任务时同步 stop Activity, 配合 Dart 端 WidgetsBindingObserver
+                 (AppLifecycleState.detached) 调 PlayerService.stop/dispose,
+                 三层保险释放资源.  P0 严重 bug 修复. -->
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues

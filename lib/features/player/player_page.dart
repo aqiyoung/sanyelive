@@ -99,6 +99,18 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         statusBarBrightness: Brightness.light,
       ),
     );
+    // 6/18 P3-1 (老板反馈): 路由 pop 时显式 stop native player.  不做
+    // dispose, 保留 libmpv 实例在内存中 (后续返回频道会重新 open).  这
+    // 是 RouteObserver + AppLifecycleListener 之外的第一道保险:  当用户
+    // 退到首页 / 切频道时,  player_page 的 State 也会被 Flutter 调
+    // dispose,  这时只要调 stop 就能让 libmpv 停止推 PCM,  声音立即停.
+    // ChangeNotifierProvider 在 widget 树全部拆掉后才 release service,  所以
+    // 这里 read() 仍然拿到同一个 PlayerService 实例,  安全.
+    try {
+      ref.read(playerServiceProvider).stop();
+    } catch (_) {
+      // widget 树已拆 + provider 链可能已被释放,  静默忽略.
+    }
     super.dispose();
   }
 

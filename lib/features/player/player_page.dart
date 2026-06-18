@@ -381,18 +381,28 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                   ),
                 ),
               ),
+              // v0.3.5.5 P0 bug fix: TopBar 永远 visible (不参与 _controlsVisible
+              // 3s 隐身), 因为 TopBar 含"退出全屏"按钮 — 必须随时能点.  控件层
+              // (节目卡 + 频道横滑) 才走 _controlsVisible 隐身.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: _TopBar(
+                  channel: channel,
+                  state: state,
+                  onBack: () => context.pop(),
+                  onExitFullscreen: _toggleFullscreen,
+                ),
+              ),
               // 6/18 P1 hotfix: 控件层 — 整体走 _controlsVisible 隐身
-              // (TopBar 也参与, 不再永远显示).
+              // (TopBar 已经移到外面, 这里只剩 节目卡 + 频道横滑).
               AnimatedOpacity(
                 opacity: _controlsVisible ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 250),
                 child: Column(
                   children: [
-                    _TopBar(
-                      channel: channel,
-                      state: state,
-                      onBack: () => context.pop(),
-                    ),
+                    // TopBar 已经移出去, 留 Spacer 占位让控件贴底
                     const Spacer(),
                     if (channel != null)
                       Container(
@@ -429,28 +439,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                     ),
                   ),
                 ),
-              // P2-2: 移动端用户主动全屏时, 给个"退出全屏"按钮 (TV 端没有)
-              // 6/18 P1 hotfix: status bar 已隐, top=12 顶到屏幕真正顶部.
-              // v0.3.5.4: 跟右下角全屏按钮统一 — 背景 surfaceContainerHigh,
-              // 图标 onSurface (跟主题联动).
-              if (_isFullscreen)
-                Positioned(
-                  right: 12,
-                  top: 12,
-                  child: Material(
-                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                    shape: const CircleBorder(),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.fullscreen_exit,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        size: 22,
-                      ),
-                      tooltip: '退出全屏',
-                      onPressed: _toggleFullscreen,
-                    ),
-                  ),
-                ),
+              // v0.3.5.5 P0 bug fix: 退出全屏按钮已经合并进 _TopBar, 这里的
+              // 单独 Positioned 删掉 (避免跟 TopBar 的退出全屏按钮重复).
             ],
           );
         },
@@ -464,11 +454,15 @@ class _TopBar extends StatefulWidget {
     required this.channel,
     required this.state,
     required this.onBack,
+    this.onExitFullscreen,
   });
 
   final Channel? channel;
   final PlayerState state;
   final VoidCallback onBack;
+  // v0.3.5.5 P0 bug fix: 退出全屏按钮 — 永远显示, 不参与 _controlsVisible
+  // 3s 隐身.  null = 不渲染 (移动端嵌入布局 / TV 默认布局).
+  final VoidCallback? onExitFullscreen;
 
   @override
   State<_TopBar> createState() => _TopBarState();
@@ -560,7 +554,7 @@ class _TopBarState extends State<_TopBar> {
           if (widget.channel != null) ...[
             const SizedBox(width: 4),
             Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.only(right: 4),
               child: FavoriteIcon(
                 channelId: widget.channel!.id,
                 channelName: widget.channel!.name,
@@ -570,6 +564,28 @@ class _TopBarState extends State<_TopBar> {
                 },
               ),
             ),
+          ],
+          // v0.3.5.5 P0 bug fix: 退出全屏按钮放在 TopBar 末尾, 永远 visible.
+          // (原来在 _buildFullscreenOverlay 里单独 Positioned, 跟 TopBar
+          // 走 _controlsVisible 时一起隐 — 用户反馈体验严重 bug.)
+          // 跟右下角全屏按钮统一 — 背景 surfaceContainerHigh, 图标
+          // onSurface (跟主题联动).
+          if (widget.onExitFullscreen != null) ...[
+            const SizedBox(width: 4),
+            Material(
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              shape: const CircleBorder(),
+              child: IconButton(
+                icon: Icon(
+                  Icons.fullscreen_exit,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  size: 22,
+                ),
+                tooltip: '退出全屏',
+                onPressed: widget.onExitFullscreen!,
+              ),
+            ),
+            const SizedBox(width: 8),
           ],
         ],
       ),

@@ -1,13 +1,14 @@
-// v0.3.5.2 (6/18 P1 hotfix): PlayerPage 全屏覆盖布局测试
+// v0.3.5.2 (6/18 P1 hotfix) + v0.3.5.5 (P0 bug fix): PlayerPage 全屏覆盖布局测试
 // 验证:
 //   1. 全屏覆盖布局不再 SafeArea (find.byType(SafeArea) 在全屏覆盖时为 0,
 //      在移动嵌入布局时为 1).
-//   2. _TopBar 也参与 _controlsVisible 隐身 — 3s 后 TopBar 跟节目卡 /
-//      频道横滑一起隐.
-//   3. 退出全屏按钮 (top right, fullscreen_exit 图标) 在全屏时存在, 退出
-//      时不存在.
+//   2. (v0.3.5.5 P0 fix) _TopBar **不参与** _controlsVisible 隐身 — 3s
+//      后 _TopBar 仍然 visible, 节目卡 / 频道横滑才跟着隐.  TopBar 含
+//      退出全屏按钮, 必须永远 visible (否则用户无法退出全屏).
+//   3. 退出全屏按钮 (v0.3.5.5 P0 fix 后) 移进 _TopBar 内, 不再单独
+//      Positioned.  全屏时存在, 退出后消失 (回到 _buildMobile 不渲染).
 //   4. TV 端 (shortestSide >= 600) 默认就走全屏覆盖 — _TopBar 渲染且
-//      参与隐身.
+//      永远 visible (v0.3.5.5 P0 fix).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -99,7 +100,9 @@ void main() {
       expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
     });
 
-    testWidgets('全屏: _TopBar 跟其他控件一起 3s 后隐身 (opacity 0)', (tester) async {
+    testWidgets(
+        '全屏 (v0.3.5.5 P0 fix): 控件层 3s 后 opacity=0, TopBar 仍 visible',
+        (tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -129,24 +132,43 @@ void main() {
         reason: '全屏 + 控件可见时 _TopBar 显示频道名',
       );
 
-      // 6/18 fix: 控件层 (含 _TopBar) 都走 _controlsVisible 隐身.  pump
-      // fake clock 过 3s, 整个控件层应该一起 opacity 0.
+      // v0.3.5.5 P0 fix: _TopBar 已移到 AnimatedOpacity 外面.  pump
+      // fake clock 过 3s, 控件层 (节目卡 + 频道横滑) 应该 opacity=0,
+      // 但 _TopBar 永远 visible — 频道名 (CCTV-1 综合) + 退出全屏按钮
+      // (Icons.fullscreen_exit) 仍 findable.
       await tester.pump(const Duration(milliseconds: 4000));
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 200));
 
-      // 验证 AnimatedOpacity 的 opacity = 0.0
+      // 验证 AnimatedOpacity 的 opacity = 0.0 (只剩控件层)
       final opacities =
           tester.widgetList<AnimatedOpacity>(find.byType(AnimatedOpacity));
       expect(opacities, isNotEmpty);
       expect(
         opacities.first.opacity,
         0.0,
-        reason: '3s 后全屏控件层 (含 _TopBar) 应该 opacity=0',
+        reason: '3s 后控件层 (节目卡 + 频道横滑) opacity=0',
+      );
+
+      // 关键 (v0.3.5.5 P0 fix): _TopBar 不在 AnimatedOpacity 内, 永远 visible.
+      // 频道名仍在:
+      expect(
+        find.text('CCTV-1 综合'),
+        findsOneWidget,
+        reason: 'v0.3.5.5 P0 fix — _TopBar 永远 visible, 3s 后频道名仍在',
+      );
+      // 退出全屏按钮仍在 (v0.3.5.5 P0 fix: 合并进 _TopBar):
+      expect(
+        find.widgetWithIcon(IconButton, Icons.fullscreen_exit),
+        findsOneWidget,
+        reason: 'v0.3.5.5 P0 fix — 退出全屏按钮在 _TopBar 内, 永远 findable, '
+            '用户随时可点退出全屏',
       );
     });
 
-    testWidgets('全屏: 退出全屏按钮 (fullscreen_exit) 在 top right', (tester) async {
+    testWidgets(
+        '全屏: 退出全屏按钮 (fullscreen_exit) 在 _TopBar 内 (v0.3.5.5 移入)',
+        (tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -196,7 +218,9 @@ void main() {
       );
     });
 
-    testWidgets('TV 端 (短边 >= 600): 默认走全屏覆盖, _TopBar 渲染且参与隐身', (tester) async {
+    testWidgets(
+        'TV 端 (短边 >= 600): 默认走全屏覆盖, _TopBar 永远 visible (v0.3.5.5 P0 fix)',
+        (tester) async {
       // TV 端: logical 1920x1080 (短边 1080 >= 600)
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1.0;
@@ -229,21 +253,23 @@ void main() {
         reason: 'TV 端默认全屏覆盖, 无 SafeArea (跟移动端全屏一致)',
       );
 
-      // TV 端: 没有"进入全屏"按钮 (因为已经全屏了).  也没有"退出全屏"按钮
-      // (因为 _isFullscreen=false, _buildFullscreenOverlay 是 TV 默认,
-      // 退出按钮只在 _isFullscreen=true 时显示).
+      // TV 端: 没有"进入全屏"按钮 (因为已经全屏了).
       expect(
         find.byIcon(Icons.fullscreen),
         findsNothing,
         reason: 'TV 端没有"进入全屏"按钮 (默认就是全屏覆盖)',
       );
+      // v0.3.5.5 P0 fix: 退出全屏按钮现在在 _TopBar 内 — TV 端 _isFullscreen=false
+      // 也在 (onExitFullscreen 永远传给 _TopBar).  因为 TV 端也走
+      // _buildFullscreenOverlay, onExitFullscreen 不为 null, 按钮渲染.
       expect(
-        find.byIcon(Icons.fullscreen_exit),
-        findsNothing,
-        reason: 'TV 端没有"退出全屏"按钮 (只 _isFullscreen=true 时显示)',
+        find.widgetWithIcon(IconButton, Icons.fullscreen_exit),
+        findsOneWidget,
+        reason: 'v0.3.5.5 P0 fix — 退出全屏按钮在 _TopBar 内, TV 端也显示',
       );
 
-      // 3s 后 _TopBar 隐身
+      // v0.3.5.5 P0 fix: 3s 后 _TopBar **不**隐身 (永远 visible).  只有
+      // 控件层 (节目卡 + 频道横滑) opacity=0.
       await tester.pump(const Duration(milliseconds: 4000));
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump(const Duration(milliseconds: 200));
@@ -253,7 +279,20 @@ void main() {
       expect(
         opacities.first.opacity,
         0.0,
-        reason: 'TV 端 _TopBar 跟其他控件一起 3s 后隐身',
+        reason: 'TV 端 控件层 (节目卡 + 频道横滑) 3s 后 opacity=0',
+      );
+
+      // 关键 (v0.3.5.5 P0 fix): _TopBar 永远 visible, 3s 后频道名 + 退出
+      // 全屏按钮仍在.
+      expect(
+        find.text('CCTV-1 综合'),
+        findsOneWidget,
+        reason: 'v0.3.5.5 P0 fix — _TopBar 永远 visible, 3s 后频道名仍在',
+      );
+      expect(
+        find.widgetWithIcon(IconButton, Icons.fullscreen_exit),
+        findsOneWidget,
+        reason: 'v0.3.5.5 P0 fix — _TopBar 永远 visible, 退出全屏按钮仍在',
       );
     });
   });

@@ -28,11 +28,14 @@ class CategoryPage extends ConsumerWidget {
     final asyncChannels = ref.watch(channelsProvider);
 
     return Scaffold(
+      // P2-3-A (6/18 老板拍): TV 端 root 包 TvFocusGroup,  方向键导航.
       body: SafeArea(
-        child: asyncChannels.when(
-          loading: () => const _LoadingState(),
-          error: (e, _) => _ErrorState(message: e.toString()),
-          data: (channels) => _buildContent(context, channels),
+        child: TvFocusGroup(
+          child: asyncChannels.when(
+            loading: () => const _LoadingState(),
+            error: (e, _) => _ErrorState(message: e.toString()),
+            data: (channels) => _buildContent(context, channels),
+          ),
         ),
       ),
     );
@@ -66,6 +69,7 @@ class CategoryPage extends ConsumerWidget {
           Builder(
             builder: (context) {
               // 6/17 v0.2.3 P1-5: TV 端 TvFocus 套住 ChannelTile
+              // P2-3-A (6/18 老板拍): TV 端 borderWidth 3px + scale 1.08.
               final isTv = context.deviceTier == DeviceTier.tv;
               return SliverList.builder(
                 itemCount: filtered.length,
@@ -78,12 +82,16 @@ class CategoryPage extends ConsumerWidget {
                     country: ch.country,
                     isLive: ch.sources.isNotEmpty,
                     onTap: () => context.push('/player/${ch.id}'),
+                    // P2-3-A: TV 端字号 16sp → 18sp,  3 米可视.
+                    fontSizeOverride: isTv ? 18.0 : null,
                   );
                   if (!isTv) return tile;
                   return TvFocus(
                     autofocus: i == 0,
                     onTap: () => context.push('/player/${ch.id}'),
                     borderRadius: 0,
+                    borderWidth: 3,
+                    focusedScale: 1.08,
                     child: tile,
                   );
                 },
@@ -135,16 +143,28 @@ class _BackBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // P2-3-A (6/18 老板拍): TV 端 back 按钮套 TvFocus,  3 米可视.
+    final isTv = context.deviceTier == DeviceTier.tv;
+    final backButton = IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: onBack,
+      // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface
+      color: Theme.of(context).colorScheme.onSurface,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 20, 8),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: onBack,
-            // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+          if (isTv)
+            TvFocus(
+              borderRadius: 24,
+              borderWidth: 3,
+              focusedScale: 1.08,
+              onTap: onBack,
+              child: backButton,
+            )
+          else
+            backButton,
           const SizedBox(width: 4),
           Expanded(
             child: Column(

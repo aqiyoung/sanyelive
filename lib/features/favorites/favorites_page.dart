@@ -26,23 +26,27 @@ class FavoritesPage extends ConsumerWidget {
     return Scaffold(
       // 6/18 v0.3.6.1 hotfix: 删 scaffold 硬编码 bgParchment,
       // 让 colorScheme.surface (light=bgParchment / dark=darkBg) 生效.
+      // P2-3-A (6/18 老板拍): TV 端 root 包 TvFocusGroup,  方向键导航.
       body: SafeArea(
-        child: Column(
-          children: [
-            _FavoritesAppBar(
-              count: asyncFavs.maybeWhen(
-                data: (ids) => ids.length,
-                orElse: () => 0,
+        child: TvFocusGroup(
+          child: Column(
+            children: [
+              _FavoritesAppBar(
+                count: asyncFavs.maybeWhen(
+                  data: (ids) => ids.length,
+                  orElse: () => 0,
+                ),
               ),
-            ),
-            Expanded(
-              child: asyncFavs.when(
-                loading: () => const _LoadingState(),
-                error: (e, _) => _ErrorState(message: e.toString()),
-                data: (ids) => _buildList(context, ref, ids, asyncChannels),
+              Expanded(
+                child: asyncFavs.when(
+                  loading: () => const _LoadingState(),
+                  error: (e, _) => _ErrorState(message: e.toString()),
+                  data: (ids) =>
+                      _buildList(context, ref, ids, asyncChannels),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -73,30 +77,37 @@ class FavoritesPage extends ConsumerWidget {
           return const _EmptyState();
         }
         // 6/17 v0.2.3 P1-5: TV 端 TvFocus 拿焦点环.  手机端不变.
+        // P2-3-A (6/18 老板拍): TV 端 borderWidth 3px + scale 1.08,  3 米可视.
         final isTv = context.deviceTier == DeviceTier.tv;
-        return ListView.builder(
-          itemCount: ordered.length,
-          itemBuilder: (context, i) {
-            final ch = ordered[i];
-            final tile = GestureDetector(
-              onLongPress: () => _confirmRemove(context, ref, ch),
-              child: ChannelTile(
-                channel: ch,
-                channelNumber: (i + 1).toString().padLeft(2, '0'),
-                channelName: ch.name,
-                country: ch.country,
-                isLive: ch.sources.isNotEmpty,
+        return TvFocusGroup(
+          child: ListView.builder(
+            itemCount: ordered.length,
+            itemBuilder: (context, i) {
+              final ch = ordered[i];
+              final tile = GestureDetector(
+                onLongPress: () => _confirmRemove(context, ref, ch),
+                child: ChannelTile(
+                  channel: ch,
+                  channelNumber: (i + 1).toString().padLeft(2, '0'),
+                  channelName: ch.name,
+                  country: ch.country,
+                  isLive: ch.sources.isNotEmpty,
+                  onTap: () => context.push('/player/${ch.id}'),
+                  // P2-3-A (6/18): TV 端字号 14sp → 18sp,  3 米可视.
+                  fontSizeOverride: isTv ? 18.0 : null,
+                ),
+              );
+              if (!isTv) return tile;
+              return TvFocus(
+                autofocus: i == 0,
                 onTap: () => context.push('/player/${ch.id}'),
-              ),
-            );
-            if (!isTv) return tile;
-            return TvFocus(
-              autofocus: i == 0,
-              onTap: () => context.push('/player/${ch.id}'),
-              borderRadius: 0,
-              child: tile,
-            );
-          },
+                borderRadius: 0,
+                borderWidth: 3,
+                focusedScale: 1.08,
+                child: tile,
+              );
+            },
+          ),
         );
       },
     );
@@ -168,17 +179,29 @@ class _FavoritesAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // P2-3-A (6/18 老板拍): TV 端 back 按钮套 TvFocus,  3 米可视.
+    final isTv = context.deviceTier == DeviceTier.tv;
+    final backButton = IconButton(
+      icon: const Icon(Icons.arrow_back),
+      // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface,
+      // 暗色下用 darkTextPrimary (米色) 而不是浅色 token.
+      color: Theme.of(context).colorScheme.onSurface,
+      onPressed: () => context.pop(),
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 20, 12),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface,
-            // 暗色下用 darkTextPrimary (米色) 而不是浅色 token.
-            color: Theme.of(context).colorScheme.onSurface,
-            onPressed: () => context.pop(),
-          ),
+          if (isTv)
+            TvFocus(
+              borderRadius: 24,
+              borderWidth: 3,
+              focusedScale: 1.08,
+              onTap: () => context.pop(),
+              child: backButton,
+            )
+          else
+            backButton,
           const SizedBox(width: 4),
           Expanded(
             child: Column(

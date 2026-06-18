@@ -27,11 +27,13 @@ class IPv4Client extends http.BaseClient {
     final client = HttpClient();
     // 关键: 用 connectionFactory 强制只走 IPv4
     // (HttpClient 没有 setAddresses, addresses 是 getter)
-    client.connectionFactory = (Uri uri, String? proxyHost, int? proxyPort) async {
+    client.connectionFactory =
+        (Uri uri, String? proxyHost, int? proxyPort) async {
       // 直接 (不通过代理) 时, 用 IPv4 解析域名 + 连
       if (proxyHost == null || proxyHost.isEmpty) {
         // 先 IPv4 解析
-        final addrs = await InternetAddress.lookup(uri.host, type: InternetAddressType.IPv4);
+        final addrs = await InternetAddress.lookup(uri.host,
+            type: InternetAddressType.IPv4);
         if (addrs.isEmpty) {
           throw SocketException('No IPv4 address for ${uri.host}');
         }

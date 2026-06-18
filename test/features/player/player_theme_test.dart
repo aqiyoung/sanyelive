@@ -170,7 +170,8 @@ void main() {
           reason: '暗色下不能用浅色 token IptvColors.bgElevated');
     });
 
-    testWidgets('浅/暗色 Scaffold 跟随主题 colorScheme.surface (跟主题联动)', (tester) async {
+    testWidgets('浅/暗色 Scaffold 跟随主题 colorScheme.surface (跟主题联动)',
+        (tester) async {
       // v0.3.5.15: Scaffold bg 改为 scheme.surface, 跟主题联动
       await _pumpPlayer(
         tester,
@@ -178,7 +179,8 @@ void main() {
         physicalSize: const Size(1080, 1920),
       );
       final scaffoldLight = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffoldLight.backgroundColor, equals(IptvTheme.light().colorScheme.surface),
+      expect(scaffoldLight.backgroundColor,
+          equals(IptvTheme.light().colorScheme.surface),
           reason: 'v0.3.5.15: Scaffold bg 应跟随主题 colorScheme.surface');
     });
   });

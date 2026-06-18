@@ -62,12 +62,13 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     // 卡 7 (6/17 老板需求): 播放页背景黑, 状态栏文字用白图标.
     // 退出时 dispose 还原.
+    final cs = Theme.of(context).colorScheme;
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
+      SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light, // Android: 白图标
         statusBarBrightness: Brightness.dark, // iOS: 黑背景 -> 白文字
-        systemNavigationBarColor: Colors.black,
+        systemNavigationBarColor: cs.surface,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
@@ -193,16 +194,16 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     final asyncChannels = ref.watch(channelsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: asyncChannels.when(
           loading: () => const Center(
-            child: CircularProgressIndicator(color: Colors.white54),
+            child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           error: (e, _) => Center(
             child: Text(
               '加载失败: $e',
-              style: const TextStyle(color: Colors.white54),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           data: (channels) {
@@ -224,12 +225,12 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                         right: 8,
                         bottom: 8,
                         child: Material(
-                          color: Colors.black54,
+                          color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
                           shape: const CircleBorder(),
                           child: IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.fullscreen,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               size: 22,
                             ),
                             tooltip: '全屏',
@@ -280,16 +281,16 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     final asyncChannels = ref.watch(channelsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: asyncChannels.when(
           loading: () => const Center(
-            child: CircularProgressIndicator(color: Colors.white54),
+            child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           error: (e, _) => Center(
             child: Text(
               '加载失败: $e',
-              style: const TextStyle(color: Colors.white54),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           data: (channels) {
@@ -367,7 +368,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: Colors.white24,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -379,12 +380,12 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                     right: 12,
                     top: 12,
                     child: Material(
-                      color: Colors.black54,
+                      color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
                       shape: const CircleBorder(),
                       child: IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.fullscreen_exit,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           size: 22,
                         ),
                         tooltip: '退出全屏',
@@ -455,7 +456,7 @@ class _TopBarState extends State<_TopBar> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
             onPressed: widget.onBack,
           ),
           const SizedBox(width: 4),
@@ -468,7 +469,7 @@ class _TopBarState extends State<_TopBar> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: IptvTypography.serifTitle
-                      .copyWith(color: Colors.white, fontSize: 18),
+                      .copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 18),
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -478,7 +479,7 @@ class _TopBarState extends State<_TopBar> {
                     Text(
                       statusText,
                       style: const TextStyle(
-                        color: Colors.white70,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -486,7 +487,7 @@ class _TopBarState extends State<_TopBar> {
                     Text(
                       _clockText,
                       style: const TextStyle(
-                        color: Colors.white54,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -496,7 +497,7 @@ class _TopBarState extends State<_TopBar> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface),
             onPressed: () {},
           ),
           if (widget.channel != null) ...[
@@ -529,7 +530,7 @@ class _StatusDot extends StatelessWidget {
       PlayerStatus.playing => IptvColors.accentTerracotta,
       PlayerStatus.loading => Colors.amber,
       PlayerStatus.error => Colors.redAccent,
-      PlayerStatus.idle => Colors.white38,
+      PlayerStatus.idle => Theme.of(context).colorScheme.onSurfaceVariant,
     };
     return Container(
       width: 8,
@@ -591,7 +592,7 @@ class _LoadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: Colors.black54,
+      color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -607,7 +608,7 @@ class _LoadingOverlay extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Text(text, style: const TextStyle(color: Colors.white70)),
+            Text(text, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
       ),
@@ -629,7 +630,7 @@ class _ErrorOverlay extends ConsumerWidget {
     final hasMultipleSources = (channel?.sources.length ?? 0) > 1;
 
     return ColoredBox(
-      color: Colors.black87,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -645,7 +646,7 @@ class _ErrorOverlay extends ConsumerWidget {
               const Text(
                 '播放失败',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -654,7 +655,7 @@ class _ErrorOverlay extends ConsumerWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white60, fontSize: 12),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
               ),
               const SizedBox(height: 16),
               // 重试 + 换源 两个按钮.  重试: 重调 play(当前 channel), 走
@@ -672,8 +673,8 @@ class _ErrorOverlay extends ConsumerWidget {
                     icon: const Icon(Icons.refresh, size: 18),
                     label: const Text('重试'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white54),
+                      foregroundColor: Theme.of(context).colorScheme.onSurface,
+                      side: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ),
                   if (hasMultipleSources) ...[

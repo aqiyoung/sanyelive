@@ -127,8 +127,7 @@ void main() {
   });
 
   group('PlayerPage v0.3.5.5 TopBar 永远 visible (退出全屏按钮不能 3s 隐)', () {
-    testWidgets(
-        '全屏 overlay + 控件 3s 隐身后, TopBar (含退出全屏按钮) 仍 visible',
+    testWidgets('全屏 overlay + 控件 3s 隐身后, TopBar (含退出全屏按钮) 仍 visible',
         (tester) async {
       await _pumpPlayerFullscreen(tester);
       // devicePixelRatio=1.0, 物理 1080x1920 → 逻辑 1080x1920, shortestSide=1080
@@ -167,8 +166,7 @@ void main() {
           reason: '控件层 _controlsVisible=false 时 opacity=0 (节目卡 + 频道横滑隐)');
     });
 
-    testWidgets(
-        '全屏 overlay + 控件显示时, TopBar + 退出全屏按钮 + 控件层都 visible',
+    testWidgets('全屏 overlay + 控件显示时, TopBar + 退出全屏按钮 + 控件层都 visible',
         (tester) async {
       await _pumpPlayerFullscreen(tester);
 
@@ -195,8 +193,7 @@ void main() {
       );
     });
 
-    testWidgets(
-        'TopBar 跟 AnimatedOpacity 分离 — 控件隐时 TopBar 仍 visible, 反之亦然',
+    testWidgets('TopBar 跟 AnimatedOpacity 分离 — 控件隐时 TopBar 仍 visible, 反之亦然',
         (tester) async {
       await _pumpPlayerFullscreen(tester);
 
@@ -246,9 +243,7 @@ void main() {
       );
     });
 
-    testWidgets(
-        '回归: 移动端嵌入布局不显示退出全屏按钮 (onExitFullscreen=null)',
-        (tester) async {
+    testWidgets('回归: 移动端嵌入布局不显示退出全屏按钮 (onExitFullscreen=null)', (tester) async {
       // 移动端嵌入布局: devicePixelRatio=2.0, 物理 1080x1920 → 逻辑 540x960
       // → shortestSide=540 < 600 → _isMobile=true → 走 _buildMobile.
       // _buildMobile 调 _TopBar 不传 onExitFullscreen, TopBar 内不渲染

@@ -100,8 +100,7 @@ void main() {
       expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
     });
 
-    testWidgets(
-        '全屏 (v0.3.5.5 P0 fix): 控件层 3s 后 opacity=0, TopBar 仍 visible',
+    testWidgets('全屏 (v0.3.5.5 P0 fix): 控件层 3s 后 opacity=0, TopBar 仍 visible',
         (tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 2.0;
@@ -166,8 +165,7 @@ void main() {
       );
     });
 
-    testWidgets(
-        '全屏: 退出全屏按钮 (fullscreen_exit) 在 _TopBar 内 (v0.3.5.5 移入)',
+    testWidgets('全屏: 退出全屏按钮 (fullscreen_exit) 在 _TopBar 内 (v0.3.5.5 移入)',
         (tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 2.0;

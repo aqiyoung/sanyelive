@@ -127,8 +127,9 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     });
   }
 
-  /// P2-2: 切真全屏 ↔ 退出.  全屏: immersiveSticky + landscape, 让视频占满
-  /// 整个屏幕并隐藏状态栏/导航栏.  退出: edgeToEdge + portrait (默认).
+  /// P2-2: 切真全屏 ↔ 退出.  全屏: immersiveSticky + landscape + 状态栏透
+  /// 明 + 白图标, 让视频占满整个屏幕并隐藏状态栏/导航栏.  退出: edgeToEdge
+  /// + portrait (默认) + 还原成全 APP 默认 (黑图标 + 浅米色 nav bar).
   void _toggleFullscreen() {
     setState(() => _isFullscreen = !_isFullscreen);
     if (_isFullscreen) {
@@ -137,12 +138,32 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
+      // 6/18 P1 hotfix: 全屏时 status bar 透明 + 白图标, 跟黑底视频配套.
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light, // Android: 白图标
+          statusBarBrightness: Brightness.dark, // iOS: 黑背景 -> 白文字
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+      );
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       // empty list = "use whatever the platform default is" (portrait on
       // phones, landscape on TVs, etc.).  Passing null breaks the
       // argument_type_not_assignable analyzer check on Flutter 3.29.3.
       SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
+      // 6/18 P1 hotfix: 退出全屏还原成全 APP 默认 (黑图标, 跟浅米色页面配套)
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+          systemNavigationBarColor: IptvColors.bgParchment,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
+      );
     }
   }
 
@@ -274,6 +295,9 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
 
   /// P2-2: 全屏覆盖布局 (v0.3.0 行为保留) — 视频填满全屏, 控件盖在上面,
   /// 3s 后自动隐身.  TV 端直接走这条.  移动端点右下角全屏按钮进入.
+  /// 6/18 P1 hotfix: 移除 SafeArea (status bar 已隐, SafeArea 反而留 padding
+  /// 让视频被压下 ~80px 看着像有顶栏).  _TopBar 也移进 AnimatedOpacity, 3s
+  /// 控件隐身时跟节目卡 / 频道横滑一起隐.
   Widget _buildFullscreenOverlay(BuildContext context) {
     final state = ref.watch(currentPlayerStateProvider);
     final controller = ref.watch(mediaKitVideoControllerProvider);
@@ -281,45 +305,51 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: asyncChannels.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: Colors.white54),
+      // 6/18 P1 hotfix: 全屏时不 SafeArea.  immersiveSticky 已隐 status bar /
+      // nav bar 视觉, 但 SafeArea 仍会按 MediaQuery padding 布局, 压下视频
+      // ~24-32px (Android) / ~44px (iOS) 看着像有顶栏.
+      body: asyncChannels.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: Colors.white54),
+        ),
+        error: (e, _) => Center(
+          child: Text(
+            '加载失败: $e',
+            style: const TextStyle(color: Colors.white54),
           ),
-          error: (e, _) => Center(
-            child: Text(
-              '加载失败: $e',
-              style: const TextStyle(color: Colors.white54),
-            ),
-          ),
-          data: (channels) {
-            final channel = _findChannel(channels, widget.channelId);
-            // P0-1: 视频区点一下切控件可见性 (原本不可见 -> 显示, 显示中 -> 立即隐藏)
-            return Stack(
-              children: [
-                // 视频区填满全屏 (控件盖在上面, 隐身时露出视频)
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      if (_controlsVisible) {
-                        // 显示中: 立即隐藏, 不重置计时器
-                        _hideControlsTimer?.cancel();
-                        setState(() => _controlsVisible = false);
-                      } else {
-                        // 隐藏中: 显示并重置计时器
-                        _resetHideTimer();
-                      }
-                    },
-                    child: _VideoArea(
-                      controller: controller,
-                      state: state,
-                      channel: channel,
-                    ),
+        ),
+        data: (channels) {
+          final channel = _findChannel(channels, widget.channelId);
+          // P0-1: 视频区点一下切控件可见性 (原本不可见 -> 显示, 显示中 -> 立即隐藏)
+          return Stack(
+            children: [
+              // 视频区填满全屏 (控件盖在上面, 隐身时露出视频)
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    if (_controlsVisible) {
+                      // 显示中: 立即隐藏, 不重置计时器
+                      _hideControlsTimer?.cancel();
+                      setState(() => _controlsVisible = false);
+                    } else {
+                      // 隐藏中: 显示并重置计时器
+                      _resetHideTimer();
+                    }
+                  },
+                  child: _VideoArea(
+                    controller: controller,
+                    state: state,
+                    channel: channel,
                   ),
                 ),
-                // 控件层: 顶部 + 底部, 统一控制可见性
-                Column(
+              ),
+              // 6/18 P1 hotfix: 控件层 — 整体走 _controlsVisible 隐身
+              // (TopBar 也参与, 不再永远显示).
+              AnimatedOpacity(
+                opacity: _controlsVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 250),
+                child: Column(
                   children: [
                     _TopBar(
                       channel: channel,
@@ -328,74 +358,63 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                     ),
                     const Spacer(),
                     if (channel != null)
-                      AnimatedOpacity(
-                        opacity: _controlsVisible ? 1.0 : 0.0,
-                        duration: const Duration(milliseconds: 250),
-                        child: Container(
-                          color: Colors.black.withValues(alpha: 0.55),
-                          child: Builder(builder: (context) {
-                            // Outer if (channel != null) has already
-                            // promoted the local channel to non-null for
-                            // this subtree (Dart 3 propagates the
-                            // promotion into the nested Builder closure
-                            // for locals), so we can use it directly here
-                            // without re-checking or non-null asserting.
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                NowNextProgram(channel: channel),
-                                NextChannelsStrip(
-                                  currentChannelId: channel.id,
-                                  allChannels: channels,
-                                  onChannelTap: _switchTo,
-                                ),
-                              ],
-                            );
-                          }),
+                      Container(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            NowNextProgram(channel: channel),
+                            NextChannelsStrip(
+                              currentChannelId: channel.id,
+                              allChannels: channels,
+                              onChannelTap: _switchTo,
+                            ),
+                          ],
                         ),
                       ),
                     const SizedBox(height: 24),
                   ],
                 ),
-                // 隐藏中提示: 右下角小点 (随时点一下又可以看控件)
-                if (!_controlsVisible)
-                  Positioned(
-                    right: 12,
-                    bottom: 12,
-                    child: IgnorePointer(
-                      child: Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          shape: BoxShape.circle,
-                        ),
+              ),
+              // 隐藏中提示: 右下角小点 (随时点一下又可以看控件)
+              if (!_controlsVisible)
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: IgnorePointer(
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        shape: BoxShape.circle,
                       ),
                     ),
                   ),
-                // P2-2: 移动端用户主动全屏时, 给个"退出全屏"按钮 (TV 端没有)
-                if (_isFullscreen)
-                  Positioned(
-                    right: 12,
-                    top: 12,
-                    child: Material(
-                      color: Colors.black54,
-                      shape: const CircleBorder(),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.fullscreen_exit,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        tooltip: '退出全屏',
-                        onPressed: _toggleFullscreen,
+                ),
+              // P2-2: 移动端用户主动全屏时, 给个"退出全屏"按钮 (TV 端没有)
+              // 6/18 P1 hotfix: status bar 已隐, top=12 顶到屏幕真正顶部.
+              if (_isFullscreen)
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.fullscreen_exit,
+                        color: Colors.white,
+                        size: 22,
                       ),
+                      tooltip: '退出全屏',
+                      onPressed: _toggleFullscreen,
                     ),
                   ),
-              ],
-            );
-          },
-        ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

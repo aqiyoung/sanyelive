@@ -117,7 +117,7 @@ void main() {
       );
 
       // showDialog + barrierDismissible: false.
-      await ForceUpdateDialog.show(ctx!, container);
+      await ForceUpdateDialog.show(ctx!);
       await tester.pumpAndSettle();
 
       expect(find.byType(AlertDialog), findsOneWidget);

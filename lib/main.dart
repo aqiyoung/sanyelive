@@ -127,7 +127,7 @@ class IptvApp extends ConsumerWidget {
     // 关不掉.  main() runApp 后用 Future.microtask 异步调 checkOnStartup.
     ref.listen<VersionCheckState>(versionCheckerProvider, (prev, next) {
       if (next is VersionCheckOutdated) {
-        ForceUpdateDialog.show(context, ref);
+        ForceUpdateDialog.show(context);
       }
     });
     return MaterialApp.router(

@@ -32,9 +32,11 @@ import 'package:sanyelive/core/theme/colors.dart';
 import 'package:sanyelive/services/version_checker.dart';
 
 /// 公开入口:  main.dart 在 VersionCheckOutdated 时调.
+/// 用 ProviderScope.containerOf(context) 拿 ref,  避免外部传 ref.
 class ForceUpdateDialog {
-  static Future<void> show(BuildContext context, WidgetRef ref) async {
-    final state = ref.read(versionCheckerProvider);
+  static Future<void> show(BuildContext context) async {
+    final container = ProviderScope.containerOf(context);
+    final state = container.read(versionCheckerProvider);
     if (state is! VersionCheckOutdated) return;
 
     return showDialog<void>(

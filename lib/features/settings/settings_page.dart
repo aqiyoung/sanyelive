@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../main.dart' show currentVersion, currentVersionCode;
 import 'theme_provider.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -41,6 +42,12 @@ class SettingsPage extends ConsumerWidget {
             subtitle: Text(_modeLabel(mode)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _pickTheme(context, ref, current: mode),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('版本号'),
+            subtitle: Text('$currentVersion (build $currentVersionCode)'),
           ),
           const Divider(),
         ],

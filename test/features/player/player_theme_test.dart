@@ -13,7 +13,6 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sanyelive/core/theme/colors.dart';
 import 'package:sanyelive/core/theme/theme.dart';
 import 'package:sanyelive/data/models/channel.dart';
 import 'package:sanyelive/data/repositories/channel_repository.dart';
@@ -126,29 +125,25 @@ void main() {
   });
 
   group('PlayerPage v0.3.5.4 主题适配 (浅色+暗色)', () {
-    testWidgets('浅色主题: 全屏按钮 Material bg = surfaceContainerHigh',
+    testWidgets('浅色主题: 全屏按钮 Material bg = transparent (v0.3.5.19)',
         (tester) async {
       await _pumpPlayer(
         tester,
         theme: IptvTheme.light(),
         physicalSize: const Size(1080, 1920),
       );
-      // 找全屏按钮 (Icons.fullscreen)
       final btnFinder = find.widgetWithIcon(IconButton, Icons.fullscreen);
       expect(btnFinder, findsOneWidget);
-      // 全屏按钮的 Material 容器 bg
-      final ctx = tester.element(btnFinder);
-      final expectedColor = Theme.of(ctx).colorScheme.surfaceContainerHigh;
-      // 从 Material 父级拿 color
+      
+      // v0.3.5.19: 全屏按钮背景改透明, 不再用 surfaceContainerHigh
       final materialFinder =
           find.ancestor(of: btnFinder, matching: find.byType(Material)).first;
       final material = tester.widget<Material>(materialFinder);
-      expect(material.color, isNotNull);
-      expect(material.color, equals(expectedColor),
-          reason: '浅色下全屏按钮 bg 应该 = surfaceContainerHigh (theme-driven)');
+      expect(material.color, equals(Colors.transparent),
+          reason: 'v0.3.5.19: 全屏按钮 bg 应该 = transparent');
     });
 
-    testWidgets('暗色主题: 全屏按钮 Material bg = surfaceContainerHigh (暗色板)',
+    testWidgets('暗色主题: 全屏按钮 Material bg = transparent (v0.3.5.19)',
         (tester) async {
       await _pumpPlayer(
         tester,
@@ -160,28 +155,21 @@ void main() {
       final materialFinder =
           find.ancestor(of: btnFinder, matching: find.byType(Material)).first;
       final material = tester.widget<Material>(materialFinder);
-      // 暗色 theme 下, surfaceContainerHigh = IptvColors.darkSurfaceHigh
-      // (312B25 暖深灰), 跟浅色的 EAE5DA 不同, 验证用的是当前主题的 token.
-      expect(material.color, isNotNull);
-      expect(material.color, equals(IptvColors.darkSurfaceHigh),
-          reason: '暗色下全屏按钮 bg 应该 = darkSurfaceHigh (暗色板)');
-      // 不能是浅色 token
-      expect(material.color, isNot(equals(IptvColors.bgElevated)),
-          reason: '暗色下不能用浅色 token IptvColors.bgElevated');
+      expect(material.color, equals(Colors.transparent),
+          reason: 'v0.3.5.19: 暗色下全屏按钮 bg 应该 = transparent');
     });
 
-    testWidgets('浅/暗色 Scaffold 跟随主题 colorScheme.surface (跟主题联动)',
+    testWidgets('视频区 Scaffold bg = Colors.black (v0.3.5.19)',
         (tester) async {
-      // v0.3.5.15: Scaffold bg 改为 scheme.surface, 跟主题联动
+      // v0.3.5.19: 视频区纯黑底, 不跟主题联动
       await _pumpPlayer(
         tester,
         theme: IptvTheme.light(),
         physicalSize: const Size(1080, 1920),
       );
       final scaffoldLight = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffoldLight.backgroundColor,
-          equals(IptvTheme.light().colorScheme.surface),
-          reason: 'v0.3.5.15: Scaffold bg 应跟随主题 colorScheme.surface');
+      expect(scaffoldLight.backgroundColor, equals(Colors.black),
+          reason: 'v0.3.5.19: 视频区 Scaffold bg 应 = Colors.black');
     });
   });
 }

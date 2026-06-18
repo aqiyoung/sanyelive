@@ -51,8 +51,19 @@ publish_to: "none"
 # 但 git tag 用 v0.3.6.1 (热修复, 跟 PR 标题一致).
 # APK 文件名: sanyelive-v0.3.6.1-arm64-v8a.apk (来自 tag name)
 # Android versionName 显示 "0.3.6", versionCode = 20.
-# v0.3.7 (6/18): 后台强制更新 — versionCode 21
-version: 0.3.7+20
+# v0.3.7+21 (6/18): P1 hotfix — 全屏播放 status bar + TopBar 修复
+#   老板 12:57 反馈"全屏播放的状态还显示台标 和返回".
+#   _buildFullscreenOverlay: 移除 SafeArea (status bar 已隐, SafeArea 反而留
+#     padding 让视频被压下, 看着像有顶栏).
+#   _TopBar 移进 AnimatedOpacity, 3s 控件隐身时跟节目卡 / 频道横滑一起隐.
+#   _toggleFullscreen: 全屏时 setSystemUIOverlayStyle 状态栏透明 + 白图标.
+#   退出全屏按钮位置 top=12 (status bar 已隐, 顶到屏幕真正顶部).
+#   退出全屏后还原成全 APP 默认 (黑图标 + 浅米色 nav bar, 跟浅米色页面配套).
+#   _isMobile 嵌入布局保留 SafeArea + TopBar (v0.3.5 设计的 P2-2 行为不破坏).
+#   pubspec 实际版本 0.3.7+21 (Dart pub 不支持 4 段版本号, Git tag 用
+#     v0.3.5.2 跟老板追踪名字保持一致).  Android versionName = "0.3.7",
+#     versionCode = 21.
+version: 0.3.7+21
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

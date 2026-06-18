@@ -26,7 +26,14 @@ publish_to: "none"
 #   - CCTV-5 + 14 卫视 source URL 合并 (assets/data/channels_cn.json)
 #   - 强制 IPv4 http.Client, 修 wifi 加载不出来 (lib/core/http/ipv4_client.dart)
 #   - 维护脚本 scripts/merge_known_sources.py
-version: 0.3.5+18
+# 0.3.6+19 (6/18): 暗色主题 + 设置页 + 主题持久化
+#   lib/core/theme/theme.dart 加 IptvTheme.dark()
+#   lib/core/theme/colors.dart 加 darkBg/darkSurface/darkTextPrimary tokens
+#   lib/features/settings/theme_provider.dart (新) — Riverpod + shared_preferences
+#   lib/features/settings/settings_page.dart (新) — 系统/浅色/深色 RadioListTile
+#   home_page 加齿轮 icon 跳 settings_page
+#   test/features/settings/theme_provider_test.dart + test/core/theme/dark_theme_test.dart
+version: 0.3.6+19
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/router/router.dart';
 import 'core/theme/colors.dart';
 import 'core/theme/theme.dart';
+import 'features/settings/theme_provider.dart';
 import 'services/player_service.dart';
 
 void main() async {
@@ -27,7 +29,15 @@ void main() async {
   // 6/18 P3-1: 把 PlayerService 创建提到 runApp 之前,  才可以传进
   // PlayerRouteObserver + WidgetsBindingObserver.  media_kit Player()
   // 必须 ensureInitialized() 后才能建,  上一步已 await 完成.
-  final container = ProviderContainer();
+  // 0.3.6+19: shared_preferences 也提前拿,  override 给 themeModeProvider.
+  // 跳过逻辑:  flutter_test 模式下 SharedPreferences 抛 MissingPluginException,
+  //  改成 noop override (用空内存版),  行为退化为默认 system theme.
+  final prefs = await _loadSharedPreferencesOrMock();
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+  );
   final playerService = container.read(playerServiceProvider);
   // 路由观察器: 离开 /player/* 时 stop + dispose.
   final playerObserver = PlayerRouteObserver(playerService);
@@ -72,17 +82,28 @@ bool get _shouldSkipMediaKit {
   return const bool.fromEnvironment('FLUTTER_TEST') == true;
 }
 
-class IptvApp extends StatelessWidget {
+/// 0.3.6+19: 拿 SharedPreferences.  生产等异步 init,  测试时调用方
+/// 会在 setUp 里调 SharedPreferences.setMockInitialValues({}) 让
+/// getInstance 返回一个内存版 (flutter_test 自带 fixture),  无需特殊处理.
+Future<SharedPreferences> _loadSharedPreferencesOrMock() async {
+  return SharedPreferences.getInstance();
+}
+
+class IptvApp extends ConsumerWidget {
   const IptvApp({super.key, this.playerObserver});
 
   final NavigatorObserver? playerObserver;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 0.3.6+19: 监听 themeModeProvider, 切换后 MaterialApp 立刻用新 themeMode.
+    final themeMode = ref.watch(themeModeProvider);
     return MaterialApp.router(
       title: '三页直播',
       debugShowCheckedModeBanner: false,
       theme: IptvTheme.light(),
+      darkTheme: IptvTheme.dark(),
+      themeMode: themeMode,
       routerConfig: buildRouter(playerObserver: playerObserver),
       builder: (context, child) =>
           _ErrorBoundary(child: child ?? const SizedBox()),

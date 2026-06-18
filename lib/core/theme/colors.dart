@@ -25,4 +25,28 @@ class IptvColors {
 
   /// 分隔线 — 暖灰
   static const Color dividerWarm = Color(0xFFE8E0D4);
+
+  // -------- 0.3.6+19 暗色主题 tokens --------
+  // 设计原则: 暗色页面也保持"宣纸/赤陶"调性, 不走纯黑灰.
+  // 主背景用深棕黑(仿"古纸焚"), 卡片用暖调深灰,
+  // 主色 accentTerracotta 在暗色下也保留 — 暖橙在深底上对比度好.
+  // 参考 Material 3 dark surface tier (surface / surfaceContainer 等).
+
+  /// 暗色主背景 — 深棕黑 (仿古纸焚后的焦褐)
+  static const Color darkBg = Color(0xFF1A1612);
+
+  /// 暗色卡片背景 — 暖调深灰
+  static const Color darkSurface = Color(0xFF25201B);
+
+  /// 暗色高亮卡片 — 比 surface 略亮
+  static const Color darkSurfaceHigh = Color(0xFF312B25);
+
+  /// 暗色主文字 — 米色 (跟 bgParchment 呼应的"宣纸白")
+  static const Color darkTextPrimary = Color(0xFFEDE4D3);
+
+  /// 暗色次文字 — 暖灰
+  static const Color darkTextSecondary = Color(0xFFB5A99A);
+
+  /// 暗色分隔线 — 暖深灰
+  static const Color darkDivider = Color(0xFF3A332C);
 }

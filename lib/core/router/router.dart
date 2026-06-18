@@ -6,6 +6,7 @@ import '../../features/favorites/favorites_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/player/player_page.dart';
 import '../../features/search/search_page.dart';
+import '../../features/settings/settings_page.dart';
 import '../../services/player_service.dart';
 
 /// 路由路径常量 — 集中管理
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String player = '/player/:channelId';
   static const String search = '/search';
   static const String favorites = '/favorites';
+  static const String settings = '/settings';
 
   static String categoryPath(String catId, {String? title, int? count}) {
     final query = <String, String>{};
@@ -82,8 +84,16 @@ GoRouter buildRouter({NavigatorObserver? playerObserver}) {
             name: 'favorites',
             builder: (context, state) => const FavoritesPage(),
           ),
+          // 0.3.6+19: 设置页: /settings
+          GoRoute(
+            path: 'settings',
+            name: 'settings',
+            builder: (context, state) => const SettingsPage(),
+          ),
         ],
       ),
+      // 0.3.6+19: settings 在顶层 (可从任何页面 push).
+      // 留顶层一份, 方便测试 / 深度链接,  HomePage 用 context.push('/settings').
     ],
     errorBuilder: (context, state) => _RouterErrorPage(error: state.error),
   );

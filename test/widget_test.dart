@@ -7,6 +7,7 @@ import 'package:sanyelive/core/responsive/breakpoints.dart';
 import 'package:sanyelive/data/models/channel.dart';
 import 'package:sanyelive/data/repositories/channel_repository.dart';
 import 'package:sanyelive/features/favorites/favorites_service.dart';
+import 'package:sanyelive/features/settings/theme_provider.dart';
 import 'package:sanyelive/main.dart';
 import 'package:sanyelive/services/startup_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,7 @@ void main() {
 
   testWidgets('IptvApp boots and home page renders (offline)', (tester) async {
     // 卡 5: 用 [bootstrap] 跳过 media_kit native init, 并 override 频道源
+    final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -30,6 +32,10 @@ void main() {
           favoritesServiceProvider.overrideWithValue(
             FavoritesService(store: InMemoryFavoritesStore()),
           ),
+          // 0.3.6+19: IptvApp 是 ConsumerWidget 监听 themeModeProvider,
+          //  themeModeProvider 内部读 sharedPreferencesProvider.
+          //  setUp 已 setMockInitialValues({}),  getInstance 返回 mock.
+          sharedPreferencesProvider.overrideWithValue(prefs),
         ],
         child: const IptvApp(),
       ),

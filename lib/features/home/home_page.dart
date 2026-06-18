@@ -107,12 +107,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // P2-1 (6/18): 一屏焦点项上限守卫 — ChatGPT 6/17 21:18 建议
     //   当前 home_page (TV) 焦点项:
-    //     - 2 个 AppBar actions (search / favorites)
+    //     - 3 个 AppBar actions (search / favorites / settings) — 0.3.6+19 加了 settings
     //     - 1 个 ContinueWatchingCard (当有 lastChannel 时)
     //     - 3 个 CategoryCard
-    //   最多 6 个, 远低于 9. 但用 TvFocusScope 断言, 后续加新焦点项时
+    //   最多 7 个, 远低于 9. 但用 TvFocusScope 断言, 后续加新焦点项时
     //   超出上限会报 assert 警告, 防止漂移.
-    final focusableCount = 2 + 3 + (lastChannel != null ? 1 : 0);
+    final focusableCount = 3 + 3 + (lastChannel != null ? 1 : 0);
 
     return TvFocusScope(
       actualFocusableCount: focusableCount,
@@ -124,6 +124,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 _AppHeader(
                   onSearchTap: () => context.go('/search'),
+                  onSettingsTap: () => context.push('/settings'),
                 ),
                 // 上次观看 (有记录才显示)
                 if (lastChannel != null) ...[
@@ -172,9 +173,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 }
 
 class _AppHeader extends StatelessWidget {
-  const _AppHeader({this.onSearchTap});
+  const _AppHeader({this.onSearchTap, this.onSettingsTap});
 
   final VoidCallback? onSearchTap;
+  final VoidCallback? onSettingsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +205,7 @@ class _AppHeader extends StatelessWidget {
           const Spacer(),
           // P2-1 (6/18 老板拍): AppBar actions 套 TvFocusCapWrap,
           //  maxPerRow=3, 加新按钮超出上限会报 assert 警告.
-          //  Wrap 布局对 2 个 IconButton 跟原 Row 等价 (不会折行).
+          //  Wrap 布局对 3 个 IconButton 跟原 Row 等价 (不会折行).
           TvFocusCapWrap(
             maxPerRow: 3,
             spacing: 0,
@@ -221,6 +223,13 @@ class _AppHeader extends StatelessWidget {
                 color: IptvColors.textPrimary,
                 tooltip: '我的收藏',
                 onPressed: () => context.push('/favorites'),
+              ),
+              // 0.3.6+19: 暗色主题设置入口,  加齿轮 icon
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                color: IptvColors.textPrimary,
+                tooltip: '设置',
+                onPressed: onSettingsTap,
               ),
             ],
           ),

@@ -30,6 +30,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/channel.dart';
 
@@ -217,15 +218,17 @@ class CctvSourcePicker {
   }
 
   /// 按健康分降序排列 URL 列表 (无分数的排在最后保持原顺序).
+  /// 优先用运行时动态分, 没有则回退 kCctvHealthScores.
   static List<String> _sortByHealth(List<String> urls) {
     final withScore = <_ScoredUrl>[];
     final noScore = <String>[];
     for (final url in urls) {
-      final s = kCctvHealthScores[url];
-      if (s == null) {
+      final hasRuntimeScore = _runtimeScores.containsKey(url);
+      final hasStaticScore = kCctvHealthScores.containsKey(url);
+      if (!hasRuntimeScore && !hasStaticScore) {
         noScore.add(url);
       } else {
-        withScore.add(_ScoredUrl(url, s));
+        withScore.add(_ScoredUrl(url, healthScore(url)));
       }
     }
     withScore.sort((a, b) => b.score.compareTo(a.score));
@@ -235,9 +238,57 @@ class CctvSourcePicker {
     ];
   }
 
+  /// 运行时动态健康分 (覆盖 kCctvHealthScores 初始分).
+  static final Map<String, double> _runtimeScores = <String, double>{};
+
+  /// SharedPreferences 缓存 (懒加载).
+  static SharedPreferences? _prefs;
+
+  /// 失败时扣分 (最低 0.0).
+  @visibleForTesting
+  static Future<void> recordFailure(String url) async {
+    final base = kCctvHealthScores[url] ?? 0.5;
+    final current = _runtimeScores[url] ?? base;
+    final next = (current - 0.1).clamp(0.0, 1.0);
+    _runtimeScores[url] = next;
+    await _persist(url, next);
+  }
+
+  /// 成功时加分 (最高 1.0).
+  @visibleForTesting
+  static Future<void> recordSuccess(String url) async {
+    final base = kCctvHealthScores[url] ?? 0.5;
+    final current = _runtimeScores[url] ?? base;
+    final next = (current + 0.05).clamp(0.0, 1.0);
+    _runtimeScores[url] = next;
+    await _persist(url, next);
+  }
+
+  /// 从 SharedPreferences 加载持久化健康分 (启动时调一次).
+  static Future<void> loadPersistedScores() async {
+    _prefs = await SharedPreferences.getInstance();
+    final keys = _prefs?.getKeys() ?? <String>{};
+    for (final key in keys) {
+      if (key.startsWith('iptv_health_')) {
+        final value = _prefs?.getDouble(key);
+        if (value != null) {
+          final url = key.substring('iptv_health_'.length);
+          _runtimeScores[url] = value;
+        }
+      }
+    }
+  }
+
+  /// 持久化单个 key.
+  static Future<void> _persist(String url, double score) async {
+    _prefs ??= await SharedPreferences.getInstance();
+    await _prefs?.setDouble('iptv_health_$url', score);
+  }
+
   /// 查单个 URL 的健康分 (测试用, UI 显示用).
+  /// 优先返回运行时动态分, 没有则回退到静态 kCctvHealthScores.
   static double healthScore(String url) {
-    return kCctvHealthScores[url] ?? 0.5; // 未知源默认中
+    return _runtimeScores[url] ?? kCctvHealthScores[url] ?? 0.5;
   }
 
   /// CCTV 主频道的健康统计 (debug UI 用 — 比如 "CCTV-1: 3 sources, avg 0.87")

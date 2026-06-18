@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/cctv_source.dart';
 import 'core/router/router.dart';
 import 'core/theme/colors.dart';
 import 'core/theme/theme.dart';
@@ -40,6 +41,8 @@ void main() async {
   // 跳过逻辑:  flutter_test 模式下 SharedPreferences 抛 MissingPluginException,
   //  改成 noop override (用空内存版),  行为退化为默认 system theme.
   final prefs = await _loadSharedPreferencesOrMock();
+  // v0.3.6+42: 加载持久化 health_score (SharedPreferences)
+  await CctvSourcePicker.loadPersistedScores();
   // 0.3.7+20 (6/18): 后台强制更新 — 注入当前 versionCode + versionString.
   // 编译期 const 来自 pubspec.yaml,  跟 release workflow 跑出来的 APK
   // tag +versionCode 一致.  也跟 services/version_checker.dart 里 parse

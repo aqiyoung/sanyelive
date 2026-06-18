@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../data/cctv_source.dart';
 import '../data/models/channel.dart';
 import '../data/source_dispatcher.dart';
 import 'source_failover.dart';
@@ -167,6 +168,8 @@ class PlayerService extends ChangeNotifier {
         },
       );
       if (_disposed) return;
+      // v0.3.6+42: health_score 动态恢复 — 成功后加分
+      unawaited(CctvSourcePicker.recordSuccess(source));
       _set(
         _state.copyWith(
           status: PlayerStatus.playing,
@@ -176,6 +179,10 @@ class PlayerService extends ChangeNotifier {
       );
     } on AllSourcesFailedException catch (e) {
       if (_disposed) return;
+      // v0.3.6+42: health_score 动态恢复 — 所有源失败时, 给每个失败源扣分
+      for (final attempt in e.attempts) {
+        unawaited(CctvSourcePicker.recordFailure(attempt.url));
+      }
       // v0.3.6: CCTV 源 DRM 检测 — 所有源都失败时, 检查是否 CCTV 频道,
       // 如果是, 追加 DRM 加密提示.
       final isCctvError = channel.id.startsWith('CCTV') &&
@@ -232,6 +239,8 @@ class PlayerService extends ChangeNotifier {
       final ok = await _failover.playSingle(url);
       if (_disposed) return;
       if (ok) {
+        // v0.3.6+42: health_score 动态恢复 — 单源成功后加分
+        unawaited(CctvSourcePicker.recordSuccess(url));
         _set(
           _state.copyWith(
             status: PlayerStatus.playing,
@@ -240,6 +249,8 @@ class PlayerService extends ChangeNotifier {
           ),
         );
       } else {
+        // v0.3.6+42: health_score 动态恢复 — 单源失败扣分
+        unawaited(CctvSourcePicker.recordFailure(url));
         _set(
           _state.copyWith(
             status: PlayerStatus.error,

@@ -42,7 +42,16 @@ publish_to: "none"
 #   lib/features/settings/settings_page.dart (新) — 系统/浅色/深色 RadioListTile
 #   home_page 加齿轮 icon 跳 settings_page
 #   test/features/settings/theme_provider_test.dart + test/core/theme/dark_theme_test.dart
-version: 0.3.5+19
+# 0.3.6.1 hotfix: 暗色主题 widget 适配 (17 处硬编码 IptvColors 改 colorScheme.*)
+#   5 个 widget 文件: favorites/search/category/home/next_channels_strip
+#   5 个新 dark theme widget test
+#
+# 注: pubspec.yaml 的 version 字段是 MAJOR.MINOR.PATCH+BUILD 格式,
+# 4 段版本 (如 0.3.6.1) pub get 解析失败. 这里用 0.3.6+20,
+# 但 git tag 用 v0.3.6.1 (热修复, 跟 PR 标题一致).
+# APK 文件名: sanyelive-v0.3.6.1-arm64-v8a.apk (来自 tag name)
+# Android versionName 显示 "0.3.6", versionCode = 20.
+version: 0.3.6+20
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

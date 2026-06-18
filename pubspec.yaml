@@ -93,7 +93,7 @@ publish_to: "none"
 #   v0.3.5.3 是 v0.3.5.1 之后被推迟的 P0 (老板 14:02 拍板 CCTV 源),
 #   跨过了 v0.3.6.1 (暗色) / v0.3.7 (强制更新) / v0.3.5.2 (全屏修复) /
 #   v0.3.5.4 (主题真修) 几个 release, 现在做单独 hotfix branch 出 v0.3.5.3.
-version: 0.3.5+23
+version: 0.3.5+24
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

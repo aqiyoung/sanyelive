@@ -42,7 +42,7 @@ void main() async {
   // 6/18 v0.3.5.2 hotfix 把 versionCode 从 20 bump 到 21,  这里同步.
   // 下次 release 前要记得同步这两个 const.
   const currentVersion = '0.3.7';
-  const currentVersionCode = 21;
+  const currentVersionCode = 22;
   final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),

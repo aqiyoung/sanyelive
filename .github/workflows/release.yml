@@ -185,6 +185,16 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Check CCTV-5 source health (v0.3.5.1)
+        # v0.3.5.1 (6/18): 老板 11:41 装机实测 CCTV-5 加载不出来, 是因为 channels_cn.json
+        # 里 CCTV-5 所有源 timeout.  这个 step 在 release build 前先验一次, 防止
+        # dead 源混进 APK.  --fail-on-dead-cctv: CCTV-5/-5+ 有 dead 才 fail, 其他
+        # channel dead 容忍 (不是本 release 范围).  exit 0 = CCTV-5 源 OK / 容忍, 1 = 必须修.
+        run: |
+          set -e
+          python3 scripts/check_sources.py --fail-on-dead-cctv
+          echo "✅ check_sources.py 通过 (CCTV-5 源 OK / 容忍 dead)"
+
       - name: Build APK (release, signed)
         # 卡 6: 明确 target-platform android-arm64, 减少体积 (电视/手机都是 arm64).
         # flutter build apk 默认是 fat APK (arm + arm64 + x64), 体积接近 60MB;

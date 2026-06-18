@@ -134,7 +134,7 @@ void main() {
       );
       final btnFinder = find.widgetWithIcon(IconButton, Icons.fullscreen);
       expect(btnFinder, findsOneWidget);
-      
+
       // v0.3.5.19: 全屏按钮背景改透明, 不再用 surfaceContainerHigh
       final materialFinder =
           find.ancestor(of: btnFinder, matching: find.byType(Material)).first;
@@ -159,8 +159,7 @@ void main() {
           reason: 'v0.3.5.19: 暗色下全屏按钮 bg 应该 = transparent');
     });
 
-    testWidgets('视频区 Scaffold bg = Colors.black (v0.3.5.19)',
-        (tester) async {
+    testWidgets('视频区 Scaffold bg = Colors.black (v0.3.5.19)', (tester) async {
       // v0.3.5.19: 视频区纯黑底, 不跟主题联动
       await _pumpPlayer(
         tester,

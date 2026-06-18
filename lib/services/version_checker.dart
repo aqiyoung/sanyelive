@@ -30,6 +30,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -224,6 +225,14 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     await _prefs.remove(_Keys.dismissedAt);
   }
 
+  /// @visibleForTesting — 跳开 fetch,  直接在 state 设 outdated/upToDate.
+  /// Riverpod 的 Notifier.state setter 是 @protected,  不能从外面调,
+  /// 这里包一层.  测试用,  生产代码不要调.
+  @visibleForTesting
+  void debugSetState(VersionCheckState newState) {
+    state = newState;
+  }
+
   // -------- private: 网络 --------
 
   Future<Map<String, dynamic>> _fetchLatestRelease() async {
@@ -292,6 +301,55 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
         .firstWhere((l) => l.isNotEmpty, orElse: () => '');
     final lower = firstLine.toLowerCase();
     return lower.contains('**p0**') || lower.contains('**critical**');
+  }
+
+  // -------- @visibleForTesting 入口 --------
+  // 测试不依赖 Dio,  直接验证 parse 逻辑.  private static → 改写成 public 静态
+  // 包装,  保持 production 调用路径不变.
+
+  @visibleForTesting
+  static int? debugExtractVersionCode(String apkName) =>
+      _extractVersionCode(apkName);
+
+  @visibleForTesting
+  static bool debugIsCriticalRelease(String body) => _isCriticalRelease(body);
+
+  @visibleForTesting
+  static Map<String, dynamic>? debugParseRelease(Map<String, dynamic> json) {
+    final tagName = json['tag_name'] as String?;
+    if (tagName == null || tagName.isEmpty) return null;
+
+    final assets = json['assets'] as List<dynamic>?;
+    if (assets == null) return null;
+
+    String? apkName;
+    String? apkUrl;
+    for (final a in assets) {
+      if (a is! Map<String, dynamic>) continue;
+      final name = a['name'] as String? ?? '';
+      if (!name.endsWith('.apk')) continue;
+      if (name.contains('arm64-v8a') || apkName == null) {
+        apkName = name;
+        apkUrl = a['browser_download_url'] as String?;
+        if (name.contains('arm64-v8a')) break;
+      }
+    }
+    if (apkName == null || apkUrl == null) return null;
+
+    final versionCode = _extractVersionCode(apkName);
+    if (versionCode == null) return null;
+
+    final body = (json['body'] as String?) ?? '';
+    final isCritical = _isCriticalRelease(body);
+
+    return {
+      'tagName': tagName,
+      'versionCode': versionCode,
+      'apkAssetName': apkName,
+      'apkDownloadUrl': apkUrl,
+      'releaseNotes': body,
+      'isCritical': isCritical,
+    };
   }
 }
 

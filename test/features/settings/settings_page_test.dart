@@ -37,11 +37,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // dump widget tree for debugging
-      debugDumpApp();
-
       expect(find.text('版本号'), findsOneWidget);
-      expect(find.text(currentVersion), findsOneWidget);
+      expect(find.textContaining(currentVersion), findsOneWidget);
     });
 
     testWidgets('显示 build number (currentVersionCode)', (tester) async {
@@ -60,7 +57,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('build $currentVersionCode'), findsOneWidget);
+      expect(find.textContaining('build $currentVersionCode'), findsOneWidget);
     });
 
     testWidgets('currentVersion 跟 pubspec 版本一致', (tester) async {

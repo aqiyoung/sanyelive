@@ -15,6 +15,9 @@ class ChannelTile extends StatelessWidget {
     this.country,
     this.isLive = true,
     this.onTap,
+    // P2-3-A (6/18 老板拍): TV 端字号 14sp → 18sp 适配,  3 米可视.
+    // null = 使用 IptvTypography.sansTitle 默认 16sp, TV 端可传 18.
+    this.fontSizeOverride,
   });
 
   final String channelNumber;
@@ -23,6 +26,7 @@ class ChannelTile extends StatelessWidget {
   final String? country;
   final bool isLive;
   final VoidCallback? onTap;
+  final double? fontSizeOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +67,10 @@ class ChannelTile extends StatelessWidget {
                   children: [
                     Text(
                       primaryName,
-                      style: IptvTypography.sansTitle,
+                      style: IptvTypography.sansTitle.copyWith(
+                        // P2-3-A: TV 端 16sp → 18sp,  3 米可视.
+                        fontSize: fontSizeOverride ?? 16,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -74,13 +81,24 @@ class ChannelTile extends StatelessWidget {
                         subtitle,
                         style: IptvTypography.caption.copyWith(
                           color: IptvColors.textSecondary,
+                          // P2-3-A: TV 端 12sp → 14sp,  跟主标题比例一致.
+                          fontSize: fontSizeOverride != null
+                              ? fontSizeOverride! - 4
+                              : 12,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ] else if (country != null && country!.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text(country!, style: IptvTypography.caption),
+                      Text(
+                        country!,
+                        style: IptvTypography.caption.copyWith(
+                          fontSize: fontSizeOverride != null
+                              ? fontSizeOverride! - 4
+                              : 12,
+                        ),
+                      ),
                     ],
                   ],
                 ),

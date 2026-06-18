@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/responsive/breakpoints.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
+import '../../core/tv/tv_focus.dart';
 import '../../data/models/channel.dart';
 import '../../data/repositories/channel_repository.dart';
 import '../../features/favorites/favorite_button.dart';
@@ -151,120 +153,171 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    // P2-3-A (6/18 老板拍): TV 端 back 按钮 + 清除按钮 + 结果 tile 套 TvFocus.
+    final isTv = context.deviceTier == DeviceTier.tv;
     return Scaffold(
       body: SafeArea(
-        child: KeyboardListener(
-          focusNode: _keyboardFocusNode,
-          onKeyEvent: _handleKeyEvent,
-          child: CustomScrollView(
-            slivers: [
-              // 搜索栏
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => context.pop(),
-                        // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          focusNode: _focusNode,
-                          autofocus: true,
-                          decoration: InputDecoration(
-                            hintText: '搜索频道名或频道号…',
-                            hintStyle: IptvTypography.body.copyWith(
-                              // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                            border: InputBorder.none,
-                            suffixIcon: _query.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () {
-                                      _controller.clear();
-                                    },
-                                  )
-                                : null,
-                          ),
-                          style: IptvTypography.body,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: Divider(height: 1)),
-
-              // 结果列表
-              if (!_hasSearched)
+        child: TvFocusGroup(
+          child: KeyboardListener(
+            focusNode: _keyboardFocusNode,
+            onKeyEvent: _handleKeyEvent,
+            child: CustomScrollView(
+              slivers: [
+                // 搜索栏
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(
-                      child: Text(
-                        '输入关键词搜索频道',
-                        style: IptvTypography.body.copyWith(
-                          // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                    child: Row(
+                      children: [
+                        _buildBackButton(context, isTv),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            autofocus: true,
+                            // P2-3-A: TV 端字号 14sp → 20sp,  3 米可视.
+                            style: IptvTypography.body.copyWith(
+                              fontSize: isTv ? 20 : 14,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: '搜索频道名或频道号…',
+                              hintStyle: IptvTypography.body.copyWith(
+                                // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                fontSize: isTv ? 20 : 14,
+                              ),
+                              border: InputBorder.none,
+                              suffixIcon: _query.isNotEmpty
+                                  ? _buildClearButton(context, isTv)
+                                  : null,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                )
-              else if (_results.isEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 48,
+                ),
+                const SliverToBoxAdapter(child: Divider(height: 1)),
+
+                // 结果列表
+                if (!_hasSearched)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Text(
+                          '输入关键词搜索频道',
+                          style: IptvTypography.body.copyWith(
                             // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: isTv ? 18 : 14,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '未找到匹配 "$_query" 的频道',
-                            style: IptvTypography.body.copyWith(
+                        ),
+                      ),
+                    ),
+                  )
+                else if (_results.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: 48,
                               // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurfaceVariant,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            Text(
+                              '未找到匹配 "$_query" 的频道',
+                              style: IptvTypography.body.copyWith(
+                                // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                fontSize: isTv ? 18 : 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  )
+                else
+                  SliverList.builder(
+                    itemCount: _results.length,
+                    itemBuilder: (context, i) {
+                      final ch = _results[i];
+                      final isSelected = i == _selectedIndex;
+                      // P2-3-A: TV 端结果 tile 套 TvFocus,  拿焦点环.
+                      // 手机端保持原 background-color 高亮.
+                      final tile = _SearchResultTile(
+                        channel: ch,
+                        isSelected: isSelected,
+                        channelNumber: (i + 1).toString().padLeft(2, '0'),
+                        fontSizeOverride: isTv ? 18.0 : null,
+                        onTap: () => _goToPlayer(ch),
+                      );
+                      if (!isTv) return tile;
+                      return TvFocus(
+                        autofocus: i == 0,
+                        onTap: () => _goToPlayer(ch),
+                        borderRadius: 0,
+                        borderWidth: 3,
+                        focusedScale: 1.05,
+                        // Focus 系统自动处理上下方向键,  KeyboardListener
+                        // 双轨同步 _selectedIndex (仅触屏 / 选中文本时生效).
+                        child: tile,
+                      );
+                    },
                   ),
-                )
-              else
-                SliverList.builder(
-                  itemCount: _results.length,
-                  itemBuilder: (context, i) {
-                    final ch = _results[i];
-                    final isSelected = i == _selectedIndex;
-                    return _SearchResultTile(
-                      channel: ch,
-                      isSelected: isSelected,
-                      channelNumber: (i + 1).toString().padLeft(2, '0'),
-                      onTap: () => _goToPlayer(ch),
-                    );
-                  },
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  /// P2-3-A: TV 端 back 按钮套 TvFocus,  3 米可视.
+  Widget _buildBackButton(BuildContext context, bool isTv) {
+    final btn = IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => context.pop(),
+      // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+    if (!isTv) return btn;
+    return TvFocus(
+      borderRadius: 24,
+      borderWidth: 3,
+      focusedScale: 1.08,
+      onTap: () => context.pop(),
+      child: btn,
+    );
+  }
+
+  /// P2-3-A: TV 端清除按钮套 TvFocus.
+  Widget _buildClearButton(BuildContext context, bool isTv) {
+    final btn = IconButton(
+      icon: const Icon(Icons.clear),
+      onPressed: () => _controller.clear(),
+    );
+    if (!isTv) return btn;
+    return TvFocus(
+      borderRadius: 24,
+      borderWidth: 3,
+      focusedScale: 1.08,
+      onTap: () => _controller.clear(),
+      child: btn,
     );
   }
 }
@@ -275,12 +328,15 @@ class _SearchResultTile extends StatelessWidget {
     required this.isSelected,
     required this.channelNumber,
     this.onTap,
+    // P2-3-A: TV 端字号 16sp → 18sp,  3 米可视.
+    this.fontSizeOverride,
   });
 
   final Channel channel;
   final bool isSelected;
   final String channelNumber;
   final VoidCallback? onTap;
+  final double? fontSizeOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -306,6 +362,8 @@ class _SearchResultTile extends StatelessWidget {
                           ? IptvColors.accentTerracotta
                           // ignore: deprecated_member_use
                           : IptvColors.accentTerracotta.withOpacity(0.5),
+                      fontSize:
+                          fontSizeOverride != null ? fontSizeOverride! + 2 : 20,
                     ),
                   ),
                 ),
@@ -321,13 +379,18 @@ class _SearchResultTile extends StatelessWidget {
                           color: isSelected
                               ? Theme.of(context).colorScheme.onSurface
                               : Theme.of(context).colorScheme.onSurface,
+                          fontSize: fontSizeOverride ?? 16,
                         ),
                       ),
                       if (channel.country.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
                           '${channel.country} · ${channel.primaryCategory}',
-                          style: IptvTypography.caption,
+                          style: IptvTypography.caption.copyWith(
+                            fontSize: fontSizeOverride != null
+                                ? fontSizeOverride! - 4
+                                : 12,
+                          ),
                         ),
                       ],
                     ],

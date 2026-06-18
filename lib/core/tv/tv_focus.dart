@@ -8,10 +8,13 @@ import '../theme/colors.dart';
 /// (P2-1: 老板 6/18 拍板 1.05 scale + 2px 暖色边,  看起来更明显但不刺眼).
 const Color kTvFocusColor = Color(0xFFE24A1A);
 
-/// TV 焦点包裹器 — 1.05 scale + 2px 赤陶焦点边 (P2-1 6/18 老板拍板).
+/// TV 焦点包裹器 — 1.05 scale + 2-4px 赤陶焦点边 (P2-1 6/18 老板拍板).
 ///
-/// 高亮态: scale 1.0 → 1.05, 2px IptvColors.accentTerracotta 0.6 alpha 边.
-/// 非高亮态: 无变换无边. 动画 150ms ease.
+/// 高亮态: scale 1.0 → 1.05, [borderWidth] 宽 IptvColors.accentTerracotta
+/// 0.6 alpha 边. 非高亮态: 无变换无边. 动画 150ms ease.
+///
+/// 边框宽度: 默认 2px (常规焦点), TV 远距 (3 米可视) 可调到 3-4px 让
+/// 边框更明显.  [scale] 同理可覆盖 (默认 1.05,  远距可调 1.08).
 class TvFocus extends StatefulWidget {
   const TvFocus({
     super.key,
@@ -21,6 +24,8 @@ class TvFocus extends StatefulWidget {
     this.onKeyEvent,
     this.focusNode,
     this.borderRadius = 12,
+    this.borderWidth = 2,
+    this.focusedScale = 1.05,
   });
 
   final Widget child;
@@ -29,6 +34,12 @@ class TvFocus extends StatefulWidget {
   final KeyEventResult Function(KeyEvent event)? onKeyEvent;
   final FocusNode? focusNode;
   final double borderRadius;
+
+  /// 焦点边宽度 (px).  默认 2,  3 米可视场景可调到 3-4.
+  final double borderWidth;
+
+  /// 焦点高亮 scale.  默认 1.05,  3 米可视场景可调到 1.08.
+  final double focusedScale;
 
   @override
   State<TvFocus> createState() => _TvFocusState();
@@ -85,7 +96,8 @@ class _TvFocusState extends State<TvFocus> {
         child: AnimatedScale(
           // P2-1 (6/18 老板拍): 高亮态 scale 1.03 → 1.05, 远距离更明显.
           // ChatGPT 6/17 21:18 建议, 1.05 是"明显但不夸张"的上限.
-          scale: _focused ? 1.05 : 1.0,
+          // P2-3-A (6/18 老板拍): [focusedScale] 可覆盖,  3 米场景调 1.08.
+          scale: _focused ? widget.focusedScale : 1.0,
           duration: const Duration(milliseconds: 150),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
@@ -93,10 +105,11 @@ class _TvFocusState extends State<TvFocus> {
               borderRadius: BorderRadius.circular(widget.borderRadius),
               // P2-1: 焦点边 4dp 朱砂 → 2px 赤陶 0.6 alpha.
               //  4dp 太厚遮卡片内容,  2px + scale 1.05 远距离也清晰.
+              // P2-3-A (6/18): [borderWidth] 可覆盖,  默认 2,  3 米场景调 3-4.
               border: _focused
                   ? Border.all(
                       color: IptvColors.accentTerracotta.withOpacity(0.6),
-                      width: 2,
+                      width: widget.borderWidth,
                     )
                   : null,
             ),

@@ -71,7 +71,29 @@ publish_to: "none"
 #   pubspec 实际版本 0.3.7+22 (Dart pub 不支持 4 段版本号, Git tag 用
 #     v0.3.5.4 跟老板追踪名字保持一致).  Android versionName = "0.3.7",
 #     versionCode = 22.
-version: 0.3.7+22
+# v0.3.5+23 (6/18): P0 hotfix — CCTV 源 hotfix (16 频道健康分矩阵)
+#   老板 14:02 拍板"去找央视的源": v0.3.5 标 CCTV "全活" 实际主备源 (38.75.136.137 /
+#   74.91.26.218) 多频道实际死了, iptv-org 6/18 已删 CCTV-5 (版权), 公开 m3u 渠道失效.
+#   实测 6 方向调研 (央视频 API / 央视网直播 / GitHub CCTV 仓库 / 各地电信 IPTV /
+#   CSS 站 / 自建 nginx+ffmpeg), 拿到 12/16 频道公共源 (CCTV-1/4/4K/6/8/9/10/11/13/
+#   14/15 + 卫视频道). CCTV-2/3/5/5+/7/12/16/17 公开 CDN 全部 geo-blocked / 死链,
+#   留给老板自建 (终极 fallback, 卡 6 nginx+ffmpeg) + 后续 PR.
+#   Channel: 新增 cctvSource 字段 (跟 sources 不冲突), 优先级 cctvSource[0] >
+#   sources[0] > iptv-org.  lib/data/cctv_source.dart: 封装选源 + health score +
+#   failover.  lib/data/source_dispatcher.dart: CCTV 频道走 cctvSource first.
+#   scripts/discover_cctv_sources.py: 30 并发 head+GET 健康分排序, 输出 top 3/频道.
+#   scripts/check_sources.py: 加 --require-cctv 标志, v0.3.5.3 release 时启用.
+#   test/cctv_source_test.dart: 5 case (cctvSource 解析 / 优先级 / 降级 / 空 / 集成).
+#   release workflow 跑 check_sources --require-cctv, CCTV 全部 dead 才 fail.
+#   pubspec 实际版本 0.3.5+23 (Dart pub 不支持 4 段版本号, Git tag 用
+#   v0.3.5.3 跟老板追踪名字保持一致).  Android versionName = "0.3.5",
+#   versionCode = 23.
+#   卡里写 v0.3.5.3 用 +21, 但 v0.3.5.2 (+21) + v0.3.5.4 (+22) 都先占了,
+#   顺位 +23 才对 — Android versionCode 唯一不冲突.
+#   v0.3.5.3 是 v0.3.5.1 之后被推迟的 P0 (老板 14:02 拍板 CCTV 源),
+#   跨过了 v0.3.6.1 (暗色) / v0.3.7 (强制更新) / v0.3.5.2 (全屏修复) /
+#   v0.3.5.4 (主题真修) 几个 release, 现在做单独 hotfix branch 出 v0.3.5.3.
+version: 0.3.5+23
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

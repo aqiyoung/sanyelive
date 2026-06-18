@@ -102,7 +102,8 @@ void main() {
         final btn = tester.widget<IconButton>(
           find.widgetWithIcon(IconButton, icon),
         );
-        expect(btn.color, isNotNull, reason: '$icon button color should be set');
+        expect(btn.color, isNotNull,
+            reason: '$icon button color should be set');
         expect(btn.color, isNot(equals(IptvColors.textPrimary)),
             reason: '$icon still uses light token IptvColors.textPrimary');
         // dark theme 下应该用 darkTextPrimary (colorScheme.onSurface)

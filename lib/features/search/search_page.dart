@@ -179,7 +179,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                             hintText: '搜索频道名或频道号…',
                             hintStyle: IptvTypography.body.copyWith(
                               // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                             border: InputBorder.none,
                             suffixIcon: _query.isNotEmpty
@@ -227,14 +229,17 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                             Icons.search_off,
                             size: 48,
                             // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             '未找到匹配 "$_query" 的频道',
                             style: IptvTypography.body.copyWith(
                               // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                           ),
                         ],

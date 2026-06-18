@@ -57,8 +57,7 @@ void main() {
       expect(backButton.color, equals(IptvColors.darkTextPrimary));
     });
 
-    testWidgets('空态 inbox_outlined icon 颜色 != textSecondary',
-        (tester) async {
+    testWidgets('空态 inbox_outlined icon 颜色 != textSecondary', (tester) async {
       await _pumpDark(tester);
       // 空 channels → _EmptyState → inbox_outlined icon
       final iconFinder = find.byIcon(Icons.inbox_outlined);

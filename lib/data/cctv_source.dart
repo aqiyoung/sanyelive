@@ -245,7 +245,6 @@ class CctvSourcePicker {
   static SharedPreferences? _prefs;
 
   /// 失败时扣分 (最低 0.0).
-  @visibleForTesting
   static Future<void> recordFailure(String url) async {
     final base = kCctvHealthScores[url] ?? 0.5;
     final current = _runtimeScores[url] ?? base;
@@ -255,7 +254,6 @@ class CctvSourcePicker {
   }
 
   /// 成功时加分 (最高 1.0).
-  @visibleForTesting
   static Future<void> recordSuccess(String url) async {
     final base = kCctvHealthScores[url] ?? 0.5;
     final current = _runtimeScores[url] ?? base;

@@ -158,6 +158,13 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   /// v0.3.5.4: 退出全屏时 nav bar 用 colorScheme.surfaceContainer 跟主题联动.
   void _toggleFullscreen() {
     setState(() => _isFullscreen = !_isFullscreen);
+    // v0.3.7+78 (6/19 老板反馈 "两比才全屏"):
+    // 之前 _toggleFullscreen 不调 _resetHideTimer,  进全屏时 _controlsVisible
+    // 保持 default true 一直显示 TopBar + 节目卡,  看着像 "还没进全屏".
+    // 老板等不及 3s 自动隐,  第 2 次点全屏按钮 = 退出全屏,  循环.
+    // 修法: 进入/退出全屏都立即 _resetHideTimer,  让 _controlsVisible=true
+    // 立刻生效 (强制重渲染),  然后 3s 自动隐.
+    _resetHideTimer();
     if (_isFullscreen) {
       // v0.3.7+69 (6/19): immersiveSticky → immersive (sticky 模式边缘
       // 滑出再显示,  老板反馈 "状态栏横过来后没全屏沉浸").  改成 immersive

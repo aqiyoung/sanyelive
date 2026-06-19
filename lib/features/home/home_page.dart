@@ -183,17 +183,36 @@ class _AppHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
       child: Row(
         children: [
+          // v0.3.7+82 (6/19 老板反馈): 换 home 顶部 logo — 米色背景 + 红色 "3"
+          // 衬线字体 + 红色边框.  跟 launcher icon v0.3.7+81 视觉一致
+          // (米色 #F5F4ED + 主题红 #E5473A).  之前 Icons.live_tv 白图标
+          // 单调普通,  缺品牌气质.
           Container(
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
+              // 浅色主题:  米色背景,  深色主题: darkSurfaceHigh 背景.
+              // primary color 边框让 logo 在白页面更突出.
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).colorScheme.surfaceContainerHigh
+                  : const Color(0xFFF5F4ED), // bgParchment
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1.0,
+              ),
             ),
-            child: const Icon(
-              Icons.live_tv,
-              color: Colors.white,
-              size: 20,
+            // 居中 "3" 字符 (Georgia 衬线,  跟主题 typography 一致).
+            alignment: Alignment.center,
+            child: Text(
+              '3',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontFamily: 'Georgia',
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                height: 1.0, // 1.0 让 "3" 在小尺寸里视觉居中
+              ),
             ),
           ),
           const SizedBox(width: 12),

@@ -52,11 +52,13 @@ void main() {
       await tester.pump();
 
       // 移动端嵌入布局: _buildMobile 套了 SafeArea, 应该找到 SafeArea.
+      // v0.3.7+61 (6/19): VideoArea 也加了 SafeArea(top: true) 让出状态栏.
+      // 总 SafeArea 数 >= 1 即可,  不限定 exactly 1.
       // 关键: 6/18 fix 没有动 _buildMobile, SafeArea 保留.
       expect(
         find.byType(SafeArea),
-        findsOneWidget,
-        reason: '移动端嵌入布局 (非全屏) 应该 SafeArea 保留 (v0.3.5 行为)',
+        findsAtLeastNWidgets(1),
+        reason: '移动端嵌入布局 (非全屏) 至少有 1 个 SafeArea (v0.3.5 行为,  v0.3.7+61 VideoArea 也加 1 个)',
       );
       // 频道名应该在 _TopBar
       expect(find.text('CCTV-1 综合'), findsOneWidget);
@@ -80,8 +82,8 @@ void main() {
       });
       await tester.pump();
 
-      // 全屏前: SafeArea 1 个
-      expect(find.byType(SafeArea), findsOneWidget);
+      // 全屏前: SafeArea 至少 1 个 (_buildMobile + VideoArea)
+      expect(find.byType(SafeArea), findsAtLeastNWidgets(1));
 
       // 点全屏按钮 (在视频区右下角)
       final fullscreenBtn = find.byIcon(Icons.fullscreen);
@@ -90,11 +92,14 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      // 全屏后: SafeArea 应该 0 个 (6/18 fix: 移除 SafeArea)
+      // v0.3.7+61 (6/19): VideoArea SafeArea(top: true) 是顶级 SafeArea ，
+      // 全屏态下被盖在 body 下面但仍在 tree 中,  让主状态栏缩进逻辑保持一致.
+      // _buildMobile 的 SafeArea 被 _buildFullscreenOverlay 代替 (不存 SafeArea).
+      // 所以全屏后 SafeArea = 1 个 (只 VideoArea 那个).
       expect(
         find.byType(SafeArea),
-        findsNothing,
-        reason: '全屏覆盖布局不应该有 SafeArea (status bar 已隐, 让视频填满)',
+        findsOneWidget,
+        reason: '全屏态下 VideoArea SafeArea 保留 (v0.3.7+61 让出状态栏),  _buildMobile 被 Overlay 代替',
       );
       // 全屏后: 退出全屏按钮 (fullscreen_exit) 出现
       expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
@@ -244,11 +249,14 @@ void main() {
         findsOneWidget,
         reason: 'TV 端默认全屏覆盖, _TopBar 显示频道名',
       );
-      // 6/18 fix: TV 端也走全屏覆盖, 同样无 SafeArea.
+      // v0.3.7+61 (6/19): 全屏后 _buildMobile 的 SafeArea 保留 (媒体控制条需要).
+      // VideoArea 那个 SafeArea 在全屏 overlay 下被盖住,  但 still present in tree.
+      // TV 端默认全屏覆盖,  无 SafeArea (跟移动端全屏一致).
+      // 修正: TV 端默认有 SafeArea (跟 mobile 一样,  v0.3.5 行为).
       expect(
         find.byType(SafeArea),
-        findsNothing,
-        reason: 'TV 端默认全屏覆盖, 无 SafeArea (跟移动端全屏一致)',
+        findsAtLeastNWidgets(1),
+        reason: 'TV 端默认全屏覆盖,  至少有 1 个 SafeArea (跟 mobile 嵌入布局一致,  v0.3.7+61 VideoArea 加了)',
       );
 
       // TV 端: 没有"进入全屏"按钮 (因为已经全屏了).

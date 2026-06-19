@@ -7,7 +7,7 @@
   "channels": {
     "CCTV1.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv1_1/index.m3u8",
         "score": 0.8,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -41,7 +41,7 @@
         "alive": true
       },
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv10_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv10_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -59,7 +59,7 @@
         "alive": true
       },
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv11_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv11_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -69,7 +69,7 @@
     ],
     "CCTV12.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv12_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv12_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -79,7 +79,7 @@
     ],
     "CCTV13.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv13_1/index.m3u8",
         "score": 0.8,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -97,7 +97,7 @@
         "alive": true
       },
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv14_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv14_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -115,7 +115,7 @@
         "alive": true
       },
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv15_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv15_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -125,7 +125,7 @@
     ],
     "CCTV16.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv16_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv16_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -135,7 +135,7 @@
     ],
     "CCTV17.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv17_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv17_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -145,7 +145,7 @@
     ],
     "CCTV2.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv2_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv2_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -155,7 +155,7 @@
     ],
     "CCTV3.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv3_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv3_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -173,7 +173,7 @@
         "alive": true
       },
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv4_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv4_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -193,7 +193,7 @@
     ],
     "CCTV5.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv5_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv5_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -211,7 +211,7 @@
     ],
     "CCTV5Plus.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv51_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv51_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -229,7 +229,7 @@
         "alive": true
       },
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv6_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv6_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -239,7 +239,7 @@
     ],
     "CCTV7.cn": [
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv7_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv7_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",
@@ -257,7 +257,7 @@
         "alive": true
       },
       {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv8_1/index.m3u8",
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv8_1/index.m3u8",
         "score": 0.5,
         "method": "tencent_cloud",
         "lastChecked": "2026-06-18T15:21:20+0800",

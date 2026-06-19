@@ -102,9 +102,9 @@ const Set<String> kCctvMainChannelIds = <String>{
 @visibleForTesting
 const Map<String, double> kCctvHealthScores = <String, double>{
   // === 央视官方 (Tencent Cloud CDN, 6/18 实测 1/13 sub-stream 200 OK) ===
-  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1/index.m3u8':
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv1_1/index.m3u8':
       0.95,
-  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8':
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cctv13_1/index.m3u8':
       0.95,
 
   // === 央视 4K (198.204.240.250:82 — iptv-org 历史源) ===

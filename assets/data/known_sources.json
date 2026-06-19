@@ -184,8 +184,8 @@
     "http://223.166.234.114:7777/tsfile/live/1033_1.m3u8"
   ],
   "ShenzhenSatelliteTV.cn": [
-    "https://livepull-tcms.sztv.com.cn/live/sz4Kpgm.m3u8",
-    "http://183.207.248.71/cntv/live1/HD-2500k-1080P-shenzhenstv/HD-2500k-1080P-shenzhenstv"
+    "http://183.207.248.71/cntv/live1/HD-2500k-1080P-shenzhenstv/HD-2500k-1080P-shenzhenstv",
+    "https://livepull-tcms.sztv.com.cn/live/sz4Kpgm.m3u8"
   ],
   "SipingTV.cn": [
     "http://stream2.jlntv.cn/sptv/sd/live.m3u8?_upt=f27750421743154598"
@@ -211,9 +211,9 @@
     "http://222.80.13.33:4022/udp/238.125.3.175:5140"
   ],
   "XinjiangTV3.cn": [
-    "http://110.153.180.106:55555/out_2/index.m3u8",
+    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
     "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
-    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1"
+    "http://110.153.180.106:55555/out_2/index.m3u8"
   ],
   "XinjiangTV8.cn": [
     "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1"

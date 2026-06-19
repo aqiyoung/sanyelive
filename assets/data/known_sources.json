@@ -267,8 +267,8 @@
     "http://117.156.28.119/270000001111/1110000149/index.m3u8"
   ],
   "SichuanSatelliteTV.cn": [
-    "http://39.134.115.163:8080/PLTV/88888910/224/3221225733/index.m3u8",
-    "http://183.207.248.71/gitv/live1/SCWS/SCWS"
+    "http://183.207.248.71/gitv/live1/SCWS/SCWS",
+    "http://39.134.115.163:8080/PLTV/88888910/224/3221225733/index.m3u8"
   ],
   "SichuanTVWomenandChildrenChannel.cn": [
     "http://scgctvshow.sctv.com/hdlive/sctv7/index.m3u8"

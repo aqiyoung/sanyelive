@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/responsive/breakpoints.dart';
-import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/tv/tv_focus.dart';
 import '../../../widgets/category_card.dart';

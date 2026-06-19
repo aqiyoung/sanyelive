@@ -338,7 +338,13 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
 
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: scheme.surface,
+      backgroundColor: Colors.black,
+      // v0.3.7+77 (6/19 老板反馈):  全屏背景 Colors.black.
+      // 之前 scheme.surface 在浅色主题下是米白色 (0xF5F4ED),  周围米白背景
+      //  老板说 "两比才正式全屏" = 第 1 次点完看到米白背景不像全屏态.
+      //  改 Colors.black 全面沉浸,  视频底色跟黑背景一体化.
+      // (这条注释代替之前的 scheme.surface,  跟 _buildFullscreenOverlay 一体.)
+      // 6/18 P1 hotfix: 全屏时不 SafeArea.
       // 6/18 P1 hotfix: 全屏时不 SafeArea.  immersiveSticky 已隐 status bar /
       // nav bar 视觉, 但 SafeArea 仍会按 MediaQuery padding 布局, 压下视频
       // ~24-32px (Android) / ~44px (iOS) 看着像有顶栏.

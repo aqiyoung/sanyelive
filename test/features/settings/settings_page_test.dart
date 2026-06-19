@@ -69,26 +69,19 @@ void main() {
       expect(find.textContaining('build 57'), findsOneWidget);
     });
 
-    testWidgets('Provider 默认版本号格式是 x.y.z+N', (tester) async {
-      // v0.3.7.2: 不再 const 写死,  默认从 Provider 读.  验证 Provider 默认格式.
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      // 不 override — 期望 Provider 默认 fallback 'unknown' 或合理值
-      final v = container.read(currentVersionStringProvider);
-      expect(v, matches(RegExp(r'^\d+\.\d+\.\d+\+\d+$|unknown')));
-    });
-
-    testWidgets('Provider 默认 build number 是正整数', (tester) async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-      final c = container.read(currentVersionCodeProvider);
-      expect(c, greaterThanOrEqualTo(0));
-    });
+    // v0.3.7.2: currentVersionStringProvider / currentVersionCodeProvider
+    // 在 version_checker.dart 里默认 throw UnimplementedError,  必须在
+    // ProviderContainer 里 override (参考 main.dart 的 PackageInfo.fromPlatform
+    // 路径).  所以不写 "默认读取" test,  只测 override 后能正常显示.
 
     testWidgets('设置页同时有主题和版本号 section', (tester) async {
       final prefs = await SharedPreferences.getInstance();
       final container = ProviderContainer(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          currentVersionStringProvider.overrideWithValue('0.3.7+58'),
+          currentVersionCodeProvider.overrideWithValue(58),
+        ],
       );
       addTearDown(container.dispose);
       await tester.pumpWidget(

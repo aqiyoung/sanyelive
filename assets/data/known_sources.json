@@ -61,6 +61,7 @@
     "http://go.bkpcp.top/mg/CCTV8"
   ],
   "CCTV8K.cn": [
+    "http://198.204.240.250:82/live/cctv8k.m3u8",
     "http://74.91.26.218:82/live/cctv8k.m3u8",
     "http://go.bkpcp.top/mg/CCTV8K"
   ],

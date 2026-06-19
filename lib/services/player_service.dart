@@ -78,18 +78,21 @@ class MediaKitStreamOpener implements StreamOpener {
       // 真正的"起播"通过 [Player.stream.playing] 监听, 此处只检查 open 成功与否
       final completer = Completer<bool>();
       late final StreamSubscription<dynamic> sub;
+      // v0.3.7+87 hotfix: 变量提前声明, 让 listen 闭包能引用 (Dart 不允许
+      // 在闭包内引用尚未声明的局部变量, 即使闭包延后执行).
+      Timer? timer;
       sub = _player.stream.playing.listen((playing) {
         // 收到任何 playing 状态变化 (true or false) → 视为 open 完成
         if (!completer.isCompleted) {
           sub.cancel();
-          timer.cancel(); // v0.3.7+86: 收到事件立刻 cancel timer, 避免 timer
+          timer?.cancel(); // v0.3.7+86: 收到事件立刻 cancel timer, 避免 timer
           // 持有 callback 引用等到 timeout 才被 GC,  浪费资源.
           completer.complete(true);
         }
       });
       // 兜底: 如果 stream 一直没事件, 在 timeout 后算 open 完成
       // v0.3.7+86: timer 变量提上来,  listen 收到事件时主动 cancel.
-      final timer = Timer(timeout, () {
+      timer = Timer(timeout, () {
         if (!completer.isCompleted) {
           sub.cancel();
           // 超时前没收到任何 playing 事件, 视作失败

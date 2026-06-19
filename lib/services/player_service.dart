@@ -335,7 +335,17 @@ final mediaKitPlayerProvider = Provider<Player>((ref) {
 /// media_kit 的 video controller (用于 Video widget)
 final mediaKitVideoControllerProvider = Provider<VideoController>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);
-  return VideoController(player);
+  // v0.3.7+65 (6/19): 显式 hwdec='mediacodec' 强制 Android 原生硬解.
+  // 之前默认 'auto-safe' 在部分 Android 13+ 设备 (Pixel / 三星 / 小米新机) 会
+  // 走 software fallback  →  H.264 High profile 4.1 1080p 解码慢/失败 → 绿屏.
+  // 5G + 1000M 宽带 (老板 15:47 反馈)  速度不是问题,  是 decoder 不走硬件.
+  // 'mediacodec' = Android MediaCodec API,  原生硬解,  H.264/H.265/AV1 都支持.
+  return VideoController(
+    player,
+    configuration: const VideoControllerConfiguration(
+      hwdec: 'mediacodec',
+    ),
+  );
 });
 
 /// [StreamOpener] — 默认走 media_kit 真实实现

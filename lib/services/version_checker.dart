@@ -30,7 +30,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show visibleForTesting, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -80,16 +80,40 @@ class EndpointNotifier extends Notifier<String> {
     // v0.3.7+92 (6/20 08:42 老板反馈): 老板已装 +85~+91 时在 prefs 里存了老默认
     // api.github.com 直连 (国内超时).  APP 升级到 +92 后,  启动时检测到 prefs 里的
     // URL == 老默认,  自动迁移到新默认 gh-proxy.com (国内 600ms 响应).
-    // 手动填的中转 URL (e.g. NAS 自建镜像) 不动.
+    // v0.3.8+95 (6/20 12:35 老板反馈): 不限于精确匹配 kLegacyEndpointUrl.
+    // 老板可能手动改过 URL (例如 上一版他填了自己的中转), 但如果 URL 还含
+    // api.github.com/repos/* 就自动迁移到 gh-proxy.com 包起来.
+    // 手动填的非 github URL (e.g. NAS 自建镜像) 不动.
+    // 之前 exact-match 迁不到, 老板装 +94 后还会看到老 URL 报网络错.
     final stored = _prefs.getString(kEndpointPrefsKey);
     if (stored == null) return kDefaultEndpointUrl;
-    if (stored == kLegacyEndpointUrl) {
-      // 老默认,  迁移到新默认
+    // 迁移规则: URL 含 'api.github.com/repos/' 且 不含 'gh-proxy.com'
+    // → 包成 'https://gh-proxy.com/api.github.com/repos/.../releases/latest'
+    final migrated = _migrateGithubUrl(stored);
+    if (migrated != stored) {
       // ignore: discarded_futures
-      _prefs.setString(kEndpointPrefsKey, kDefaultEndpointUrl);
-      return kDefaultEndpointUrl;
+      _prefs.setString(kEndpointPrefsKey, migrated);
+      debugPrint('EndpointNotifier: migrated $stored -> $migrated');
+      return migrated;
     }
     return stored;
+  }
+
+  /// 迁移老 api.github.com URL 到 gh-proxy.com 代理.
+  /// 返回 null = 不需要迁移 (URL 已经是新格式 或 用户自填的).
+  /// 返回非空 = 迁移后 URL.
+  String _migrateGithubUrl(String url) {
+    // 已经是 gh-proxy.com 包过的 → 不动
+    if (url.contains('gh-proxy.com')) return url;
+    // 含 api.github.com/repos/ → 包成 gh-proxy.com
+    if (url.contains('api.github.com/repos/')) {
+      // 提取 path 部分 (api.github.com/ 之后的所有)
+      final uri = Uri.tryParse(url);
+      if (uri == null) return url;
+      // 重组: https://gh-proxy.com/api.github.com/repos/{owner}/{repo}/releases/latest
+      return 'https://gh-proxy.com/api.github.com${uri.path}';
+    }
+    return url;
   }
 
   /// 用户改 endpoint — 持久化 + state 更新.

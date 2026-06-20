@@ -10,12 +10,31 @@ class IptvTheme {
   static ThemeData light() {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: IptvColors.accentTerracotta,
+      // v0.3.8+95 (6/20 12:35 老板反馈): 从 ColorScheme.fromSeed 改 const ColorScheme.light().
+      // fromSeed(seedColor: terracotta) 会自动生成一整套 M3 surface tokens (surfaceContainer
+      // / surfaceContainerHigh / surfaceContainerHighest) 都是中性灰绿色调 (跟 Material
+      // 3 default theme 一样),  跟 light theme 的 bgParchment 采米色不连贯.
+      // 老板 settings page 看到背景 = #70716C (fromSeed 算的灰绿) + 文字 = textPrimary 深棕
+      // #2A2520 — 两者对比度低,  看不清.
+      // 现在显式指定 surfaceContainer* = bgElevated (调淁米白),  scaffold + surface 都是
+      // 采米色调,  settings page 背景 = #FFFCF6 (比 bgParchment 亮 一点点),  文字 = #2A2520
+      // 对比度清晰.
+      colorScheme: const ColorScheme.light(
         primary: IptvColors.accentTerracotta,
+        onPrimary: Colors.white,
+        secondary: IptvColors.accentClay,
+        onSecondary: Colors.white,
         surface: IptvColors.bgParchment,
         onSurface: IptvColors.textPrimary,
-        secondary: IptvColors.accentClay,
+        surfaceContainerHighest: IptvColors.bgElevated,
+        surfaceContainerHigh: IptvColors.bgElevated,
+        surfaceContainer: IptvColors.bgParchment,
+        surfaceContainerLow: IptvColors.bgParchment,
+        surfaceContainerLowest: IptvColors.bgParchment,
+        surfaceDim: IptvColors.bgParchment,
+        surfaceBright: IptvColors.bgElevated,
+        outline: IptvColors.dividerWarm,
+        onSurfaceVariant: IptvColors.textSecondary,
       ),
       scaffoldBackgroundColor: IptvColors.bgParchment,
       // v0.3.7+60: light 主题也加 .apply 显式指定 IptvColors.textPrimary 颜色.

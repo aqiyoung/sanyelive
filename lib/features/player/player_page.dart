@@ -437,10 +437,20 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
               // 状态栏不完全隐,  状态栏区域泄露是白色,  老板看到 "上白边".
               // 修法: 整控件层 Column 外面包 Container(半透明黑 0.55) =
               // 整控件一致.  删内部重复的 Container.
-              AnimatedOpacity(
-                opacity: _controlsVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 250),
-                child: Container(
+              // v0.3.8+111 (6/20 老板反馈 19:13 "点左下/右下切频道 bug"):
+              // 之前只有 AnimatedOpacity 包控件层,  opacity=0 时 children 仍
+              // 响应 tap.  NextChannelsStrip 底部是 InkWell chip 阵列,  第一个
+              // chip 在左下/最后一个在右下, 控件隐藏后仍能点 → 切频道.
+              // 根因:  Flutter Opacity widget 不阻止 hit test.  需要套
+              // IgnorePointer(ignoring: !_controlsVisible).
+              // 修法:  AnimatedOpacity 外包 IgnorePointer,  invisible 时控件
+              // 整体不响应 tap.  visible 时跟之前一样.
+              IgnorePointer(
+                ignoring: !_controlsVisible,
+                child: AnimatedOpacity(
+                  opacity: _controlsVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 250),
+                  child: Container(
                   color: Colors.black.withValues(alpha: 0.55),
                   child: Column(
                     mainAxisSize: MainAxisSize.max,
@@ -468,6 +478,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                     ],
                   ),
                 ),
+              ),
+              // v0.3.8+111:  IgnorePointer 闭合 (包 AnimatedOpacity).
               ),
               // 隐藏中提示: 右下角小点 (随时点一下又可以看控件)
               if (!_controlsVisible)

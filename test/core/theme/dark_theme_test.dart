@@ -64,7 +64,6 @@ void main() {
       expect(dark.colorScheme.primary, IptvColors.accentTerracotta);
     });
   });
-}
 
 // v0.3.8+95 (6/20 老板反馈): light theme 的 surfaceContainerHighest
 // 不应该是 fromSeed 算的灰绿色 (Material 3 default),  应该是 bgElevated.
@@ -73,7 +72,6 @@ void main() {
 // = surfaceContainerHighest = 灰绿色,  文字 = onSurface = textPrimary 深棕
 // → 对比度低看不清.
 
-void main() {
   group('IptvTheme.light() (v0.3.8+95)', () {
     test('surfaceContainerHighest == bgElevated (不灰绿)', () {
       final light = IptvTheme.light();

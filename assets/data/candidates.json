@@ -1,13 +1,13 @@
 {
-  "fetched_at": "2026-06-20T10:03:23+0000",
+  "fetched_at": "2026-06-20T10:04:01+0000",
   "source": "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/cn.m3u",
   "channels": {
     "AndoTV.cn": [
       {
         "url": "http://play.kankanlive.com/live/1711956137852982.m3u8",
         "alive": true,
-        "score": 0.738,
-        "rttMs": 1308,
+        "score": 0.692,
+        "rttMs": 1539,
         "error": null,
         "method": "iptv_org"
       }
@@ -27,7 +27,7 @@
         "url": "https://video.bread-tv.com:8091/hls-live24/online/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5095,
+        "rttMs": 5078,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -37,7 +37,7 @@
         "url": "http://223.111.191.105/downflv.brtvcloud.com/kkkkasd/winfr.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5005,
+        "rttMs": 5003,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -63,7 +63,7 @@
         "url": "http://118.81.195.79:9003/hls/20/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 198,
+        "rttMs": 216,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -72,16 +72,16 @@
       {
         "url": "http://198.204.240.250:82/live/cctv1.m3u8",
         "alive": true,
-        "score": 0.981,
-        "rttMs": 96,
+        "score": 0.986,
+        "rttMs": 71,
         "error": null,
         "method": "iptv_org"
       },
       {
         "url": "http://74.91.26.218:82/live/cctv1hd.m3u8",
         "alive": true,
-        "score": 0.956,
-        "rttMs": 218,
+        "score": 0.968,
+        "rttMs": 159,
         "error": null,
         "method": "iptv_org"
       },
@@ -98,8 +98,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv2hd.m3u8",
         "alive": true,
-        "score": 0.958,
-        "rttMs": 210,
+        "score": 0.967,
+        "rttMs": 163,
         "error": null,
         "method": "iptv_org"
       }
@@ -108,8 +108,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv3hd.m3u8",
         "alive": true,
-        "score": 0.962,
-        "rttMs": 188,
+        "score": 0.887,
+        "rttMs": 566,
         "error": null,
         "method": "iptv_org"
       }
@@ -118,8 +118,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv4hd.m3u8",
         "alive": true,
-        "score": 0.959,
-        "rttMs": 205,
+        "score": 0.969,
+        "rttMs": 157,
         "error": null,
         "method": "iptv_org"
       }
@@ -128,8 +128,8 @@
       {
         "url": "http://198.204.240.250:82/live/cctv4k.m3u8",
         "alive": true,
-        "score": 0.982,
-        "rttMs": 92,
+        "score": 0.985,
+        "rttMs": 77,
         "error": null,
         "method": "iptv_org"
       }
@@ -138,8 +138,8 @@
       {
         "url": "http://198.204.240.250:82/live/cctv6.m3u8",
         "alive": true,
-        "score": 0.98,
-        "rttMs": 98,
+        "score": 0.986,
+        "rttMs": 71,
         "error": null,
         "method": "iptv_org"
       },
@@ -156,8 +156,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv7hd.m3u8",
         "alive": true,
-        "score": 0.958,
-        "rttMs": 211,
+        "score": 0.969,
+        "rttMs": 156,
         "error": null,
         "method": "iptv_org"
       }
@@ -166,8 +166,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv8hd.m3u8",
         "alive": true,
-        "score": 0.957,
-        "rttMs": 217,
+        "score": 0.969,
+        "rttMs": 155,
         "error": null,
         "method": "iptv_org"
       }
@@ -176,16 +176,16 @@
       {
         "url": "http://198.204.240.250:82/live/cctv8k.m3u8",
         "alive": true,
-        "score": 0.981,
-        "rttMs": 95,
+        "score": 0.986,
+        "rttMs": 70,
         "error": null,
         "method": "iptv_org"
       },
       {
         "url": "http://192.151.150.154/live/cctv8k.m3u8",
         "alive": true,
-        "score": 0.963,
-        "rttMs": 186,
+        "score": 0.971,
+        "rttMs": 147,
         "error": null,
         "method": "iptv_org"
       }
@@ -194,8 +194,8 @@
       {
         "url": "https://xykt-fix.github.io/Y77.m3u8",
         "alive": true,
-        "score": 0.983,
-        "rttMs": 86,
+        "score": 0.96,
+        "rttMs": 201,
         "error": null,
         "method": "iptv_org"
       }
@@ -204,34 +204,34 @@
       {
         "url": "http://74.91.26.218:82/live/cctv10hd.m3u8",
         "alive": true,
-        "score": 0.963,
-        "rttMs": 184,
+        "score": 0.97,
+        "rttMs": 149,
         "error": null,
         "method": "iptv_org"
       },
       {
         "url": "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8",
         "alive": true,
-        "score": 0.782,
-        "rttMs": 1091,
+        "score": 0.75,
+        "rttMs": 1251,
         "error": null,
         "method": "iptv_org"
       }
     ],
     "CCTV11.cn": [
       {
-        "url": "https://xykt-fix.github.io/play/a02b/index.m3u8",
+        "url": "http://74.91.26.218:82/live/cctv11hd.m3u8",
         "alive": true,
-        "score": 0.987,
-        "rttMs": 67,
+        "score": 0.97,
+        "rttMs": 149,
         "error": null,
         "method": "iptv_org"
       },
       {
-        "url": "http://74.91.26.218:82/live/cctv11hd.m3u8",
+        "url": "https://xykt-fix.github.io/play/a02b/index.m3u8",
         "alive": true,
-        "score": 0.962,
-        "rttMs": 190,
+        "score": 0.96,
+        "rttMs": 202,
         "error": null,
         "method": "iptv_org"
       }
@@ -240,8 +240,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv12hd.m3u8",
         "alive": true,
-        "score": 0.96,
-        "rttMs": 202,
+        "score": 0.969,
+        "rttMs": 155,
         "error": null,
         "method": "iptv_org"
       }
@@ -250,8 +250,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv13hd.m3u8",
         "alive": true,
-        "score": 0.959,
-        "rttMs": 207,
+        "score": 0.969,
+        "rttMs": 157,
         "error": null,
         "method": "iptv_org"
       },
@@ -276,26 +276,26 @@
       {
         "url": "http://74.91.26.218:82/live/cctv14hd.m3u8",
         "alive": true,
-        "score": 0.963,
-        "rttMs": 183,
+        "score": 0.97,
+        "rttMs": 151,
         "error": null,
         "method": "iptv_org"
       }
     ],
     "CCTV15.cn": [
       {
-        "url": "https://xykt-fix.github.io/play/a02e/index.m3u8",
+        "url": "http://74.91.26.218:82/live/cctv15hd.m3u8",
         "alive": true,
-        "score": 0.986,
-        "rttMs": 71,
+        "score": 0.968,
+        "rttMs": 158,
         "error": null,
         "method": "iptv_org"
       },
       {
-        "url": "http://74.91.26.218:82/live/cctv15hd.m3u8",
+        "url": "https://xykt-fix.github.io/play/a02e/index.m3u8",
         "alive": true,
-        "score": 0.962,
-        "rttMs": 188,
+        "score": 0.958,
+        "rttMs": 212,
         "error": null,
         "method": "iptv_org"
       }
@@ -304,8 +304,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv16hd.m3u8",
         "alive": true,
-        "score": 0.88,
-        "rttMs": 599,
+        "score": 0.885,
+        "rttMs": 577,
         "error": null,
         "method": "iptv_org"
       }
@@ -314,8 +314,8 @@
       {
         "url": "http://74.91.26.218:82/live/cctv17hd.m3u8",
         "alive": true,
-        "score": 0.961,
-        "rttMs": 193,
+        "score": 0.969,
+        "rttMs": 155,
         "error": null,
         "method": "iptv_org"
       }
@@ -325,7 +325,7 @@
         "url": "http://121.19.134.246:808/hls/62/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5005,
+        "rttMs": 5002,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       },
@@ -343,7 +343,7 @@
         "url": "http://117.161.133.51:81/gitv_live/G_CETV-2/G_CETV-2.m3u8?p=GITV",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5005,
+        "rttMs": 5004,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -352,16 +352,16 @@
       {
         "url": "https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8",
         "alive": true,
-        "score": 0.953,
-        "rttMs": 235,
+        "score": 0.89,
+        "rttMs": 548,
         "error": null,
         "method": "iptv_org"
       },
       {
         "url": "https://english-livebkali.cgtn.com/live/encgtn.m3u8",
         "alive": true,
-        "score": 0.816,
-        "rttMs": 922,
+        "score": 0.794,
+        "rttMs": 1031,
         "error": null,
         "method": "iptv_org"
       }
@@ -370,8 +370,8 @@
       {
         "url": "https://amg00405-rakutentv-cgtndocumentary-rakuten-0ql8j.amagi.tv/master.m3u8",
         "alive": true,
-        "score": 0.902,
-        "rttMs": 491,
+        "score": 0.883,
+        "rttMs": 587,
         "error": null,
         "method": "iptv_org"
       }
@@ -380,13 +380,21 @@
       {
         "url": "http://play1-qk.nmtv.cn/live/1735546697341033.m3u8",
         "alive": true,
-        "score": 0.686,
-        "rttMs": 1572,
+        "score": 0.729,
+        "rttMs": 1354,
         "error": null,
         "method": "iptv_org"
       }
     ],
     "GoldenEagleCartoon.cn": [
+      {
+        "url": "http://223.110.245.145/ott.js.chinamobile.com/PLTV/3/224/3221226303/index.m3u8",
+        "alive": false,
+        "score": 0.0,
+        "rttMs": 5002,
+        "error": "URLError: <urlopen error timed out>",
+        "method": "skipped"
+      },
       {
         "url": "http://1.24.190.98:10080/hls/51/index.m3u8",
         "alive": false,
@@ -402,22 +410,14 @@
         "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
-      },
-      {
-        "url": "http://223.110.245.145/ott.js.chinamobile.com/PLTV/3/224/3221226303/index.m3u8",
-        "alive": false,
-        "score": 0.0,
-        "rttMs": 5006,
-        "error": "URLError: <urlopen error timed out>",
-        "method": "skipped"
       }
     ],
     "GuangzhouTV.cn": [
       {
         "url": "https://tencentplaybusiness.gztv.com/live/zonghes.m3u8",
         "alive": true,
-        "score": 0.658,
-        "rttMs": 1708,
+        "score": 0.678,
+        "rttMs": 1611,
         "error": null,
         "method": "iptv_org"
       }
@@ -426,8 +426,8 @@
       {
         "url": "https://stream.hrbtv.net/xwzh/playlist.m3u8?_upt=ef41dd531755913594",
         "alive": true,
-        "score": 0.788,
-        "rttMs": 1060,
+        "score": 0.777,
+        "rttMs": 1114,
         "error": null,
         "method": "iptv_org"
       }
@@ -436,8 +436,8 @@
       {
         "url": "https://stream.hrbtv.net/yspd/playlist.m3u8",
         "alive": true,
-        "score": 0.786,
-        "rttMs": 1071,
+        "score": 0.777,
+        "rttMs": 1115,
         "error": null,
         "method": "iptv_org"
       }
@@ -446,8 +446,8 @@
       {
         "url": "https://event.pull.hebtv.com/live/live101.m3u8",
         "alive": true,
-        "score": 0.738,
-        "rttMs": 1311,
+        "score": 0.553,
+        "rttMs": 2237,
         "error": null,
         "method": "iptv_org"
       },
@@ -455,7 +455,7 @@
         "url": "http://118.81.195.79:9003/hls/29/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 205,
+        "rttMs": 211,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -464,8 +464,8 @@
       {
         "url": "http://hlsal-ldvt.qing.mgtv.com/nn_live/nn_x64/dWlwPTEyNy4wLjAuMSZ1aWQ9cWluZy1jbXMmbm5fdGltZXpvbmU9OCZjZG5leF9pZD1hbF9obHNfbGR2dCZ1dWlkPTliODY4NmU5ZTM2YzYwMmMmZT02OTE0NjA0JnY9MSZpZD1ITldTWkdTVCZzPTcwN2RiYTc2YzJjNmJmMTQ4MmUyZGYzOWU2NWM3YWFi/HNWSZGST.m3u8",
         "alive": true,
-        "score": 0.807,
-        "rttMs": 965,
+        "score": 0.611,
+        "rttMs": 1944,
         "error": null,
         "method": "iptv_org"
       }
@@ -475,7 +475,7 @@
         "url": "https://play-live-hls.jxtvcn.com.cn/live-city/tv_jxtv6.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1510,
+        "rttMs": 1761,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -485,7 +485,7 @@
         "url": "https://play-live-hls.jxtvcn.com.cn/live-city/tv_jxtv2.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1508,
+        "rttMs": 1755,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -495,7 +495,7 @@
         "url": "https://play-live-hls.jxtvcn.com.cn/live-city/tv_jxtv3.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1496,
+        "rttMs": 1758,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -505,7 +505,7 @@
         "url": "https://play-live-hls.jxtvcn.com.cn/live-city/tv_jxtv4.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1503,
+        "rttMs": 1748,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -515,7 +515,7 @@
         "url": "https://play-live-hls.jxtvcn.com.cn/live-city/tv_jxtv5.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1498,
+        "rttMs": 1718,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -525,7 +525,7 @@
         "url": "https://lsfb.avap.jilintv.cn/zqvk7vpj/channel/7e8474e6daea44ccaa5aa2300191439e/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1141,
+        "rttMs": 1144,
         "error": "HTTP 567",
         "method": "skipped"
       }
@@ -545,7 +545,7 @@
         "url": "https://lsfb.avap.jilintv.cn/zqvk7vpj/channel/906341e6f19b4c4bacdc89941eb85d12/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1152,
+        "rttMs": 1136,
         "error": "HTTP 567",
         "method": "skipped"
       }
@@ -555,7 +555,7 @@
         "url": "https://lsfb.avap.jilintv.cn/zqvk7vpj/channel/3ffc4824dce54b92be185555923ce382/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1298,
+        "rttMs": 974,
         "error": "HTTP 567",
         "method": "skipped"
       }
@@ -575,22 +575,22 @@
         "url": "https://play-live-hls.jxtvcn.com.cn/live-city/tv_nanchang.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1314,
+        "rttMs": 1344,
         "error": "HTTP 403",
         "method": "skipped"
       }
     ],
     "NeiMonggolTV.cn": [
       {
-        "url": "http://1.24.190.98:10080/hls/39/index.m3u8",
+        "url": "http://110.19.156.172:9901/tsfile/live/1003_1.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5005,
+        "rttMs": 5004,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       },
       {
-        "url": "http://110.19.156.172:9901/tsfile/live/1003_1.m3u8",
+        "url": "http://1.24.190.98:10080/hls/39/index.m3u8",
         "alive": false,
         "score": 0.0,
         "rttMs": 5005,
@@ -621,7 +621,7 @@
         "url": "http://video10.qtv.com.cn/drm/qtv1at/manifest.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 7246,
+        "rttMs": 14326,
         "error": "TimeoutError: timed out",
         "method": "skipped"
       }
@@ -631,7 +631,7 @@
         "url": "http://video10.qtv.com.cn/drm/qtv2at/manifest.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 7158,
+        "rttMs": 14330,
         "error": "TimeoutError: timed out",
         "method": "skipped"
       }
@@ -639,21 +639,21 @@
     "QTV3.cn": [
       {
         "url": "http://video10.qtv.com.cn/drm/qtv3at/manifest.m3u8",
-        "alive": false,
+        "alive": true,
         "score": 0.0,
-        "rttMs": 7144,
-        "error": "TimeoutError: timed out",
-        "method": "skipped"
+        "rttMs": 9512,
+        "error": null,
+        "method": "iptv_org"
       }
     ],
     "QTV4.cn": [
       {
         "url": "http://video10.qtv.com.cn/drm/qtv4at/manifest.m3u8",
-        "alive": false,
+        "alive": true,
         "score": 0.0,
-        "rttMs": 7104,
-        "error": "TimeoutError: timed out",
-        "method": "skipped"
+        "rttMs": 9518,
+        "error": null,
+        "method": "iptv_org"
       }
     ],
     "QTV5.cn": [
@@ -661,7 +661,7 @@
         "url": "http://video10.qtv.com.cn/drm/qtv5at/manifest.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 7051,
+        "rttMs": 14242,
         "error": "TimeoutError: timed out",
         "method": "skipped"
       }
@@ -669,11 +669,11 @@
     "QTV6.cn": [
       {
         "url": "http://video10.qtv.com.cn/drm/qtv6at/manifest.m3u8",
-        "alive": false,
+        "alive": true,
         "score": 0.0,
-        "rttMs": 7048,
-        "error": "TimeoutError: timed out",
-        "method": "skipped"
+        "rttMs": 9509,
+        "error": null,
+        "method": "iptv_org"
       }
     ],
     "ShanghaiEducationTelevisionStation.cn": [
@@ -681,7 +681,7 @@
         "url": "http://223.166.234.114:7777/tsfile/live/1033_1.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 187,
+        "rttMs": 195,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -691,7 +691,7 @@
         "url": "https://livepull-tcms.sztv.com.cn/live/sz4Kpgm.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1580,
+        "rttMs": 1347,
         "error": "HTTP 403",
         "method": "skipped"
       },
@@ -707,7 +707,7 @@
         "url": "http://183.207.248.71/cntv/live1/HD-2500k-1080P-shenzhenstv/HD-2500k-1080P-shenzhenstv",
         "alive": false,
         "score": 0.0,
-        "rttMs": 9224,
+        "rttMs": 5307,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -716,8 +716,8 @@
       {
         "url": "http://stream2.jlntv.cn/sptv/sd/live.m3u8?_upt=f27750421743154598",
         "alive": true,
-        "score": 0.608,
-        "rttMs": 1962,
+        "score": 0.775,
+        "rttMs": 1123,
         "error": null,
         "method": "iptv_org"
       }
@@ -746,16 +746,16 @@
       {
         "url": "http://lsfb.avap.jilintv.cn/zqvk7vpj/channel/43ea5771aa44421591f9dfd2b71f1b9b/index.m3u8",
         "alive": true,
-        "score": 0.724,
-        "rttMs": 1378,
+        "score": 0.882,
+        "rttMs": 588,
         "error": null,
         "method": "iptv_org"
       },
       {
         "url": "https://lsfb.avap.jilintv.cn/zqvk7vpj/channel/43ea5771aa44421591f9dfd2b71f1b9b/index.m3u8",
         "alive": true,
-        "score": 0.0,
-        "rttMs": 6547,
+        "score": 0.863,
+        "rttMs": 684,
         "error": null,
         "method": "iptv_org"
       }
@@ -764,8 +764,8 @@
       {
         "url": "https://voa-ingest.akamaized.net/hls/live/2033878/tvmc08/playlist.m3u8",
         "alive": true,
-        "score": 0.956,
-        "rttMs": 218,
+        "score": 0.935,
+        "rttMs": 323,
         "error": null,
         "method": "iptv_org"
       }
@@ -775,7 +775,7 @@
         "url": "https://klmysjtzb.rcsxzx.com/hls/klmy2.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5482,
+        "rttMs": 5504,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -784,8 +784,8 @@
       {
         "url": "http://110.153.180.106:55555/out_3/index.m3u8",
         "alive": true,
-        "score": 0.694,
-        "rttMs": 1531,
+        "score": 0.868,
+        "rttMs": 662,
         "error": null,
         "method": "iptv_org"
       },
@@ -800,26 +800,26 @@
     ],
     "XinjiangTV3.cn": [
       {
-        "url": "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
+        "url": "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
         "alive": true,
-        "score": 0.895,
-        "rttMs": 526,
+        "score": 0.888,
+        "rttMs": 558,
         "error": null,
         "method": "iptv_org"
       },
       {
-        "url": "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
+        "url": "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
         "alive": true,
-        "score": 0.885,
-        "rttMs": 573,
+        "score": 0.679,
+        "rttMs": 1605,
         "error": null,
         "method": "iptv_org"
       },
       {
         "url": "http://110.153.180.106:55555/out_2/index.m3u8",
         "alive": true,
-        "score": 0.748,
-        "rttMs": 1260,
+        "score": 0.52,
+        "rttMs": 2398,
         "error": null,
         "method": "iptv_org"
       }
@@ -828,8 +828,8 @@
       {
         "url": "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1",
         "alive": true,
-        "score": 0.878,
-        "rttMs": 608,
+        "score": 0.886,
+        "rttMs": 572,
         "error": null,
         "method": "iptv_org"
       }
@@ -838,8 +838,8 @@
       {
         "url": "http://php.jdshipin.com:8880/xztv.php?id=zy",
         "alive": true,
-        "score": 0.654,
-        "rttMs": 1731,
+        "score": 0.691,
+        "rttMs": 1543,
         "error": null,
         "method": "iptv_org"
       }
@@ -849,23 +849,23 @@
         "url": "https://play-qukan.cztv.com/live/1758879019692345.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 746,
+        "rttMs": 876,
         "error": "HTTP 404",
-        "method": "skipped"
-      },
-      {
-        "url": "http://39.134.115.163:8080/PLTV/88888910/224/3221225703/index.m3u8",
-        "alive": false,
-        "score": 0.0,
-        "rttMs": 5005,
-        "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       },
       {
         "url": "http://39.134.115.163:8080/PLTV/88888910/224/3221225744/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5005,
+        "rttMs": 5002,
+        "error": "URLError: <urlopen error timed out>",
+        "method": "skipped"
+      },
+      {
+        "url": "http://39.134.115.163:8080/PLTV/88888910/224/3221225703/index.m3u8",
+        "alive": false,
+        "score": 0.0,
+        "rttMs": 5003,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -874,8 +874,8 @@
       {
         "url": "https://ali-m-l.cztv.com/channels/lantian/channel10/1080p.m3u8",
         "alive": true,
-        "score": 0.764,
-        "rttMs": 1180,
+        "score": 0.757,
+        "rttMs": 1217,
         "error": null,
         "method": "iptv_org"
       }
@@ -885,7 +885,7 @@
         "url": "http://118.81.195.79:9003/hls/23/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 204,
+        "rttMs": 220,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -895,12 +895,20 @@
         "url": "http://hls.weathertv.cn/tslslive/qCFIfHB/hls/live_sd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5605,
+        "rttMs": 5428,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
     ],
     "YunnanSatelliteTV.cn": [
+      {
+        "url": "http://183.207.248.71/cntv/live1/yunnanstv/yunnanstv",
+        "alive": false,
+        "score": 0.0,
+        "rttMs": 4136,
+        "error": "HTTP 500",
+        "method": "skipped"
+      },
       {
         "url": "http://39.134.115.163:8080/PLTV/88888910/224/3221225664/index.m3u8",
         "alive": false,
@@ -913,22 +921,14 @@
         "url": "https://hwapi.yunshicloud.com/8xughf/e0bx15.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 6536,
+        "rttMs": 6720,
         "error": "TimeoutError: The read operation timed out",
-        "method": "skipped"
-      },
-      {
-        "url": "http://183.207.248.71/cntv/live1/yunnanstv/yunnanstv",
-        "alive": false,
-        "score": 0.0,
-        "rttMs": 6900,
-        "error": "TimeoutError: timed out",
         "method": "skipped"
       }
     ],
     "YouManCartoonChannel.cn": [
       {
-        "url": "http://183.207.249.15/PLTV/4/224/3221225933/index.m3u8",
+        "url": "http://223.110.243.171/PLTV/3/224/3221226982/index.m3u8",
         "alive": false,
         "score": 0.0,
         "rttMs": 5004,
@@ -936,10 +936,10 @@
         "method": "skipped"
       },
       {
-        "url": "http://223.110.243.171/PLTV/3/224/3221226982/index.m3u8",
+        "url": "http://183.207.249.15/PLTV/4/224/3221225933/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5004,
+        "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -949,7 +949,7 @@
         "url": "http://112.25.48.68/live/program/live/btws/1300000/mnf.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5004,
+        "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -979,7 +979,7 @@
         "url": "http://118.81.195.79:9003/hls/34/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 206,
+        "rttMs": 204,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1015,7 +1015,7 @@
         "url": "http://183.207.248.71/gitv/live1/SCWS/SCWS",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5345,
+        "rttMs": 9014,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1025,7 +1025,7 @@
         "url": "http://scgctvshow.sctv.com/hdlive/sctv7/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 648,
+        "rttMs": 1170,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1061,7 +1061,7 @@
         "url": "http://223.110.245.169/PLTV/4/224/3221227026/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5001,
+        "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1087,7 +1087,7 @@
         "url": "http://183.207.248.71/gitv/live1/G_NINGXIA/G_NINGXIA",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5735,
+        "rttMs": 7464,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1107,7 +1107,7 @@
         "url": "http://livealone302.iqilu.com/iqilu/typd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 647,
+        "rttMs": 4399,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1117,22 +1117,22 @@
         "url": "http://livealone302.iqilu.com/iqilu/nkpd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 652,
+        "rttMs": 3539,
         "error": "HTTP 403",
         "method": "skipped"
       }
     ],
     "ShandongTV.cn": [
       {
-        "url": "http://39.134.115.163:8080/PLTV/88888910/224/3221225697/index.m3u8",
+        "url": "http://39.134.115.163:8080/PLTV/88888910/224/3221225738/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5005,
+        "rttMs": 5002,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       },
       {
-        "url": "http://39.134.115.163:8080/PLTV/88888910/224/3221225738/index.m3u8",
+        "url": "http://39.134.115.163:8080/PLTV/88888910/224/3221225697/index.m3u8",
         "alive": false,
         "score": 0.0,
         "rttMs": 5005,
@@ -1153,7 +1153,7 @@
         "url": "http://125.210.152.18:9090/live/SDWSHD_H265.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5004,
+        "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1163,7 +1163,7 @@
         "url": "http://livealone302.iqilu.com/iqilu/sepd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 17,
+        "rttMs": 1983,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1173,7 +1173,7 @@
         "url": "http://livealone302.iqilu.com/iqilu/shpd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 21,
+        "rttMs": 1946,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1183,7 +1183,7 @@
         "url": "http://livealone302.iqilu.com/iqilu/zypd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 27,
+        "rttMs": 1871,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1193,7 +1193,7 @@
         "url": "http://livealone302.iqilu.com/iqilu/qlpd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 21,
+        "rttMs": 1849,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1203,7 +1203,7 @@
         "url": "http://118.81.195.79:9003/hls/19/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 198,
+        "rttMs": 213,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1213,7 +1213,7 @@
         "url": "http://118.81.195.79:9003/hls/26/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 210,
+        "rttMs": 212,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1223,7 +1223,7 @@
         "url": "http://118.81.195.79:9003/hls/27/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 200,
+        "rttMs": 218,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1233,7 +1233,7 @@
         "url": "http://scgctvshow.sctv.com/hdlive/kangba/1.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 396,
+        "rttMs": 598,
         "error": "HTTP 403",
         "method": "skipped"
       },
@@ -1259,7 +1259,7 @@
         "url": "http://223.110.245.167/ott.js.chinamobile.com/PLTV/3/224/3221225947/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5001,
+        "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1269,7 +1269,7 @@
         "url": "https://live.funhillrm.com/2/playlist.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 438,
+        "rttMs": 288,
         "error": "URLError: <urlopen error [Errno -2] Name or service not known>",
         "method": "skipped"
       }
@@ -1286,15 +1286,15 @@
     ],
     "JiangsuSportsLeisureChannel.cn": [
       {
-        "url": "http://223.110.245.157/ott.js.chinamobile.com/PLTV/3/224/3221225935/index.m3u8",
+        "url": "http://183.207.249.12/PLTV/4/224/3221225935/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5003,
+        "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       },
       {
-        "url": "http://183.207.249.12/PLTV/4/224/3221225935/index.m3u8",
+        "url": "http://223.110.245.157/ott.js.chinamobile.com/PLTV/3/224/3221225935/index.m3u8",
         "alive": false,
         "score": 0.0,
         "rttMs": 5005,
@@ -1305,7 +1305,7 @@
         "url": "http://183.207.248.71/gitv/live1/G_JSTY/G_JSTY",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5897,
+        "rttMs": 7235,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1315,7 +1315,7 @@
         "url": "http://183.207.248.71/gitv/live1/G_JSGG/G_JSGG",
         "alive": false,
         "score": 0.0,
-        "rttMs": 8184,
+        "rttMs": 5306,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1341,7 +1341,7 @@
         "url": "http://183.207.248.71/cntv/live1/HD-2500k-1080P-jiangsustv/HD-2500k-1080P-jiangsustv",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5739,
+        "rttMs": 7459,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1359,7 +1359,7 @@
         "url": "http://183.207.248.71/gitv/live1/G_JSCS/G_JSCS",
         "alive": false,
         "score": 0.0,
-        "rttMs": 6185,
+        "rttMs": 5912,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1369,7 +1369,7 @@
         "url": "http://223.110.243.134/PLTV/4/224/3221225937/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5004,
+        "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       },
@@ -1377,7 +1377,7 @@
         "url": "http://183.207.248.71/gitv/live1/G_JSYS/G_JSYS",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5738,
+        "rttMs": 5773,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1387,7 +1387,7 @@
         "url": "http://223.110.245.151/ott.js.chinamobile.com/PLTV/3/224/3221225923/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5005,
+        "rttMs": 5004,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       },
@@ -1395,7 +1395,7 @@
         "url": "http://183.207.248.71/gitv/live1/G_JSJY/G_JSJY",
         "alive": false,
         "score": 0.0,
-        "rttMs": 6171,
+        "rttMs": 5182,
         "error": "TimeoutError: timed out",
         "method": "skipped"
       }
@@ -1405,7 +1405,7 @@
         "url": "http://183.207.248.71/gitv/live1/G_JSZY/G_JSZY",
         "alive": false,
         "score": 0.0,
-        "rttMs": 7406,
+        "rttMs": 7154,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1441,7 +1441,7 @@
         "url": "http://118.81.195.79:9003/hls/30/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 207,
+        "rttMs": 220,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1451,7 +1451,7 @@
         "url": "http://118.81.195.79:9003/hls/28/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 202,
+        "rttMs": 203,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1461,7 +1461,7 @@
         "url": "http://118.81.195.79:9003/hls/32/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 198,
+        "rttMs": 212,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1471,7 +1471,7 @@
         "url": "http://live.cztv.cc:85/live/ggpd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5501,
+        "rttMs": 8959,
         "error": "URLError: <urlopen error [Errno 101] Network is unreachable>",
         "method": "skipped"
       }
@@ -1481,7 +1481,7 @@
         "url": "http://live.cztv.cc:85/live/xwpd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5444,
+        "rttMs": 8924,
         "error": "URLError: <urlopen error [Errno 101] Network is unreachable>",
         "method": "skipped"
       }
@@ -1499,7 +1499,7 @@
         "url": "http://live.cztv.cc:85/live/sjpd.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5323,
+        "rttMs": 8771,
         "error": "URLError: <urlopen error [Errno 101] Network is unreachable>",
         "method": "skipped"
       }
@@ -1509,7 +1509,7 @@
         "url": "http://118.81.195.79:9003/hls/25/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 197,
+        "rttMs": 208,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1518,8 +1518,8 @@
       {
         "url": "https://stream2.jlntv.cn/baicheng1/sd/live.m3u8",
         "alive": true,
-        "score": 0.857,
-        "rttMs": 715,
+        "score": 0.831,
+        "rttMs": 845,
         "error": null,
         "method": "iptv_org"
       }
@@ -1539,7 +1539,7 @@
         "url": "http://www.pxitv.com:8099/hls-live/livepkgr/_definst_/pxitvevent/pxtv1stream.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5351,
+        "rttMs": 5161,
         "error": "URLError: <urlopen error timed out>",
         "method": "skipped"
       }
@@ -1549,7 +1549,7 @@
         "url": "http://stream2.xiancity.cn/xatv5/playlist.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1217,
+        "rttMs": 1075,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1559,7 +1559,7 @@
         "url": "http://stream2.xiancity.cn/xatv3/playlist.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1110,
+        "rttMs": 2121,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1585,8 +1585,8 @@
         "url": "http://183.207.248.71/gitv/live1/G_GUIZHOU/G_GUIZHOU",
         "alive": false,
         "score": 0.0,
-        "rttMs": 5301,
-        "error": "URLError: <urlopen error timed out>",
+        "rttMs": 5156,
+        "error": "TimeoutError: timed out",
         "method": "skipped"
       }
     ],
@@ -1631,7 +1631,7 @@
         "url": "http://118.81.195.79:9003/hls/22/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 204,
+        "rttMs": 213,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
         "method": "skipped"
       }
@@ -1641,7 +1641,7 @@
         "url": "http://35848.hlsplay.aodianyun.com/guangdianyun_35848/tv_channel_349.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1634,
+        "rttMs": 2418,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1651,7 +1651,7 @@
         "url": "http://35848.hlsplay.aodianyun.com/guangdianyun_35848/tv_channel_348.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1451,
+        "rttMs": 1756,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1661,7 +1661,7 @@
         "url": "http://35848.hlsplay.aodianyun.com/guangdianyun_35848/tv_channel_346.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 1476,
+        "rttMs": 1677,
         "error": "HTTP 403",
         "method": "skipped"
       }
@@ -1671,7 +1671,7 @@
         "url": "http://live.geermurmt.com/qhws/sd/live.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 400,
+        "rttMs": 517,
         "error": "URLError: <urlopen error [Errno -5] No address associated with hostname>",
         "method": "skipped"
       },
@@ -1697,7 +1697,7 @@
         "url": "http://183.207.248.71/cntv/live1/fengshanggw/fengshanggw",
         "alive": false,
         "score": 0.0,
-        "rttMs": 7105,
+        "rttMs": 6211,
         "error": "TimeoutError: timed out",
         "method": "skipped"
       }
@@ -1716,8 +1716,8 @@
       {
         "url": "http://pili-live-hls.hebitv.com/hebi/hebi.m3u8",
         "alive": true,
-        "score": 0.912,
-        "rttMs": 438,
+        "score": 0.929,
+        "rttMs": 356,
         "error": null,
         "method": "iptv_org"
       }
@@ -1727,8 +1727,16 @@
         "url": "http://118.81.195.79:9003/hls/31/index.m3u8",
         "alive": false,
         "score": 0.0,
-        "rttMs": 198,
+        "rttMs": 212,
         "error": "URLError: <urlopen error [Errno 111] Connection refused>",
+        "method": "skipped"
+      },
+      {
+        "url": "http://183.207.248.71/gitv/live1/G_HEILONGJIANG/G_HEILONGJIANG",
+        "alive": false,
+        "score": 0.0,
+        "rttMs": 2724,
+        "error": "HTTP 500",
         "method": "skipped"
       },
       {
@@ -1737,14 +1745,6 @@
         "score": 0.0,
         "rttMs": 5005,
         "error": "URLError: <urlopen error timed out>",
-        "method": "skipped"
-      },
-      {
-        "url": "http://183.207.248.71/gitv/live1/G_HEILONGJIANG/G_HEILONGJIANG",
-        "alive": false,
-        "score": 0.0,
-        "rttMs": 5151,
-        "error": "TimeoutError: timed out",
         "method": "skipped"
       }
     ]

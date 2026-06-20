@@ -38,36 +38,48 @@ class VideoArea extends StatelessWidget {
     // 颜色走 setSystemUIOverlayStyle (黑色).  top:false — 视频区撑到 status bar 后面,
     // 让 status bar 区域看到视频黑色 (而不是 Android 14+ 强制 edge-to-edge 时显示的
     // theme scaffold bg = 米白).  bottom:false — 接下方的 ChannelNowNext/控制条.
+    // v0.3.8+115 (6/20 21:07 老板反馈 "没真正的全屏"):
+    // 之前 AspectRatio(16/9) 强制视频 16:9 比例.  老板手机 2670x1200 (2.22:1),
+    // 视频 16:9 (1.78:1) 在 1200 高 Stack 里:  height=1200, width=1200*16/9=2133.
+    // Stack 宽 2670,  视频 2133,  左右各留 (2670-2133)/2 = 268 px 黑边.
+    // 老板看着 "左右黑边" 不像全屏.
+    // 修法:  删 AspectRatio(16/9) 让 video widget 自己 fill 父区域 (Stack expand).
+    // media_kit Video 加 fit: BoxFit.cover + aspectRatio: 16/9:
+    //   - fit: cover = 视频 cover 父区域 (2670x1200),  长边溢出被裁剪
+    //   - aspectRatio: 16/9 = 告诉 media_kit 视频源比例,  正确计算 cover 时的居中偏移
+    // 视觉:  视频铺满全屏 (2670x1200),  左右裁剪各约 134 px (视频源 16:9 映射到 2.22:1)
+    //  — 上下完整,  左右边缘裁掉约 5% 屏幕宽.  用户体验:  看着像真全屏.
+    // 注:  BoxFit.fill 会拉伸视频变形 (人脸变扁),  不推荐.  BoxFit.contain
+    // 保留比例但有黑边 (老板不要).  BoxFit.cover 保留比例 + 裁剪长边 = 最优.
     return SafeArea(
       top: false,
       bottom: false,
       left: false,
       right: false,
-      child: ClipRect(
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // 视频底层 (黑色)
-            ColoredBox(color: Colors.black),
-            // media_kit Video (播放时)
-            if (state.status == PlayerStatus.playing)
-              Video(controller: controller),
-            // 加载 / 错误 / 空 占位
-            switch (state.status) {
-              PlayerStatus.idle || PlayerStatus.loading => LoadingOverlay(
-                  text: state.attempt == null
-                      ? '正在打开…'
-                      : '尝试源 ${state.attempt!.index}/${state.attempt!.total}',
-                ),
-              PlayerStatus.error =>
-                ErrorOverlay(message: state.error ?? '播放失败'),
-              PlayerStatus.playing => const SizedBox.shrink(),
-            },
-          ],
-        ),
-      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 视频底层 (黑色) — cover 裁不到的区域补黑
+          ColoredBox(color: Colors.black),
+          // media_kit Video (播放时) — cover + 16:9 aspect ratio
+          if (state.status == PlayerStatus.playing)
+            Video(
+              controller: controller,
+              fit: BoxFit.cover,
+              aspectRatio: 16 / 9,
+            ),
+          // 加载 / 错误 / 空 占位
+          switch (state.status) {
+            PlayerStatus.idle || PlayerStatus.loading => LoadingOverlay(
+                text: state.attempt == null
+                    ? '正在打开…'
+                    : '尝试源 ${state.attempt!.index}/${state.attempt!.total}',
+              ),
+            PlayerStatus.error =>
+              ErrorOverlay(message: state.error ?? '播放失败'),
+            PlayerStatus.playing => const SizedBox.shrink(),
+          },
+        ],
       ),
     );
   }

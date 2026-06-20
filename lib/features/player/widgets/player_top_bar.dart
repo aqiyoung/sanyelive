@@ -1,5 +1,13 @@
-/// 播放页顶栏 — 返回 + 频道名 + 状态 + 时钟 + 收藏 + 退出全屏.
+/// 播放页顶栏 — 返回 + 频道名 + 状态 + 时钟.
 /// 从 player_page.dart 拆出 (v0.3.6+43).
+///
+/// v0.3.8+115 (6/20 21:07 老板反馈):
+///   之前 TopBar 有 4 个 IconButton — ← 返回 + ⋮ + ♡ + 退出全屏.
+///   老板说 "全屏状态多了三个控件 右侧中间" = ⋮ + ♡ + ↔ 三个图标.
+///   老板要: 只保留 ← 返回,  删 ⋮ / ♡ / ↔.
+///   修法: 删 Icons.more_vert + FavoriteIcon + onExitFullscreen IconButton.
+///   退出全屏靠 Android back (系统行为) + TopBar ← 返回按钮 (全屏态调
+///   _toggleFullscreen,  嵌入布局调 context.pop — 走 _onTopBarBack).
 library;
 
 import 'dart:async';
@@ -8,24 +16,19 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/typography.dart';
 import '../../../data/models/channel.dart';
-import '../../../features/favorites/favorite_button.dart';
 import '../../../services/player_service.dart';
 
-/// 播放页顶栏 — 返回 + 频道名 + 状态 + 时钟 + 收藏 + 退出全屏.
+/// 播放页顶栏 — 返回 + 频道名 + 状态 + 时钟.
 class TopBar extends StatefulWidget {
   const TopBar({
     required this.channel,
     required this.state,
     required this.onBack,
-    this.onExitFullscreen,
   });
 
   final Channel? channel;
   final PlayerState state;
   final VoidCallback onBack;
-  // v0.3.5.5 P0 bug fix: 退出全屏按钮 — 永远显示, 不参与 _controlsVisible
-  // 3s 隐身.  null = 不渲染 (移动端嵌入布局 / TV 默认布局).
-  final VoidCallback? onExitFullscreen;
 
   @override
   State<TopBar> createState() => _TopBarState();
@@ -71,6 +74,11 @@ class _TopBarState extends State<TopBar> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
+          // v0.3.8+115: 只保留 ← 返回按钮.
+          // 之前 TopBar 还有 ⋮ (Icons.more_vert) + ♡ (FavoriteIcon)
+          // + ↔ (Icons.fullscreen_exit) 三个图标 — 老板说 "多了三个控件 右侧中间"
+          // 全删.  退出全屏靠 _onTopBarBack (全屏态) / context.pop (嵌入布局)
+          // — 老板明确说 "点返回可以退出全屏".
           IconButton(
             icon: Icon(Icons.arrow_back, color: scheme.onSurface),
             onPressed: widget.onBack,
@@ -112,46 +120,6 @@ class _TopBarState extends State<TopBar> {
               ],
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.more_vert, color: scheme.onSurface),
-            onPressed: () {},
-          ),
-          if (widget.channel != null) ...[
-            const SizedBox(width: 4),
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: FavoriteIcon(
-                channelId: widget.channel!.id,
-                channelName: widget.channel!.name,
-                size: 24,
-                onChanged: (isFav) {
-                  // 收藏状态变化不需要额外动作, sqflite 已持久化
-                },
-              ),
-            ),
-          ],
-          // v0.3.5.5 P0 bug fix: 退出全屏按钮放在 TopBar 末尾, 永远 visible.
-          // (原来在 _buildFullscreenOverlay 里单独 Positioned, 跟 TopBar
-          // 走 _controlsVisible 时一起隐 — 用户反馈体验严重 bug.)
-          // 跟右下角全屏按钮统一 — 背景 surfaceContainerHigh, 图标
-          // onSurface (跟主题联动).
-          if (widget.onExitFullscreen != null) ...[
-            const SizedBox(width: 4),
-            Material(
-              color: Colors.transparent,
-              shape: const CircleBorder(),
-              child: IconButton(
-                icon: Icon(
-                  Icons.fullscreen_exit,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  size: 22,
-                ),
-                tooltip: '退出全屏',
-                onPressed: widget.onExitFullscreen!,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
         ],
       ),
     );

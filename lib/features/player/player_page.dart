@@ -228,6 +228,20 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     }
   }
 
+  /// v0.3.8+115 (6/20 21:07 老板反馈): TopBar ← 返回按钮处理.
+  /// 之前 +114 让 onBack = context.pop() — 全屏态点 ← 直接退出页面, 跟
+  ///  老板 "点返回可以退出全屏" 不符.  +115 改为:  全屏态点 ← = 退出全屏;
+  ///  嵌入布局点 ← = 退回首页.  跟 Android back 系统行为一致 (PopScope 之前
+  ///  在 _buildFullscreenOverlay 里没显式拦截 back — back 走系统默认, 等于
+  ///  pop.  现在跟我们的 onBack 行为对齐).
+  void _onTopBarBack() {
+    if (_isFullscreen) {
+      _toggleFullscreen();
+    } else {
+      context.pop();
+    }
+  }
+
   Future<void> _tryAutoPlay() async {
     final channels = await ref.read(channelsProvider.future);
     if (!mounted) return;
@@ -328,11 +342,13 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                     ],
                   ),
                 ),
-                // 顶栏 (返回 / 频道名 / 收藏等)
+                // 顶栏 (返回 / 频道名 / 时钟)
+                // v0.3.8+115: 嵌入布局用 _onTopBarBack (现在只 pop, 因为嵌入
+                // 布局 _isFullscreen=false — 跟全屏 _buildFullscreenOverlay 一致).
                 TopBar(
                   channel: channel,
                   state: state,
-                  onBack: () => context.pop(),
+                  onBack: _onTopBarBack,
                 ),
                 // 节目卡 + 频道横滑 (可滚动)
                 Expanded(
@@ -473,26 +489,46 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
               //   这意味着 TopBar 必须永远显示 (或只被 IgnorePointer 跟 AnimatedOpacity 控制).
               //   选 "永远显示" — 避免隐藏时老板找不到退出按钮 / 返回按钮.
 
-              // [1] TopBar — 永远显示,  在最上层 (Stack 顺序最前 = 最后渲染 = 最上面).
-              // 单独 AnimatedOpacity (always 1) 让它在控件层切换时保持稳定.
-              // (不用 IgnorePointer 因为 TopBar 永远 visible, 一直要响应 tap).
-              Padding(
-                padding: const EdgeInsets.only(top: 0),
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  child: TopBar(
-                    channel: channel,
-                    state: state,
-                    onBack: () => context.pop(),
-                    onExitFullscreen: _toggleFullscreen,
+              // v0.3.8+115 (6/20 21:07 老板反馈): 整控件层 (TopBar + 节目卡 +
+              // 横滑) 一起 3s 隐.  之前 +114 只 TopBar 永远显示 — 老板反馈
+              // "多了三个控件右侧中间" (⋮ ♡ ↔) + "台标不是一直显示 要自动隐藏
+              // 点击后再出现".  我之前误判 "老板要台标永远显示" 是错的.
+              //  真正需求: 整控件层 3s 隐 + onTap 显示 + 隐.
+              //  +115 修法:  TopBar 进 [2] 的 IgnorePointer + AnimatedOpacity
+              //  一起.  TopBar 简化成只有 ← 返回 (删 ⋮ ♡ ↔ — 删 onExitFullscreen
+              //  删 FavoriteIcon 删 Icons.more_vert).  退出全屏靠 Android back
+              //  (系统行为,  _buildFullscreenOverlay 顶层 PopScope 处理 — 见下面).
+              // [1] TopBar — 3s 隐 (跟 [2] 同步).  IgnorePointer + AnimatedOpacity
+              // 一起包,  控件隐藏时不响应 tap (修切频道 bug + TopBar hit test).
+              // 老板 21:07 反馈:  台标 (TopBar) 不要一直显示,  要 3s 隐 + 点击再现.
+              //  +115 删 TopBar 里 ⋮ ♡ ↔ 三个 IconButton,  只保留 ← 返回.
+              IgnorePointer(
+                ignoring: !_controlsVisible,
+                child: AnimatedOpacity(
+                  opacity: _controlsVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 250),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    child: TopBar(
+                      channel: channel,
+                      state: state,
+                      onBack: _onTopBarBack,
+                    ),
                   ),
                 ),
               ),
               // [2] 节目卡 + 频道横滑 — IgnorePointer + AnimatedOpacity 一起,
-              //  3s 自动隐 + 防切频道 bug. 不用 ignorePointer for TopBar 因为
-              //  TopBar 在 [1] 已经独立渲染.
-              // 关键:  Column 让 AnimatedOpacity 占据屏幕下方,  TopBar [1] 在上方
-              //  永远显示.  Positioned 放底部 — NowNextProgram + NextChannelsStrip.
+              //  3s 自动隐 + 防切频道 bug.  +115: 整控件层 3s 隐 (含 TopBar).
+              //  TopBar 在 [1] 也走 _controlsVisible (跟 [2] 同步显隐).
+              //  关键:  Positioned 放底部 — NowNextProgram + NextChannelsStrip.
+              //  整体结构:
+              //    Stack
+              //      ├── [0] Positioned.fill → 视频 GestureDetector (onTap 切显隐)
+              //      ├── [1] Padding → TopBar (always show in tree, 走 [2] opacity)
+              //      └── [2] Positioned(bottom) → IgnorePointer + AnimatedOpacity (TopBar + 节目卡 + 横滑)
+              //  但实际 +115 还是分开 [1] 和 [2] 各自有自己的 opacity wrap — 这样
+              //  TopBar 是 Padding non-Positioned, 节目卡是 Positioned bottom,
+              //  两者 opacity 同步 (都 _controlsVisible).
               Positioned(
                 left: 0,
                 right: 0,

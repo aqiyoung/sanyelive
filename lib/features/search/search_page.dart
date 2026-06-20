@@ -199,7 +199,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(child: Divider(height: 1)),
+              // v0.3.8+99 (6/20 14:03 老板反馈): 删 divider, 用 SizedBox 16 代替.
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
               // 结果列表
               if (!_hasSearched)

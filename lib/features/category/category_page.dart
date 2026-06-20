@@ -250,7 +250,8 @@ class _CctvUnavailableBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: scheme.outline.withOpacity(0.3)),
+          // v0.3.8+99 (6/20 14:03 老板反馈): 删边框线,  靠 surfaceContainerHigh
+          // 背景色 + 圆角 区分,  不要线.
         ),
         child: Row(
           children: [

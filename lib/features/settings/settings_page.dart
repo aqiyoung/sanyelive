@@ -330,9 +330,16 @@ class SettingsPage extends ConsumerWidget {
               const SizedBox(height: 16),
               TextField(
                 controller: controller,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '更新源 URL',
-                  border: OutlineInputBorder(),
+                  // v0.3.8+99 (6/20 14:03 老板反馈): 删 OutlineInputBorder 四
+                  // 周边框线,  改 UnderlineInputBorder (只保留 focus 时的下
+                  // 划线).  iOS-style 极简风格.
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
                   isDense: true,
                 ),
                 autofocus: true,

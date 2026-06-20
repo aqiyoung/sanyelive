@@ -129,7 +129,8 @@ class FavoritesPage extends ConsumerWidget {
                     style: IptvTypography.serifTitle,
                   ),
                 ),
-                const Divider(height: 0.5, thickness: 0.5),
+                // v0.3.8+99 (6/20 14:03 老板反馈): 删 divider, 用 SizedBox 12 代替.
+                const SizedBox(height: 12),
                 ListTile(
                   leading: Icon(
                     Icons.delete_outline,

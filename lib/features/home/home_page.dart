@@ -342,10 +342,8 @@ class _ContinueWatchingSkeleton extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.4),
-          width: 1,
-        ),
+        // v0.3.8+99 (6/20 14:03 老板反馈): 删边框线,  骨架屏靠 outlineVariant
+        // 浅色背景 + 圆角 让用户知道是 loading 占位.
       ),
       child: const Row(
         children: [
@@ -378,10 +376,7 @@ class _CategoryCardSkeleton extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.4),
-          width: 1,
-        ),
+        // v0.3.8+99: 删边框线.
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,

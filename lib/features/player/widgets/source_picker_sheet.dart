@@ -64,7 +64,8 @@ class _SourcePickerContent extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 0.5, thickness: 0.5),
+            // v0.3.8+99 (6/20 14:03 老板反馈): 删 divider, 用 SizedBox 16 代替.
+            const SizedBox(height: 16),
             Flexible(
               child: sources.isEmpty
                   ? const Padding(

@@ -122,14 +122,16 @@ class _ChannelChip extends StatelessWidget {
           // 文字保持 textPrimary,  整 chip 跟非选中态区分靠边框粗细 + 数字
           // 颜色 + 字重,  选中态对比度 ≥ 4.5:1 (黑字 #2A2520 on 暖米 #FFFCF6
           // ≈ 13:1).
-          color: Theme.of(context).colorScheme.surface,
+          // v0.3.8+99 (6/20 14:03 老板反馈): 删边框线.
+          // 之前选中态用 2dp primary 边框区分,  非选中用 0.5dp outlineVariant.
+          // 现在改成靠背景色区分:
+          //   - 选中 (isNext): bgElevated + primary 数字 + bold
+          //   - 非选中: surface + outline 数字 + regular
+          // 效果跟有边框等价但更极简.
+          color: isNext
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(10),
-          border: isNext
-              ? Border.all(
-                  color: Theme.of(context).colorScheme.primary, width: 2)
-              : Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                  width: 0.5),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

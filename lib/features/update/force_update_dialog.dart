@@ -126,10 +126,7 @@ class _ForceUpdateDialogContentState
                     ? theme.colorScheme.surfaceContainerHighest
                     : theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color:
-                      isDark ? theme.colorScheme.outline : theme.colorScheme.outlineVariant,
-                ),
+                // v0.3.8+99: 删边框线,  靠背景色区分 release notes 区域.
               ),
               child: Text(
                 s.releaseNotes.isEmpty ? '（无变更日志）' : s.releaseNotes,

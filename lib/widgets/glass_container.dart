@@ -76,14 +76,7 @@ class _GlassContainerState extends State<GlassContainer>
             // 主题下能看见 (之前 Colors.white 0.12 在浅米色背景上几乎透明,
             // 老板反馈 "浅色模式的首页频道分类的边框没有了").  暗色下也保留
             // outlineVariant (M3 标准) 0.4 alpha = 跟分割线风格统一.
-            border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withOpacity(0.4),
-              width: 1,
-            ),
-          ),
+),
           child: widget.child,
         ),
       ),
@@ -160,14 +153,7 @@ class _GlassCardBorderState extends State<GlassCardBorder>
             // 主题下能看见 (之前 Colors.white 0.12 在浅米色背景上几乎透明,
             // 老板反馈 "浅色模式的首页频道分类的边框没有了").  暗色下也保留
             // outlineVariant (M3 标准) 0.4 alpha = 跟分割线风格统一.
-            border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withOpacity(0.4),
-              width: 1,
-            ),
-          ),
+),
           child: widget.child,
         ),
       ),

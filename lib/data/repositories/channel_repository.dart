@@ -84,24 +84,50 @@ class ChannelRepository {
 
   /// 实际 IO 路径.  拆出来让 [loadBundled] 缓存逻辑更清晰.
   Future<List<Channel>> _loadBundledImpl() async {
-    final raw = await rootBundle.loadString('assets/data/channels_cn.json');
-    final list = json.decode(raw) as List;
-    final channels = list
-        .map((e) => Channel.fromJson(e as Map<String, dynamic>))
-        .toList(growable: false);
+    // v0.3.8+110 (6/20 老板加国际频道模块):  并行加载 CN + I18N,  合并为一个
+    // [Channel] 列表.  CN 中国频道 + I18N 1886 国际频道.  合并顺序:  CN 先
+    // (首页分类依 country='CN' / id.startsWith('CCTV') 路由),  I18N 后.
+    // i18n channels 都有 country (US/UK/FR/DE/RU/IN/JP).
+    final cnFuture = _loadChannels('assets/data/channels_cn.json');
+    final i18nFuture = _loadChannels('assets/data/channels_i18n.json');
+    final knownFuture = _loadKnownSources();
 
-    // 加载 known_sources.json (国内公开 HLS 兑底) 并追加 (不覆盖) 到各 Channel.sources.
-    // channels_cn.json 里已经 bake 了 iptv-org 高画质源, known_sources 是兑底,
-    // 顺序 = iptv-org 先, known_sources 后 (去重).  SourceFailover 从前往后试.
+    final cn = await cnFuture;
+    final i18n = await i18nFuture;
+    final known = await knownFuture;
+
+    final merged = <Channel>[...cn, ...i18n];
+    if (known != null) {
+      return mergeKnownSources(merged, known);
+    }
+    return merged;
+  }
+
+  /// v0.3.8+110 (6/20):  抽 CN/I18N 公共加载逻辑 (JSON -> List<Channel>).
+  /// 加载失败返回空数组 (call 端合并时正常).
+  Future<List<Channel>> _loadChannels(String path) async {
     try {
-      final knownRaw =
-          await rootBundle.loadString('assets/data/known_sources.json');
-      final known = json.decode(knownRaw) as Map<String, dynamic>;
-      return mergeKnownSources(channels, known);
+      final raw = await rootBundle.loadString(path);
+      final list = json.decode(raw) as List;
+      return list
+          .map((e) => Channel.fromJson(e as Map<String, dynamic>))
+          .toList(growable: false);
     } catch (e) {
-      debugPrint('ChannelRepository.loadBundled known_sources failed: $e');
-      // known_sources.json 读取失败, 返回原始 channels
-      return channels;
+      debugPrint('ChannelRepository._loadChannels($path) failed: $e');
+      return const <Channel>[];
+    }
+  }
+
+  /// v0.3.8+110 (6/20):  known_sources.json 单独抽 — 加载失败返 null
+  /// (call 端选不 merge,  避免隐式吞错).
+  Future<Map<String, dynamic>?> _loadKnownSources() async {
+    try {
+      final raw =
+          await rootBundle.loadString('assets/data/known_sources.json');
+      return json.decode(raw) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('ChannelRepository._loadKnownSources failed: $e');
+      return null;
     }
   }
 

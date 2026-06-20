@@ -118,6 +118,9 @@ class CategoryPage extends ConsumerWidget {
         return ChannelFilter.satellite(all);
       case 'local':
         return ChannelFilter.local(all);
+      // v0.3.8+110 (6/20 老板加国际频道):  i18n = 非中文区 country
+      case 'international':
+        return ChannelFilter.international(all);
       default:
         return all;
     }
@@ -131,6 +134,9 @@ class CategoryPage extends ConsumerWidget {
         return '卫视';
       case 'local':
         return '地方';
+      // v0.3.8+110 (6/20 老板加国际频道):  i18n 中文名
+      case 'international':
+        return '国际';
       default:
         return '频道';
     }

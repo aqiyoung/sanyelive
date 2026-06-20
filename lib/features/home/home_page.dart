@@ -72,13 +72,18 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildContent(BuildContext context, List<Channel> all) {
-    // 派生 3 大分类 — 主页是「容器」, 分类页是「真实列表」
+    // 派生 4 大分类 — 主页是「容器」, 分类页是「真实列表」
     // 卡 6 会做收藏/历史; 此处只读 lastChannelId
     final cctv = ChannelFilter.cctv(all).length;
     final satellite = ChannelFilter.satellite(all).length;
     final local = all.length - cctv - satellite;
+    // v0.3.8+110 (6/20 老板加国际频道):  i18n 频道 (非中文区 country)
+    final international = ChannelFilter.international(all).length;
 
-    const items = [
+    // v0.3.8+110 (6/20 老板加国际频道):  items 不是 const — international
+    // subtitle 含 runtime var ($international count).  cctv/satellite/local
+    // 也是 const 兼容 (没含 var).
+    final items = [
       CategoryItem(
         id: 'cctv',
         title: '央视',
@@ -96,6 +101,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         title: '地方',
         subtitle: '省市地方台',
         icon: Icons.location_city,
+      ),
+      // v0.3.8+110 (6/20 老板加国际频道):  4 大区域 (i18n channels 7 国精选)
+      CategoryItem(
+        id: 'international',
+        title: '国际',
+        subtitle: '$international 个频道',
+        icon: Icons.language,
       ),
     ];
 
@@ -155,6 +167,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   'cctv' => cctv,
                   'satellite' => satellite,
                   'local' => local,
+                  // v0.3.8+110 (6/20 老板加国际频道):  i18n 频道 count
+                  'international' => international,
                   _ => 0,
                 };
                 context.push(

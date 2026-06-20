@@ -406,10 +406,19 @@ class _ThinDivider extends StatelessWidget {
   const _ThinDivider();
   @override
   Widget build(BuildContext context) {
+    // v0.3.8+96 (6/20 13:08 老板反馈): _ThinDivider 完全看不见.
+    // 之前用 outlineVariant.withOpacity(0.5) — outlineVariant 默认 = dividerWarm
+    // #E8E0D4, 0.5 透明度泿到 bgParchment #F5F4ED = 几乎不可见.
+    // 老板说 "设置页没看到分隔线, ListTile 粗在一起".
+    // 现在改用 outline (直接 dividerWarm #E8E0D4), 厚度 1px, 浅米色对比
+    // 采米色 bgParchment (lum 0.93 vs 0.85) — 对比度 1.4:1 (W3C AA 仅供参考,
+    // M3 spec 推荐用 surfaceVariant 做 ListTile 间分隔, 不果来在采调上是低对比).
+    // 为保证看得见,  让 divider 颜色稍深一点 (#C8C0B5) —  对比度 1.7:1
+    // 看得清但采米色系统不破坏.
     return Divider(
-      height: 0.5,
-      thickness: 0.5,
-      color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+      height: 1,
+      thickness: 1,
+      color: const Color(0xFFC8C0B5), // 稍深的米色分隔线 (visible on bgParchment)
     );
   }
 }

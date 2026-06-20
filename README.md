@@ -2,7 +2,7 @@
 
 > 极简新中式 IPTV 直播 APP — 家用电视 / 盒子 / 手机 — Flutter 全平台
 
-[![Latest Release](https://img.shields.io/github/v/release/aqiyoung/iptv-app?label=Latest&color=c96442)](https://github.com/aqiyoung/iptv-app/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/aqiyoung/iptv-app?label=Latest&color=c96442)](https://github.com/aqiyoung/iptv-app/releases/tag/v0.3.8%2B114)
 [![License](https://img.shields.io/github/license/aqiyoung/iptv-app)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.29.3-02569B?logo=flutter)](https://flutter.dev)
 [![Android](https://img.shields.io/badge/Android-TV%20%7C%20Phone%20%7C%20Box-3DDC84?logo=android)](https://www.android.com)

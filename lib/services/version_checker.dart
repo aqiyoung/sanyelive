@@ -94,6 +94,13 @@ class EndpointNotifier extends Notifier<String> {
       // ignore: discarded_futures
       _prefs.setString(kEndpointPrefsKey, migrated);
       debugPrint('EndpointNotifier: migrated $stored -> $migrated');
+      // v0.3.8+97 (6/20 13:11 老板反馈 "更新检测不到"):
+      // 之前老板装 +94 时 fetch 老 api.github.com URL 失败 → _prefs.lastCheckTime
+      // 写入了 now.  装 +97 后迁到 gh-proxy.com, 但 cache 1h TTL 不重试.
+      // 手动点 "检查更新" 才绕过 cache.  老板不会这么做 → 检测不到新版本.
+      // 现在迁移 URL 时同时清 last_check_time,  下次启动 fetch 新 endpoint.
+      // ignore: discarded_futures
+      _prefs.remove(_Keys.lastCheckTime);
       return migrated;
     }
     return stored;

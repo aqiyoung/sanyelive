@@ -50,80 +50,97 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
       body: ListView(
+        // v0.3.8+97 (6/20 13:11 老板反馈): _ThinDivider 太原始,  老板要高端.
+        // 改成 iOS-style 卡片分组:
+        //   - 3 张卡片 (外观 / 系统 / 关于)
+        //   - 卡片间靠间距 + group label 区分,  不画线
+        //   - 每张卡片圆角 12 + bgElevated 背景 + 内部 ListTile 用 1px divider
+        //   - 卡片间 16px vertical padding
+        //   - group label (小字 12px,  onSurfaceVariant,  左侧 padding 4)
+        // 参见 iOS Settings.app + Material 3 cards 设计语言.
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          const SizedBox(height: 8),
-          // ─── 主题 ─────────────────────────────────────────────────────────
-          ListTile(
-            leading: const Icon(Icons.palette_outlined),
-            title: const Text('主题'),
-            subtitle: Text(_modeLabel(mode)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _pickTheme(context, ref, current: mode),
-          ),
-          const _ThinDivider(),
-          // ─── 检查更新 ─────────────────────────────────────────────────────
-          // v0.3.7+80: 手动触发 versionCheckerProvider.notifier.checkOnStartup().
-          // 逻辑跟启动时一样: 1h 内 cache 命中跳过,  否则 fetch GitHub API.
-          // state 变化显示 SnackBar (upToDate / outdated / failed).
-          ListTile(
-            leading: const Icon(Icons.system_update_alt_outlined),
-            title: const Text('检查更新'),
-            subtitle: const Text(
-              '当前版本 + 最新版本对比',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _checkUpdate(context, ref),
-          ),
-          const _ThinDivider(),
-          // ─── 更新源 ──────────────────────────────────────────────────────
-          // v0.3.7+92 (6/20 08:42 老板反馈): 默认 endpoint 改为 gh-proxy.com
-          //   (代理 api.github.com),  国内 600ms 响应.  老板还是能在设置页手动改
-          //   (重置默认 / 填别的代理 / 填自建镜像).
-          // version_checker 用 endpointProvider 而不是 const kGitHubReleasesUrl.
-          Consumer(
-            builder: (context, ref, _) {
-              final endpoint = ref.watch(endpointProvider);
-              final isDefault = endpoint == kDefaultEndpointUrl;
-              return ListTile(
-                leading: const Icon(Icons.dns_outlined),
-                title: const Text('更新源'),
-                subtitle: Text(
-                  isDefault ? '默认 (gh-proxy.com 代理 api.github.com)' : endpoint,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+          // ─── 卡片 1: 外观 ──────────────────────────────────────────────
+          const _SettingsGroupLabel(label: '外观'),
+          const SizedBox(height: 6),
+          _SettingsCard(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.palette_outlined),
+                title: const Text('主题'),
+                subtitle: Text(_modeLabel(mode)),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => _editEndpoint(context, ref),
-              );
-            },
-          ),
-          const _ThinDivider(),
-          // ─── 关于三页直播 ─────────────────────────────────────────────────
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('关于三页直播'),
-            subtitle: const Text(
-              '项目介绍 + GitHub 地址',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showAbout(context),
-          ),
-          const _ThinDivider(),
-          // ─── 版本号 (静态展示,  从 Provider 读) ───────────────────────────
-          Consumer(
-            builder: (context, ref, _) {
-              final version = ref.watch(currentVersionStringProvider);
-              final code = ref.watch(currentVersionCodeProvider);
-              return ListTile(
-                leading: const Icon(Icons.tag_outlined),
-                title: const Text('版本号'),
-                subtitle: Text(
-                  '$version (build $code)',
-                ),
-              );
-            },
+                onTap: () => _pickTheme(context, ref, current: mode),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
+
+          // ─── 卡片 2: 系统 ──────────────────────────────────────────────
+          const _SettingsGroupLabel(label: '系统'),
+          const SizedBox(height: 6),
+          _SettingsCard(
+            children: [
+              // v0.3.7+80: 手动触发 versionCheckerProvider.notifier.checkOnStartup().
+              ListTile(
+                leading: const Icon(Icons.system_update_alt_outlined),
+                title: const Text('检查更新'),
+                subtitle: const Text('当前版本 + 最新版本对比'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _checkUpdate(context, ref),
+              ),
+              const _SettingsDivider(),
+              // v0.3.7+92 (6/20 08:42 老板反馈): 默认 endpoint 改为 gh-proxy.com
+              // v0.3.8+95: 启动时 pattern match 自动迁移老 api.github.com URL.
+              Consumer(
+                builder: (context, ref, _) {
+                  final endpoint = ref.watch(endpointProvider);
+                  final isDefault = endpoint == kDefaultEndpointUrl;
+                  return ListTile(
+                    leading: const Icon(Icons.dns_outlined),
+                    title: const Text('更新源'),
+                    subtitle: Text(
+                      isDefault ? '默认 (gh-proxy.com 代理 api.github.com)' : endpoint,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _editEndpoint(context, ref),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // ─── 卡片 3: 关于 ──────────────────────────────────────────────
+          const _SettingsGroupLabel(label: '关于'),
+          const SizedBox(height: 6),
+          _SettingsCard(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('关于三页直播'),
+                subtitle: const Text('项目介绍 + GitHub 地址'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showAbout(context),
+              ),
+              const _SettingsDivider(),
+              Consumer(
+                builder: (context, ref, _) {
+                  final version = ref.watch(currentVersionStringProvider);
+                  final code = ref.watch(currentVersionCodeProvider);
+                  return ListTile(
+                    leading: const Icon(Icons.tag_outlined),
+                    title: const Text('版本号'),
+                    subtitle: Text('$version (build $code)'),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
           // ─── 底部 footer (slogan,  跟 about 区分) ─────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -402,23 +419,74 @@ class SettingsPage extends ConsumerWidget {
 // ─── 内部组件 ──────────────────────────────────────────────────────────────
 
 /// v0.3.7+80: 细分割线,  跟设置页 ListTile 之间分隔用,  复用 0.5px outlineVariant.
-class _ThinDivider extends StatelessWidget {
-  const _ThinDivider();
+/// v0.3.8+97 (6/20 13:11 老板反馈): _SettingsCard = iOS-style 卡片.
+/// 圆角 12 + bgElevated (#FFFCF6) 背景 + 内部 ListTile 自动适配.
+/// 卡片间不画线, 靠 group label + spacing 区分.
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.children});
+  final List<Widget> children;
+
   @override
   Widget build(BuildContext context) {
-    // v0.3.8+96 (6/20 13:08 老板反馈): _ThinDivider 完全看不见.
-    // 之前用 outlineVariant.withOpacity(0.5) — outlineVariant 默认 = dividerWarm
-    // #E8E0D4, 0.5 透明度泿到 bgParchment #F5F4ED = 几乎不可见.
-    // 老板说 "设置页没看到分隔线, ListTile 粗在一起".
-    // 现在改用 outline (直接 dividerWarm #E8E0D4), 厚度 1px, 浅米色对比
-    // 采米色 bgParchment (lum 0.93 vs 0.85) — 对比度 1.4:1 (W3C AA 仅供参考,
-    // M3 spec 推荐用 surfaceVariant 做 ListTile 间分隔, 不果来在采调上是低对比).
-    // 为保证看得见,  让 divider 颜色稍深一点 (#C8C0B5) —  对比度 1.7:1
-    // 看得清但采米色系统不破坏.
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: const Color(0xFFC8C0B5), // 稍深的米色分隔线 (visible on bgParchment)
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFCF6), // bgElevated — 浅一档米色, 跟 bgParchment 区分
+        borderRadius: BorderRadius.circular(12),
+        // v0.3.8+97: 不画边框, 靠背景色差 + 圆角 + 阴影让卡片"浮"起来
+        // boxShadow: [
+        //   BoxShadow(
+        //     color: Colors.black.withValues(alpha: 0.04),
+        //     blurRadius: 8,
+        //     offset: const Offset(0, 2),
+        //   ),
+        // ],
+      ),
+      clipBehavior: Clip.antiAlias, // 让内部 ListTile ripple 不溢出圆角
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      ),
+    );
+  }
+}
+
+/// v0.3.8+97: _SettingsGroupLabel = 卡片上方的小标题 (12px, onSurfaceVariant).
+/// iOS Settings.app 风格: "外观" / "系统" / "关于".
+class _SettingsGroupLabel extends StatelessWidget {
+  const _SettingsGroupLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.5,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+/// v0.3.8+97: _SettingsDivider = 卡片内部 ListTile 之间的细分隔线.
+/// 颜色 = dividerWarm 浅一档,  从左侧 padding 缩进 16 (跟 leading icon 对齐).
+class _SettingsDivider extends StatelessWidget {
+  const _SettingsDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: Divider(
+        height: 0.5,
+        thickness: 0.5,
+        color: const Color(0xFFE8E0D4), // dividerWarm 浅米色
+      ),
     );
   }
 }

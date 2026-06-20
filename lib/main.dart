@@ -38,6 +38,17 @@ void main() async {
   // 现在改成 main 同步等 init 完成再 runApp. WidgetsFlutterBinding
   // 也必须 await, 因为 ensureInitialized 要用到 binding.
   WidgetsFlutterBinding.ensureInitialized();
+  // v0.3.8+120 (6/20 23:27 老板反馈 "退出全屏 变竖屏了"):
+  // 之前 _toggleFullscreen 退出全屏用 setPreferredOrientations([]) = 系统默认
+  // (portrait on phones) — 老板横屏全屏后退出变竖屏,  体验断裂.
+  // 修法:  启动时全局允许 portrait + landscape,  player_page 切全屏再单独
+  // 强制 landscape,  退出全屏用 [portrait, landscape] 让系统决定 (跟设备重力
+  // 传感器联动 — 用户拨横还是拨竖都能用).  这样退出全屏不强制 portrait.
+  SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   // 6/18 P3-1: 把 PlayerService 创建提到 runApp 之前,  才可以传进
   // PlayerRouteObserver + WidgetsBindingObserver.  media_kit Player()
   // 必须 ensureInitialized() 后才能建,  上一步已 await 完成.

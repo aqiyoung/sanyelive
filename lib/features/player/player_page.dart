@@ -133,10 +133,12 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     // P2-2: 离开页面时如果还在全屏, 还原 system chrome.
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      // empty list = "use whatever the platform default is" (portrait on
-      // phones, landscape on TVs, etc.).  Passing null breaks the
-      // argument_type_not_assignable analyzer check on Flutter 3.29.3.
-      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
+      // v0.3.8+120:  跟 _toggleFullscreen else 保持一致,  允许 portrait + landscape.
+      SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
     }
     // 6/17: 退出时还原 edgeToEdge (不是 immersiveSticky).
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -217,10 +219,17 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       );
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      // empty list = "use whatever the platform default is" (portrait on
-      // phones, landscape on TVs, etc.).  Passing null breaks the
-      // argument_type_not_assignable analyzer check on Flutter 3.29.3.
-      SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
+      // v0.3.8+120 (6/20 23:27 老板反馈 "退出全屏 变竖屏了"):
+      // 之前 const <DeviceOrientation>[] = 系统默认 = portrait on phones.
+      // 老板横屏全屏看视频,  退出后变竖屏 = 体验断裂.
+      // 修法:  退出全屏用 [portrait, landscape] 显式允许两个方向 — 系统会根据
+      // 设备重力传感器决定方向 (老板拨横还是拨竖都行).  跟 +120 main.dart
+      // 全局方向设置一致.
+      SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
       // 6/18 P1 hotfix + v0.3.5.4: 退出全屏还原成全 APP 默认 — 状态栏黑图标
       // (跟浅米色页面配套), 系统导航栏用 colorScheme.surfaceContainer
       // 跟当前主题联动.

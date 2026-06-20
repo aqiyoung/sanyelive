@@ -51,35 +51,53 @@ class VideoArea extends StatelessWidget {
     //  — 上下完整,  左右边缘裁掉约 5% 屏幕宽.  用户体验:  看着像真全屏.
     // 注:  BoxFit.fill 会拉伸视频变形 (人脸变扁),  不推荐.  BoxFit.contain
     // 保留比例但有黑边 (老板不要).  BoxFit.cover 保留比例 + 裁剪长边 = 最优.
+    // v0.3.8+120 (6/20 23:27 老板反馈 "全屏后视频超出屏幕了"):
+    // 之前 +115 用 BoxFit.cover + aspectRatio 16/9 — 在 2.22:1 横屏下视频 cover,
+    //  左右裁剪各 ~5%.  老板看着 "视频超出屏幕" (实际是 cover 裁剪行为).
+    // 修法:  用 LayoutBuilder 根据屏幕宽高比动态选 fit:
+    //   - 横屏 (width/height > 1,  比如 2.22:1):  BoxFit.cover (保留比例 + 裁剪长边,
+    //     看着像真全屏,  跟之前一致 — 老板在横屏是接受 cover 的)
+    //   - 竖屏 (width/height < 1,  比如 9:16):  BoxFit.contain (保留视频完整 + 上下
+    //     或左右黑边,  老板在嵌入布局 portrait 不接受裁剪)
+    // 视觉效果:
+    //   - 横屏全屏:  跟 +115 一样,  cover + 裁剪
+    //   - 竖屏嵌入:  视频完整居中,  黑边补足 (左右/上下)
+    //   - 老板竖屏看嵌入布局的 9:16 屏幕时不再觉得"超出"
     return SafeArea(
       top: false,
       bottom: false,
       left: false,
       right: false,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 视频底层 (黑色) — cover 裁不到的区域补黑
-          ColoredBox(color: Colors.black),
-          // media_kit Video (播放时) — cover + 16:9 aspect ratio
-          if (state.status == PlayerStatus.playing)
-            Video(
-              controller: controller,
-              fit: BoxFit.cover,
-              aspectRatio: 16 / 9,
-            ),
-          // 加载 / 错误 / 空 占位
-          switch (state.status) {
-            PlayerStatus.idle || PlayerStatus.loading => LoadingOverlay(
-                text: state.attempt == null
-                    ? '正在打开…'
-                    : '尝试源 ${state.attempt!.index}/${state.attempt!.total}',
-              ),
-            PlayerStatus.error =>
-              ErrorOverlay(message: state.error ?? '播放失败'),
-            PlayerStatus.playing => const SizedBox.shrink(),
-          },
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLandscape =
+              constraints.maxWidth > constraints.maxHeight;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // 视频底层 (黑色)
+              ColoredBox(color: Colors.black),
+              // media_kit Video (播放时) — 动态 fit
+              if (state.status == PlayerStatus.playing)
+                Video(
+                  controller: controller,
+                  fit: isLandscape ? BoxFit.cover : BoxFit.contain,
+                  aspectRatio: 16 / 9,
+                ),
+              // 加载 / 错误 / 空 占位
+              switch (state.status) {
+                PlayerStatus.idle || PlayerStatus.loading => LoadingOverlay(
+                    text: state.attempt == null
+                        ? '正在打开…'
+                        : '尝试源 ${state.attempt!.index}/${state.attempt!.total}',
+                  ),
+                PlayerStatus.error =>
+                  ErrorOverlay(message: state.error ?? '播放失败'),
+                PlayerStatus.playing => const SizedBox.shrink(),
+              },
+            ],
+          );
+        },
       ),
     );
   }

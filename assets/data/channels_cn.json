@@ -336,12 +336,21 @@
       "CCTV-1 综合"
     ],
     "website": "http://tv.cctv.com/cctv1/",
-    "logo": null,
+    "logo": "https://i.imgur.com/TpA3cUl.png",
     "is_nsfw": false,
     "sources": [
       "http://69.30.245.50/live/cctv1.m3u8",
       "http://198.204.240.250:82/live/cctv1.m3u8",
-      "http://74.91.26.218:82/live/cctv1hd.m3u8"
+      "http://74.91.26.218:82/live/cctv1hd.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0001_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://38.75.136.137:98/gslb/dsdqpub/cctv1hd.m3u8?auth=testpub",
+      "http://207.56.13.146:81/cdnlive/cctv1.m3u8",
+      "http://38.75.136.137:98/gslb/dsdqbv/cctv1hd.m3u8?auth=test20251009",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv1hd",
+      "http://play.kankanlive.com/live/1698234869325962.m3u8",
+      "http://120.198.95.220:9901/tsfile/live/1015_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://222.169.85.8:9901/tsfile/live/0001_1.m3u8",
+      "http://124.228.160.176:9901/tsfile/live/0017_1.m3u8?key=txiptv&playlive=1&authid=0"
     ],
     "cctvSource": [
       "http://198.204.240.250:82/live/cctv1.m3u8"
@@ -358,11 +367,18 @@
       "CCTV-10 科教"
     ],
     "website": "http://tv.cctv.com/cctv10/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV10.png",
     "is_nsfw": false,
     "sources": [
       "http://74.91.26.218:82/live/cctv10hd.m3u8",
-      "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8"
+      "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8",
+      "http://222.223.41.27:8888/hls/10/index.m3u8",
+      "http://207.56.13.146:81/cdnlive/cctv10.m3u8",
+      "http://116.128.243.121:9905/tsfile/live/0010_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://60.10.139.113:8801/hls/10/index.m3u8",
+      "http://38.75.136.137:98/gslb/dsdqbv/cctv10hd.m3u8?auth=test20251009",
+      "http://124.228.160.176:9901/tsfile/live/0010_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0010_1.m3u8?key=txiptv&playlive=1&authid=0"
     ],
     "cctvSource": [
       "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8"
@@ -379,11 +395,14 @@
       "CCTV-11 戏曲"
     ],
     "website": "http://tv.cctv.com/cctv11/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV11.png",
     "is_nsfw": false,
     "sources": [
       "http://74.91.26.218:82/live/cctv11hd.m3u8",
-      "https://xykt-fix.github.io/play/a02b/index.m3u8"
+      "https://xykt-fix.github.io/play/a02b/index.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv11hd",
+      "http://38.75.136.137:98/gslb/dsdqpub/cctv11hd.m3u8?auth=testpub",
+      "http://cd-live-stream.news.cctvplus.com/live/smil:CHANNEL1.smil/chunklist_w744036192_b1000000.m3u8"
     ],
     "cctvSource": []
   },
@@ -399,12 +418,19 @@
       "中国中央电视台新闻频道"
     ],
     "website": "http://tv.cctv.com/cctv13/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV13.png",
     "is_nsfw": false,
     "sources": [
       "http://go.bkpcp.top/mg/cctv13",
       "https://cdn3.163189.xyz/163189/cctv13",
-      "http://74.91.26.218:82/live/cctv13hd.m3u8"
+      "http://74.91.26.218:82/live/cctv13hd.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0014_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "https://event.pull.hebtv.com/jishi/cp1.m3u8",
+      "http://222.223.41.27:8888/hls/13/index.m3u8",
+      "http://38.75.136.137:98/gslb/dsdqbv/cctv13hd.m3u8?auth=test20251009",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv13hd",
+      "http://173.208.212.130:8181/720p/cctv13.m3u8",
+      "http://36.136.38.87:9901/tsfile/live/0013_1.m3u8?key=txiptv&playlive=1&authid=0"
     ],
     "cctvSource": [
       "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1_ud.m3u8"
@@ -421,10 +447,13 @@
       "CCTV-14 少儿"
     ],
     "website": "http://tv.cctv.com/cctv14/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV14.png",
     "is_nsfw": false,
     "sources": [
-      "http://74.91.26.218:82/live/cctv14hd.m3u8"
+      "http://74.91.26.218:82/live/cctv14hd.m3u8",
+      "https://event.pull.hebtv.com/jishi/cp2.m3u8",
+      "http://38.75.136.137:98/gslb/dsdqbv/cctv14hd.m3u8?auth=test20251009",
+      "http://173.208.212.130:8181/720p/cctv14.m3u8"
     ],
     "cctvSource": [
       "https://cdn4.skygo.mn/live/disk1/CCTV-14/HLSv3-FTA/CCTV-14.m3u8"
@@ -441,11 +470,17 @@
       "CCTV-15 音乐"
     ],
     "website": "http://tv.cctv.com/cctv15/",
-    "logo": null,
+    "logo": "https://live.fanmingming.com/tv/CCTV15.png",
     "is_nsfw": false,
     "sources": [
       "https://xykt-fix.github.io/play/a02e/index.m3u8",
-      "http://74.91.26.218:82/live/cctv15hd.m3u8"
+      "http://74.91.26.218:82/live/cctv15hd.m3u8",
+      "https://piccpndks.v.kcdnvip.com/audio/cctv15_2/index.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0016_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1030_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://222.223.41.27:8888/hls/15/index.m3u8",
+      "http://207.56.13.146:81/cdnlive/cctv15.m3u8",
+      "http://124.228.160.176:9901/tsfile/live/0015_1.m3u8?key=txiptv&playlive=1&authid=0"
     ],
     "cctvSource": []
   },
@@ -497,10 +532,16 @@
       "CCTV-3 综艺"
     ],
     "website": "http://tv.cctv.com/cctv3/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV3.png",
     "is_nsfw": false,
     "sources": [
-      "http://74.91.26.218:82/live/cctv3hd.m3u8"
+      "http://74.91.26.218:82/live/cctv3hd.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0003_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/3/index.m3u8",
+      "http://198.204.228.26/live/cctv3hd.m3u8",
+      "http://173.208.212.130:8181/720p/cctv3.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv3hd",
+      "http://120.198.95.220:9901/tsfile/live/1017_1.m3u8?key=txiptv&playlive=1&down=1"
     ],
     "cctvSource": []
   },
@@ -586,7 +627,7 @@
       "CCTV-5 体育"
     ],
     "website": "http://tv.cctv.com/cctv5/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV5.png",
     "is_nsfw": false,
     "sources": [
       {
@@ -604,7 +645,19 @@
       {
         "url": "https://live.fanmingming.com/cctv5.m3u8",
         "type": "hls"
-      }
+      },
+      "http://120.198.95.220:9901/tsfile/live/1019_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://112.123.243.37:50085/tsfile/live/0005_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/5/index.m3u8",
+      "http://116.128.243.121:9905/tsfile/live/0005_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://38.75.136.137:98/gslb/dsdqbv/cctv5hd.m3u8?auth=test20251009",
+      "http://38.75.136.137:98/gslb/dsdqpub/cctv5p.m3u8?auth=testpub",
+      "http://74.91.26.218:82/live/cctv5hd.m3u8",
+      "http://173.208.212.130:8181/720p/cctv5.m3u8",
+      "http://221.226.51.220:50081/newlive/live/hls/5/live.m3u8",
+      "http://74.91.26.218:82/live/cctv5p.m3u8",
+      "http://38.75.136.137:98/gslb/dsdqbv/cctv5p.m3u8?auth=test20251009",
+      "http://207.56.13.146:81/cdnlive/cctv5p.m3u8"
     ],
     "cctvSource": []
   },
@@ -619,7 +672,7 @@
       "CCTV-5+ 体育赛事"
     ],
     "website": "http://tv.cctv.com/cctv5plus/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV5+.png",
     "is_nsfw": false,
     "sources": [
       {
@@ -637,7 +690,8 @@
       {
         "url": "http://198.204.240.250:82/live/cctv5.m3u8",
         "type": "hls"
-      }
+      },
+      "http://112.123.243.37:50085/tsfile/live/0006_1.m3u8?key=txiptv&playlive=0&authid=0"
     ],
     "cctvSource": []
   },
@@ -652,11 +706,18 @@
       "CCTV-6 电影"
     ],
     "website": "http://tv.cctv.com/cctv6/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV6.png",
     "is_nsfw": false,
     "sources": [
       "http://69.30.245.50/live/cctv6.m3u8",
-      "http://198.204.240.250:82/live/cctv6.m3u8"
+      "http://198.204.240.250:82/live/cctv6.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0007_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1021_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://198.204.228.26/live/cctv6hd.m3u8",
+      "http://222.223.41.27:8888/hls/6/index.m3u8",
+      "http://173.208.212.130:8181/720p/cctv6.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv6hd",
+      "http://221.226.51.220:50081/newlive/live/hls/6/live.m3u8"
     ],
     "cctvSource": [
       "http://198.204.240.250:82/live/cctv6.m3u8"
@@ -673,10 +734,13 @@
       "CCTV-7 国防军事"
     ],
     "website": "http://tv.cctv.com/cctv7/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV7.png",
     "is_nsfw": false,
     "sources": [
-      "http://74.91.26.218:82/live/cctv7hd.m3u8"
+      "http://74.91.26.218:82/live/cctv7hd.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0008_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/7/index.m3u8",
+      "http://107.150.60.122/live/cctv7hd.m3u8"
     ],
     "cctvSource": []
   },
@@ -691,10 +755,19 @@
       "CCTV-8 电视剧"
     ],
     "website": "http://tv.cctv.com/cctv8/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV8.png",
     "is_nsfw": false,
     "sources": [
-      "http://74.91.26.218:82/live/cctv8hd.m3u8"
+      "http://74.91.26.218:82/live/cctv8hd.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0009_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/8/index.m3u8",
+      "http://120.202.94.181:9446/tsfile/live/0008_1.m3u8?key=txiptv",
+      "http://192.151.150.154/live/cctv8k.m3u8",
+      "http://173.208.212.130:8181/720p/cctv8k.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv8k",
+      "http://173.208.212.130:8181/720p/cctv8.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv8hd",
+      "http://120.198.95.220:9901/tsfile/live/1023_1.m3u8?key=txiptv&playlive=1&down=1"
     ],
     "cctvSource": [
       "http://198.204.240.250:82/live/cctv8.m3u8"
@@ -711,10 +784,12 @@
       "CCTV-9 纪录"
     ],
     "website": "http://tv.cctv.com/cctv9/",
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV9.png",
     "is_nsfw": false,
     "sources": [
-      "https://xykt-fix.github.io/Y77.m3u8"
+      "https://xykt-fix.github.io/Y77.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0010_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/9/index.m3u8"
     ],
     "cctvSource": []
   },
@@ -7495,7 +7570,7 @@
       "CCTV-2"
     ],
     "website": null,
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV2.png",
     "is_nsfw": false,
     "sources": [
       {
@@ -7509,7 +7584,15 @@
       {
         "url": "http://ivi.bupt.edu.cn/hls/cctv2.m3u8",
         "type": "hls"
-      }
+      },
+      "http://112.123.243.37:50085/tsfile/live/0002_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/2/index.m3u8",
+      "http://221.226.51.220:50081/newlive/live/hls/2/live.m3u8",
+      "http://198.204.228.26/live/cctv2hd.m3u8",
+      "http://192.151.150.154/live/cctv2hd.m3u8",
+      "http://38.75.136.137:98/gslb/dsdqbv/cctv2hd.m3u8?auth=test20251009",
+      "http://173.208.212.130:8181/720p/cctv2.m3u8",
+      "http://113.25.252.226:9901/tsfile/live/1006_1.m3u8?key=txiptv&playlive=1&authid=0"
     ],
     "cctvSource": []
   },
@@ -7542,7 +7625,7 @@
       "CCTV-12"
     ],
     "website": null,
-    "logo": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV12.png",
     "is_nsfw": false,
     "sources": [
       {
@@ -7556,7 +7639,13 @@
       {
         "url": "http://ivi.bupt.edu.cn/hls/cctv12.m3u8",
         "type": "hls"
-      }
+      },
+      "http://112.123.243.37:50085/tsfile/live/0013_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1027_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://198.204.228.26/live/cctv12hd.m3u8",
+      "http://118.193.115.2:9901/tsfile/live/0012_1.m3u8?key=txiptv",
+      "http://173.208.212.130:8181/720p/cctv12.m3u8",
+      "http://124.228.160.176:9901/tsfile/live/0012_2.m3u8?key=txiptv&playlive=1&authid=0"
     ],
     "cctvSource": []
   },
@@ -8427,5 +8516,765 @@
         "type": "hls"
       }
     ]
+  },
+  {
+    "id": "CCTV4K.cn@HD",
+    "name": "CCTV-4K (1080p)",
+    "country": "CN",
+    "categories": [
+      "general"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "sources": [
+      "http://198.204.240.250:82/live/cctv4k.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "凤凰中文.cn",
+    "name": "凤凰中文",
+    "country": "CN",
+    "categories": [
+      "news"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/凤凰中文.png",
+    "sources": [
+      "http://zmgd.zyrnet.com:8888/hls/110/index.m3u8",
+      "http://120.198.95.220:9901/tsfile/live/1036_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://218.206.193.218:8888/hls/66/index.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "凤凰香港.cn",
+    "name": "凤凰香港",
+    "country": "CN",
+    "categories": [
+      "news"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/凤凰香港.png",
+    "sources": [
+      "http://122.152.202.33/s/81a8a44f/index.m3u8?id=fhhk",
+      "https://epg.pw/stream/5f16dc7fc8aaaed3205516c63e4a8c24bca9dbba1181684244729cf574505b0e.m3u8",
+      "https://epg.pw/stream/8770e89223a086eb1b8a0c931e42296d772a8069ad3eb72540e0c434e7cb3e93.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "金鹰卡通.cn",
+    "name": "金鹰卡通",
+    "country": "CN",
+    "categories": [
+      "kids"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/金鹰卡通.png",
+    "sources": [
+      "http://120.198.95.220:9901/tsfile/live/1033_1.m3u8?key=txiptv&playlive=1&down=1"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "三沙卫视.cn",
+    "name": "三沙卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/三沙卫视.png",
+    "sources": [
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=ssws"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "东南卫视.cn",
+    "name": "东南卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/东南卫视.png",
+    "sources": [
+      "http://live.zohi.tv/video/s10001-fztv-3/index.m3u8",
+      "http://123.129.70.178:9901/tsfile/live/0137_1.m3u8",
+      "http://60.10.139.113:8801/hls/21/index.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0113_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0137_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0137_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "东方卫视.cn",
+    "name": "东方卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/东方卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0124_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1047_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://bp-resource-dfl.bestv.cn/148/3/video.m3u8",
+      "http://bp-resource-dfl.bestv.cn/155/3/video.m3u8",
+      "http://60.10.139.113:8801/hls/22/index.m3u8",
+      "http://107.150.60.122/live/dfwshd.m3u8",
+      "https://txmov2.a.kwimgs.com/bs3/video-hls/5219953535631090825_hlsb.m3u8",
+      "http://173.208.212.130:8181/720p/dfws.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "云南卫视.cn",
+    "name": "云南卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/云南卫视.png",
+    "sources": [
+      "http://120.198.95.220:9901/tsfile/live/1056_1.m3u8?key=txiptv&playlive=1&down=1",
+      "https://hwapi.yntv.net/ew265l/z1z6s5.m3u8",
+      "http://192.151.150.154/live/ynwshd.m3u8",
+      "http://198.204.228.26/live/ynwshd.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=ynwshd",
+      "http://204.12.221.218:8181/3m1080p/ynws.m3u8",
+      "http://107.150.60.122/live/ynwshd.m3u8",
+      "http://38.75.136.137:98/gslb/dsdqpub/ynwshd.m3u8?auth=testpub",
+      "http://112.123.243.37:50085/tsfile/live/0117_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0119_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0119_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "兵团卫视.cn",
+    "name": "兵团卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/兵团卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0112_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://192.151.150.154/live/btws.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "内蒙古卫视.cn",
+    "name": "内蒙古卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/内蒙古卫视.png",
+    "sources": [
+      "http://198.204.228.26/live/nmgws.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=nmgws",
+      "http://59.39.89.130:60901/tsfile/live/0125_21.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0109_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "北京卫视.cn",
+    "name": "北京卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/北京卫视.png",
+    "sources": [
+      "http://173.208.212.130:8181/720p/bjws.m3u8",
+      "http://124.228.160.176:9901/tsfile/live/0122_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1065_1.m3u8?key=txiptv&playlive=1&down=1"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "吉林卫视.cn",
+    "name": "吉林卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/吉林卫视.png",
+    "sources": [
+      "http://59.39.89.130:60901/tsfile/live/0125_19.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://60.10.139.113:8801/hls/38/index.m3u8",
+      "http://198.204.228.26/live/jlwshd.m3u8",
+      "http://192.151.150.154/live/jlwshd.m3u8",
+      "http://207.56.13.146:81/cdnlive/jlws.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0116_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0116_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "四川卫视.cn",
+    "name": "四川卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/四川卫视.png",
+    "sources": [
+      "http://207.56.13.146:81/cdnlive/scws.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0139_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://153.0.171.163:85/tsfile/live/0123_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0123_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "https://piccpndks.v.kcdnvip.com/audio/sichuan_2/index.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "天津卫视.cn",
+    "name": "天津卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/天津卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0128_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://207.56.13.146:81/cdnlive/tjws.m3u8",
+      "http://36.136.38.87:9901/tsfile/live/0135_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1067_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://153.0.171.163:9901/tsfile/live/0135_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "https://piccpndks.v.kcdnvip.com/audio/tianjin_2/index.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "宁夏卫视.cn",
+    "name": "宁夏卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/宁夏卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0125_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0112_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://204.12.221.218:8181/3m1080p/nxws.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "安徽卫视.cn",
+    "name": "安徽卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/安徽卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0130_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://60.10.139.113:8801/hls/99/index.m3u8",
+      "http://124.228.160.176:9901/tsfile/live/0130_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0130_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0130_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "山东卫视.cn",
+    "name": "山东卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/山东卫视.png",
+    "sources": [
+      "http://207.56.13.146:81/cdnlive/sdws.m3u8",
+      "http://192.151.150.154/live/sdwshd.m3u8",
+      "http://l.cztvcloud.com/channels/lantian/SXshengzhou1/720p.m3u8",
+      "http://173.208.212.130:8181/720p/sdws.m3u8",
+      "http://36.136.38.87:9901/tsfile/live/0131_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1063_1.m3u8?key=txiptv&playlive=1&down=1"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "山西卫视.cn",
+    "name": "山西卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/山西卫视.png",
+    "sources": [
+      "http://119.39.9.8:9901/tsfile/live/0118_1.m3u8",
+      "http://198.204.228.26/live/sxwshd.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0120_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1057_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://36.136.38.87:9901/tsfile/live/0118_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://113.25.252.226:9901/tsfile/live/1039_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://59.39.89.130:60901/tsfile/live/0125_20.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0118_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://207.56.13.146:81/cdnlive/sxws.m3u8",
+      "http://36.32.174.67:60080/newlive/live/hls/43/live.m3u8",
+      "http://204.12.221.218:8181/3m1080p/sxws.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "广东卫视.cn",
+    "name": "广东卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/广东卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0135_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://60.10.139.113:8801/hls/26/index.m3u8",
+      "http://223.75.149.129:9906/tsfile/live/0125_1.m3u8?key=txiptv",
+      "http://173.208.212.130:8181/720p/gdws.m3u8",
+      "http://36.136.38.87:9901/tsfile/live/0125_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0125_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "https://piccpndks.v.kcdnvip.com/audio/guangdong_2/index.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "广西卫视.cn",
+    "name": "广西卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/广西卫视.png",
+    "sources": [
+      "http://120.198.95.220:9901/tsfile/live/1054_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://60.10.139.113:8801/hls/52/index.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=gxwshd",
+      "http://112.123.243.37:50085/tsfile/live/0137_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0113_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "https://piccpndks.v.kcdnvip.com/audio/guangxi_2/index.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "延边卫视.cn",
+    "name": "延边卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/延边卫视.png",
+    "sources": [
+      "https://srs.iyb983.cn/video/CYS/index.m3u8",
+      "https://srs.iyb983.cn:443/video/CYS/index.m3u8",
+      "http://204.12.221.218:8181/3m1080p/ybws.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "新疆卫视.cn",
+    "name": "新疆卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/新疆卫视.png",
+    "sources": [
+      "http://38.75.136.137:98/gslb/dsdqpub/xjws.m3u8?auth=testpub",
+      "http://107.150.60.122/live/xjws.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0143_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://live.wjyanghu.com/live/CH1.m3u8",
+      "http://36.32.174.67:60080/newlive/live/hls/47/live.m3u8",
+      "http://204.12.221.218:8181/3m1080p/xjws.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "江西卫视.cn",
+    "name": "江西卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/江西卫视.png",
+    "sources": [
+      "http://222.169.85.8:9901/tsfile/live/0138_1.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0132_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0138_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1061_1.m3u8?key=txiptv&playlive=1&down=1"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "河北卫视.cn",
+    "name": "河北卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/河北卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0018_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0117_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://event.pull.hebtv.com/jishi/weishi_tingyun.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "河南卫视.cn",
+    "name": "河南卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/河南卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0121_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0139_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1064_1.m3u8?key=txiptv&playlive=1&down=1"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "浙江卫视.cn",
+    "name": "浙江卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/浙江卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0019_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://38.75.136.137:98/gslb/dsdqpub/zjwshd.m3u8?auth=testpub",
+      "http://173.208.212.130:8181/1080p/zjws.m3u8",
+      "http://60.10.139.113:8801/hls/18/index.m3u8",
+      "http://ali-xwl.cztv.com/live/channel01720Plxw.m3u8",
+      "http://153.0.171.163:9901/tsfile/live/0124_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "海南卫视.cn",
+    "name": "海南卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/海南卫视.png",
+    "sources": [
+      "http://36.32.174.67:60080/newlive/live/hls/46/live.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "深圳卫视.cn",
+    "name": "深圳卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/深圳卫视.png",
+    "sources": [
+      "http://120.198.95.220:9901/tsfile/live/1048_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://36.136.38.87:9901/tsfile/live/0126_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0126_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "湖北卫视.cn",
+    "name": "湖北卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/湖北卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/1001_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://60.10.139.113:8801/hls/29/index.m3u8",
+      "http://36.136.38.87:9901/tsfile/live/0132_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0132_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:85/tsfile/live/0132_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "湖南卫视.cn",
+    "name": "湖南卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/湖南卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/1002_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://221.226.51.220:50081/newlive/live/hls/29/live.m3u8",
+      "http://107.150.60.122/live/hnwshd.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "甘肃卫视.cn",
+    "name": "甘肃卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/甘肃卫视.png",
+    "sources": [
+      "http://207.56.13.146:81/cdnlive/gsws.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0123_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://204.12.221.218:8181/3m1080p/gsws.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "西藏卫视.cn",
+    "name": "西藏卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/西藏卫视.png",
+    "sources": [
+      "http://198.204.228.26/live/xzws.m3u8",
+      "http://63.141.230.178:82/gslb/zbdq5.m3u8?id=xzws",
+      "http://207.56.13.146:81/cdnlive/xzws.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0141_1.m3u8?key=txiptv&playlive=0&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "贵州卫视.cn",
+    "name": "贵州卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/贵州卫视.png",
+    "sources": [
+      "http://60.10.139.113:8801/hls/36/index.m3u8",
+      "http://36.136.38.87:9901/tsfile/live/0120_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "辽宁卫视.cn",
+    "name": "辽宁卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/辽宁卫视.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0126_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0121_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "https://piccpndks.v.kcdnvip.com/audio/liaoning_2/index.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "重庆卫视.cn",
+    "name": "重庆卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/重庆卫视.png",
+    "sources": [
+      "http://198.204.228.26/live/cqwshd.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0131_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1066_1.m3u8?key=txiptv&playlive=1&down=1"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "陕西卫视.cn",
+    "name": "陕西卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/陕西卫视.png",
+    "sources": [
+      "http://38.75.136.137:98/gslb/dsdqpub/sxwshd.m3u8?auth=testpub",
+      "http://107.150.60.122/live/snwshd.m3u8",
+      "http://112.123.243.37:50085/tsfile/live/0109_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://36.136.38.87:9901/tsfile/live/0136_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://153.0.171.163:9901/tsfile/live/0136_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "青海卫视.cn",
+    "name": "青海卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/青海卫视.png",
+    "sources": [
+      "http://198.204.228.26/live/qhws.m3u8",
+      "http://153.0.171.163:9901/tsfile/live/0140_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "香港卫视.cn",
+    "name": "香港卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/香港卫视.png",
+    "sources": [
+      "https://hkstv.tv/api/m3u8-proxy?url=http%3A%2F%2Fwebcast.hkstv.tv%2Flivestream%2Fmutfysrq%2Fplaylist.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "黑龙江卫视.cn",
+    "name": "黑龙江卫视",
+    "country": "CN",
+    "categories": [
+      "satellite"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/黑龙江卫视.png",
+    "sources": [
+      "http://36.136.38.87:9901/tsfile/live/0143_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8",
+      "http://153.0.171.163:9901/tsfile/live/0143_1.m3u8?key=txiptv&playlive=1&authid=0"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "CCTV-4",
+    "name": "CCTV-4",
+    "country": "CN",
+    "categories": [
+      "cctv"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://live.fanmingming.com/tv/CCTV4.png",
+    "sources": [
+      "https://live-play-hls.cctvnews.cctv.com/CCTVChannel/channel_cctv4_mbd.m3u8?auth_key=1781938800-1-b59134a2ead43d7f783f943c8f535e7bb80c5169575b2e8efcd5b3ddea21b41c-f97e1b4b766b8d374536f815e2648287&yid=b59134a2ead43d7f783f943c8f535e7bb80c5169575b2e8efcd5b3ddea21b41c"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "CCTV-16奥林匹克.cn",
+    "name": "CCTV-16奥林匹克",
+    "country": "CN",
+    "categories": [
+      "cctv"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV16.png",
+    "sources": [
+      "http://173.208.212.130:8181/1080p/cctv16.m3u8"
+    ],
+    "is_nsfw": false
+  },
+  {
+    "id": "CCTV4.cn",
+    "name": "CCTV-4",
+    "country": "CN",
+    "categories": [
+      "cctv"
+    ],
+    "alt_names": [],
+    "website": null,
+    "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV4.png",
+    "sources": [
+      "http://112.123.243.37:50085/tsfile/live/0004_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://120.198.95.220:9901/tsfile/live/1018_1.m3u8?key=txiptv&playlive=1&down=1",
+      "http://222.223.41.27:8888/hls/4/index.m3u8",
+      "http://107.150.60.122/live/cctv4hd.m3u8",
+      "http://74.91.26.218:82/live/cctv4hd.m3u8",
+      "http://38.75.136.137:98/gslb/dsdqbv/cctv4hd.m3u8?auth=test20251009",
+      "http://173.208.212.130:8181/720p/cctv4.m3u8",
+      "http://221.226.51.220:50081/newlive/live/hls/4/live.m3u8"
+    ],
+    "is_nsfw": false
   }
 ]

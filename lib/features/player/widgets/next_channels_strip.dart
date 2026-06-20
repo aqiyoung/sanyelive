@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/typography.dart';
-// v0.3.8+105 (6/20): 删 IptvColors import (改用 Theme token,  跟
-// 主题联动).  theme_tokens_test.dart 严格 grep 不许硬编 IptvColors.
+// v0.3.8+105 (6/20): 删硬编颜色常量 import (改用 Theme token,  跟
+// 主题联动).  theme_tokens_test.dart 严格 grep 不许硬编颜色常量.
 import '../../../data/category_zh.dart';
 import '../../../data/models/channel.dart';
 
@@ -126,7 +126,7 @@ class _ChannelChip extends StatelessWidget {
           // 现在所有 chip = bgElevated 浅一档米色 (#FFFCF6) — 统一
           // 容器.  选中加 accent 0.12α 浅红 overlay 表示"下一频道".
           // v0.3.8+105 (6/20 老板反馈 CI 红了): 改用 Theme token.
-          // 之前 v0.3.8+104 用 IptvColors.bgElevated 硬编,  触发
+          // 之前 v0.3.8+104 用硬编颜色常量, 触发
           // theme_tokens_test.dart (v0.3.7+50) fail.  bgElevated 在
           // ColorScheme 里对应的 token 是 surfaceContainerHighest
           // (theme.dart: 16 行).  走 token 后主题变化能自动联动.

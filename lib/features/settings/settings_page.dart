@@ -89,7 +89,9 @@ class SettingsPage extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context, ref),
               ),
-              const _SettingsDivider(),
+              // v0.3.8+98 (6/20 13:39): 用透明间隔条代替 divider — 老板说
+              // "所有容器分割不要线".  视觉上是空白,  不是线.
+              const _SettingsGap(),
               // v0.3.7+92 (6/20 08:42 老板反馈): 默认 endpoint 改为 gh-proxy.com
               // v0.3.8+95: 启动时 pattern match 自动迁移老 api.github.com URL.
               Consumer(
@@ -125,7 +127,7 @@ class SettingsPage extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showAbout(context),
               ),
-              const _SettingsDivider(),
+              const _SettingsGap(),
               Consumer(
                 builder: (context, ref, _) {
                   final version = ref.watch(currentVersionStringProvider);
@@ -419,6 +421,26 @@ class SettingsPage extends ConsumerWidget {
 // ─── 内部组件 ──────────────────────────────────────────────────────────────
 
 /// v0.3.7+80: 细分割线,  跟设置页 ListTile 之间分隔用,  复用 0.5px outlineVariant.
+/// v0.3.8+98 (6/20 13:39 老板反馈): _SettingsGap = 卡片内部两个 ListTile
+/// 之间的"透明间隔条" (背景色 = bgParchment, 高度 8).
+/// 老板原话: "所有容器分割不要线. 用其他方式来把它隔开".
+/// 跟 _SettingsDivider (线条) 不同,  这个是"留白"分隔:
+///   - 从 bgElevated 卡片背景 → bgParchment scaffold 背景的色块
+///   - 高度 8px,  让两个 ListTile 不粘在一起
+///   - 视觉上像"切开两个 tile 的水平空隙",  但实际是色块
+class _SettingsGap extends StatelessWidget {
+  const _SettingsGap();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 8,
+      color: const Color(0xFFF5F4ED), // bgParchment 跟 scaffold 同色
+      margin: EdgeInsets.zero,
+    );
+  }
+}
+
 /// v0.3.8+97 (6/20 13:11 老板反馈): _SettingsCard = iOS-style 卡片.
 /// 圆角 12 + bgElevated (#FFFCF6) 背景 + 内部 ListTile 自动适配.
 /// 卡片间不画线, 靠 group label + spacing 区分.
@@ -468,24 +490,6 @@ class _SettingsGroupLabel extends StatelessWidget {
           letterSpacing: 0.5,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
-      ),
-    );
-  }
-}
-
-/// v0.3.8+97: _SettingsDivider = 卡片内部 ListTile 之间的细分隔线.
-/// 颜色 = dividerWarm 浅一档,  从左侧 padding 缩进 16 (跟 leading icon 对齐).
-class _SettingsDivider extends StatelessWidget {
-  const _SettingsDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16),
-      child: Divider(
-        height: 0.5,
-        thickness: 0.5,
-        color: const Color(0xFFE8E0D4), // dividerWarm 浅米色
       ),
     );
   }

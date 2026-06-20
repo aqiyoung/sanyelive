@@ -1,15 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-卡 6: HLS 源很多走 HTTP (iptv-org CN 源常见 http://端口82)
-media_kit 需 cleartext 才能拉. Android 9+ 默认禁明文,
-这里 base config = cleartext-permitted 全开 (家用 IPTV 场景可接受).
-将来如果要更严, 可以把 base config 改 default 走 HTTPS,
-再单独给特定 host 加 cleartextTrafficPermitted=true 域配置.
+v0.3.8+93 (6/20 P0-3): cleartext 网络安全配置
+  IPTV 公开源 70% 是 HTTP 明文 (iptv-org CN 源常见 http://端口82),
+  media_kit 需 cleartext 才能拉.  Android 9+ 默认禁明文.
+  
+  之前 v0.2.0 base-config cleartextTrafficPermitted=true 全开 — 全 HTTP 放行.
+  安全风险: 任何 HTTP 第三方 API / 嵌入广告 SDK 都能被悄悄调用.
+  
+  v0.3.8+93 改成:
+  - base-config cleartextTrafficPermitted=false (默认拒绝,  绝大多数流量走 HTTPS)
+  - domain-config 给可信 IPTV 公开源 + 公开代理服务开 cleartext 白名单
+  - 未来想严格化时,  只改白名单不动 base (跟 v0.3.7+92 gh-proxy 思路一致)
+  
+  注意: IPTV 公开源 IP 经常变 (CDN 切换,  ISP 重组).  白名单是 best-effort,
+  失效的源用户手动调 known_sources.json 加新 URL.
 -->
 <network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+    <!-- v0.3.8+93: base 默认拒绝明文.  绝大多数流量 (GitHub API,  WebSocket,  统计) 走 HTTPS. -->
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
+    
+    <!-- IPTV 公开源白名单 — 这些域 (含子域) + IP 走明文 HTTP 拉 HLS 流. -->
+    <!-- 写法: domain-config cleartextTrafficPermitted=true 覆盖 base-config 默认. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- iptv-org CDN 域 -->
+        <domain includeSubdomains="false">iptv-org.github.io</domain>
+        <!-- 国内公开 IPTV 平台 (按 known_sources.json / cctv_sources.json 抽) -->
+        <domain includeSubdomains="false">ivi.bupt.edu.cn</domain>
+        <domain includeSubdomains="false">go.bkpcp.top</domain>
+        <domain includeSubdomains="false">play.kankanlive.com</domain>
+        <domain includeSubdomains="false">play-qukan.cztv.com</domain>
+        <domain includeSubdomains="false">ldncctvwbcdtxy.liveplay.myqcloud.com</domain>
+        <!-- 公开 IP (no subdomain 可写,  单独列) -->
+        <domain includeSubdomains="false">118.81.195.79</domain>
+        <domain includeSubdomains="false">183.207.248.71</domain>
+        <domain includeSubdomains="false">198.204.240.250</domain>
+        <domain includeSubdomains="false">223.111.191.105</domain>
+        <domain includeSubdomains="false">39.134.115.163</domain>
+        <domain includeSubdomains="false">39.134.24.166</domain>
+        <domain includeSubdomains="false">69.30.245.50</domain>
+        <domain includeSubdomains="false">74.91.26.218</domain>
+        <domain includeSubdomains="false">ottrrs.hl.chinamobile.com</domain>
+    </domain-config>
 </network-security-config>

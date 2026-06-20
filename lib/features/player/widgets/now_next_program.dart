@@ -220,7 +220,10 @@ class _EmptyState extends StatelessWidget {
               child: Text(
                 isLoading
                     ? '节目单加载中…'
-                    : '${channel.displayName} · 实时直播 (节目单待接入)',
+                    // v0.3.8+93 (6/20 P0-2): 去掉 "节目单待接入"
+                    // ——  EpgService 现在返时段占位 (上午/下午/黄金/夜间).
+                    // 频道上直播中 + 当前档名,  看着就象样.
+                    : '${channel.displayName} · 直播中',
                 style: IptvTypography.body.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),

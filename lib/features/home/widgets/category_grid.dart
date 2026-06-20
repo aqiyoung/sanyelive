@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/responsive/breakpoints.dart';
@@ -175,12 +176,20 @@ class ContinueWatchingCard extends StatelessWidget {
                 child: channelLogo != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          channelLogo!,
+                        // v0.3.8+93 (6/20 P1-2): 频道 logo 磁盘缓存 —
+                        // cached_network_image.  之前 Image.network 每次首页
+                        // rebuild 都重新拉, 480 频道 * 反复访问 = 闪烁 + 流量.
+                        // memCacheWidth/Height: 只解 40px 实际大小, 省内存.
+                        child: CachedNetworkImage(
+                          imageUrl: channelLogo!,
                           width: 40,
                           height: 40,
+                          memCacheWidth: 80,
+                          memCacheHeight: 80,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _defaultIcon(),
+                          fadeInDuration: const Duration(milliseconds: 200),
+                          placeholder: (_, __) => _defaultIcon(),
+                          errorWidget: (_, __, ___) => _defaultIcon(),
                         ),
                       )
                     : _defaultIcon(),

@@ -105,82 +105,17 @@ jobs:
           PYEOF
 
 
-      - name: Patch android/app/build.gradle for signing
+      - name: Verify gradle signing config
+        # v0.3.8+93 (6/20 P0-1): android/app/build.gradle 自己处理 signing,
+        # 不用再 patch.  这个 step 只验 key.properties 被正确写出 + gradle
+        # 能识别 release signing config.
         run: |
           set -e
-          if ! grep -q "iptvStoreFile" android/app/build.gradle; then
-            python3 << 'PYEOF'
-          import re
-          p = 'android/app/build.gradle'
-          with open(p) as f:
-              src = f.read()
-          # Insert ext.* load block AFTER plugins {} block (Gradle requires
-          # plugins {} to be first or right after buildscript/pluginManagement).
-          inject = '''
-          // Load signing key from android/key.properties (gitignored).
-          // Must be AFTER plugins {} block (Gradle syntax).
-          def keyPropsFile = rootProject.file('key.properties')
-          def keyProps = new Properties()
-          if (keyPropsFile.exists()) {
-              keyProps.load(new FileInputStream(keyPropsFile))
-          }
-          // Resolve storeFile relative to the key.properties directory (android/),
-          // so a plain "iptv-release.jks" entry points at android/iptv-release.jks
-          // instead of being resolved from the :app module (android/app/).
-          def _rawStore = keyProps['storeFile'] ?: ''
-          def _storeAbs = _rawStore
-          if (_rawStore && !_rawStore.startsWith('/') && !_rawStore.contains(':')) {
-              _storeAbs = new File(keyPropsFile.parentFile, _rawStore).absolutePath
-          }
-          ext.iptvStoreFile = _storeAbs
-          ext.iptvStorePassword = keyProps['storePassword'] ?: ''
-          ext.iptvKeyAlias = keyProps['keyAlias'] ?: ''
-          ext.iptvKeyPassword = keyProps['keyPassword'] ?: ''
-
-          '''
-          # Insert inject right after the first "plugins { ... }" block
-          src = re.sub(r'(plugins\s*\{[^{}]*\}\n)', r'\1' + inject, src, count=1)
-          # Add signingConfigs.release right after "android {"
-          signing = '''
-              signingConfigs {
-                  release {
-                      if (project.ext.iptvStoreFile) {
-                          // ext.iptvStoreFile is already an absolute path
-                          // (resolved at load time relative to android/key.properties).
-                          storeFile file(project.ext.iptvStoreFile)
-                          storePassword project.ext.iptvStorePassword
-                          keyAlias project.ext.iptvKeyAlias
-                          keyPassword project.ext.iptvKeyPassword
-                      }
-                  }
-              }
-          '''
-          src = re.sub(r'(\n\s*android\s*\{\n)', r'\1' + signing, src, count=1)
-          # Replace any existing buildTypes.release.signingConfig with our reference
-          src = re.sub(
-              r'buildTypes\s*\{[^{}]*?release\s*\{[^{}]*?\}',
-              lambda m: re.sub(
-                  r'signingConfig\s*=?\s*\S+',
-                  'signingConfig signingConfigs.release',
-                  m.group(0)
-              ) if 'signingConfig' in m.group(0) else re.sub(
-                  r'(release\s*\{[^{}]*?)(\n\s*\})',
-                  r'\1\n        signingConfig signingConfigs.release\n\2',
-                  m.group(0),
-                  count=1
-              ),
-              src,
-              count=1
-          )
-          with open(p, 'w') as f:
-              f.write(src)
-          print('Patched', p)
-          PYEOF
-          fi
-          echo "--- patched signing-related lines ---"
-          grep -nE "iptvStoreFile|signingConfigs|signingConfig" android/app/build.gradle
-          echo "--- top 20 lines of build.gradle ---"
-          head -20 android/app/build.gradle
+          test -f android/key.properties || (echo "❌ key.properties missing" && exit 1)
+          test -f android/iptv-release.jks || (echo "❌ iptv-release.jks missing" && exit 1)
+          grep -q 'hasReleaseKey ? signingConfigs.release' android/app/build.gradle || \
+            (echo "❌ gradle signing config missing" && exit 1)
+          echo "✅ gradle signing config OK"
 
       - name: Get dependencies
         run: flutter pub get

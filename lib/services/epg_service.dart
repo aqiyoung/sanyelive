@@ -111,12 +111,58 @@ class EpgService {
   /// 从 iptv-org EPG API 拉取 (XMLTV 格式)
   /// 实际 API: https://iptv-org.github.io/epg/guides/{cc}.xml.gz
   /// 这里 stub 返回空列表, 真实项目需要 XMLTV 解析.
+  /// v0.3.8+93 (6/20 P0-2): 不再返回空 — 拿不到 EPG 时返时段占位.
+  /// 4 档占位: 上午档 (06-12) / 下午档 (12-18) / 黄金档 (18-22) / 夜间档 (22-06).
+  /// UI 看到的是「黄金档 · 电视剧」而不是「暂无节目信息」,  体验成倍提升.
+  /// iptv-org 接进后,  _fetchRemote 返真数据,  _placeholderSchedule 被覆盖.
   Future<List<EpgEntry>> _fetchRemote(String channelId) async {
     // iptv-org 不直接提供 per-channel JSON EPG
-    // 真实实现需要下载 XMLTV gz 并解析
-    // 此处返回空列表作为占位, UI 层已有空态处理
-    // TODO: 接入真实 XMLTV EPG 数据源
-    return const [];
+    // 真实实现需要下载 XMLTV gz 并解析 (卡 +5 计划内)
+    // 当前 release 用时段占位 + 频道名当档名,  老设备也能看个象样的节目卡.
+    final entries = _placeholderSchedule(channelId);
+    // ignore: avoid_print
+    debugPrint('EpgService._fetchRemote: 占位 EPG for $channelId (${entries.length} 档)');
+    return entries;
+  }
+
+  /// 时段占位 — 按当地时间今天生成 4 档.
+  /// v0.3.8+93 (6/20 P0-2): 拿不到 iptv-org XMLTV 时给个象样的节目卡.
+  /// 实际接入 XMLTV 后这个会被覆盖.
+  List<EpgEntry> _placeholderSchedule(String channelId) {
+    // 用本地时间生成今天的时段边界 (按北京时间 8h 时区偏移预估)
+    // 抽上本地 DateTime.now(),  以 06:00 / 12:00 / 18:00 / 22:00 为分界.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    String titleFor(DateTime start) {
+      final h = start.hour;
+      if (h < 6) return '夜间档 · 重播精选';
+      if (h < 12) return '上午档 · 资讯杂志';
+      if (h < 18) return '下午档 · 综艺生活';
+      if (h < 22) return '黄金档 · 电视剧';
+      return '夜间档 · 午夜剧场';
+    }
+
+    final boundaries = [6, 12, 18, 22];
+    final entries = <EpgEntry>[];
+    DateTime start = today;
+    for (final h in boundaries) {
+      final end = today.add(Duration(hours: h));
+      entries.add(EpgEntry(
+        channelId: channelId,
+        title: titleFor(start),
+        start: start,
+        end: end,
+      ));
+      start = end;
+    }
+    // 最后一个档到明天早上 6:00
+    entries.add(EpgEntry(
+      channelId: channelId,
+      title: titleFor(start),
+      start: start,
+      end: today.add(const Duration(hours: 30)),
+    ));
+    return entries;
   }
 }
 

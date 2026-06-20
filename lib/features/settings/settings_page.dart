@@ -16,8 +16,12 @@ import 'package:go_router/go_router.dart';
 // v0.3.7.2 (6/19): 不再 import main.dart (主 dart 写死 const 没用),  用 Provider 读运行时版本号.
 import '../../services/version_checker.dart' show currentVersionStringProvider, currentVersionCodeProvider, versionCheckerProvider, VersionCheckState, VersionCheckUpToDate, VersionCheckOutdated, VersionCheckFailed, endpointProvider, kDefaultEndpointUrl;
 import '../update/force_update_dialog.dart' show ForceUpdateDialog;
-import '../../core/theme/colors.dart' show IptvColors;
 import 'theme_provider.dart';
+
+// v0.3.8+93 (6/20 P1-1): settings_page 所有 IptvColors 颜色 (textPrimary
+//   / textSecondary) 都改走 colorScheme.onSurface / onSurfaceVariant,  跟
+//   暗色主题联动.  之前 hardcode 浅米色文字在暗背景下看不清.  不再 import
+//   IptvColors — 全部跟主题走.
 
 // v0.3.7+80 (6/19): GitHub 项目地址常量.  复制到剪贴板用.
 const String kGitHubRepoUrl = 'https://github.com/aqiyoung/iptv-app';
@@ -32,7 +36,7 @@ class SettingsPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('设置', style: TextStyle(color: IptvColors.textPrimary)),
+        title: Text('设置'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: '返回',
@@ -51,8 +55,8 @@ class SettingsPage extends ConsumerWidget {
           // ─── 主题 ─────────────────────────────────────────────────────────
           ListTile(
             leading: const Icon(Icons.palette_outlined),
-            title: const Text('主题', style: TextStyle(color: IptvColors.textPrimary)),
-            subtitle: Text(_modeLabel(mode), style: const TextStyle(color: IptvColors.textSecondary)),
+            title: const Text('主题'),
+            subtitle: Text(_modeLabel(mode)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _pickTheme(context, ref, current: mode),
           ),
@@ -63,10 +67,9 @@ class SettingsPage extends ConsumerWidget {
           // state 变化显示 SnackBar (upToDate / outdated / failed).
           ListTile(
             leading: const Icon(Icons.system_update_alt_outlined),
-            title: const Text('检查更新', style: TextStyle(color: IptvColors.textPrimary)),
+            title: const Text('检查更新'),
             subtitle: const Text(
               '当前版本 + 最新版本对比',
-              style: TextStyle(color: IptvColors.textSecondary),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _checkUpdate(context, ref),
@@ -83,10 +86,9 @@ class SettingsPage extends ConsumerWidget {
               final isDefault = endpoint == kDefaultEndpointUrl;
               return ListTile(
                 leading: const Icon(Icons.dns_outlined),
-                title: const Text('更新源', style: TextStyle(color: IptvColors.textPrimary)),
+                title: const Text('更新源'),
                 subtitle: Text(
                   isDefault ? '默认 (gh-proxy.com 代理 api.github.com)' : endpoint,
-                  style: const TextStyle(color: IptvColors.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -99,10 +101,9 @@ class SettingsPage extends ConsumerWidget {
           // ─── 关于三页直播 ─────────────────────────────────────────────────
           ListTile(
             leading: const Icon(Icons.info_outline),
-            title: const Text('关于三页直播', style: TextStyle(color: IptvColors.textPrimary)),
+            title: const Text('关于三页直播'),
             subtitle: const Text(
               '项目介绍 + GitHub 地址',
-              style: TextStyle(color: IptvColors.textSecondary),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showAbout(context),
@@ -115,10 +116,9 @@ class SettingsPage extends ConsumerWidget {
               final code = ref.watch(currentVersionCodeProvider);
               return ListTile(
                 leading: const Icon(Icons.tag_outlined),
-                title: const Text('版本号', style: TextStyle(color: IptvColors.textPrimary)),
+                title: const Text('版本号'),
                 subtitle: Text(
                   '$version (build $code)',
-                  style: const TextStyle(color: IptvColors.textSecondary),
                 ),
               );
             },

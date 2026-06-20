@@ -5,6 +5,32 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// v0.3.8+93 (6/20 P0-1 修复): Release APK 签名.
+// 从 android/key.properties 读 keystore 配置 (gitignored,  见 .gitignore).
+// 本地 dev (无 key.properties) 降级用 debug key,  跟之前一样,  不破坏
+// `flutter run --release` 体验.
+// CI (release.yml) 在 Build APK 前自己写 key.properties + 把 keystore 放
+// android/iptv-release.jks. 本文件不用再 patch.
+//
+// 安全收益: 老板用 release.keystore 签名的 APK 不能被 debug key 重签冒充,
+// Play Store 不会拒收, 设备无 adb install 后门风险.
+def keyPropsFile = rootProject.file("key.properties")
+def keyProps = new Properties()
+if (keyPropsFile.exists()) {
+    keyProps.load(new FileInputStream(keyPropsFile))
+}
+// storeFile 相对 key.properties (即 android/) 解析,  避免被 :app 模块解析错
+def _rawStore = keyProps["storeFile"] ?: ""
+def _storeAbs = _rawStore
+if (_rawStore && !_rawStore.startsWith("/") && !_rawStore.contains(":")) {
+    _storeAbs = new File(keyPropsFile.parentFile, _rawStore).absolutePath
+}
+def hasReleaseKey = keyPropsFile.exists() &&
+    _rawStore &&
+    keyProps["storePassword"] &&
+    keyProps["keyAlias"] &&
+    keyProps["keyPassword"]
+
 android {
     namespace = "com.threelive.tv"
     compileSdk = flutter.compileSdkVersion
@@ -35,11 +61,25 @@ android {
         //    cannot be present when splits abi filters are set : arm64-v8a"
     }
 
+    signingConfigs {
+        // v0.3.8+93: release 配置只在 key.properties 存在时注册,  否则用 debug.
+        // Gradle DSL 要求 signingConfigs {} 块必须在 buildTypes 之前声明.
+        release {
+            if (hasReleaseKey) {
+                storeFile file(_storeAbs)
+                storePassword keyProps["storePassword"]
+                keyAlias keyProps["keyAlias"]
+                keyPassword keyProps["keyPassword"]
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            // v0.3.8+93 (6/20 P0-1): 有 release keystore 走正式签名,
+            // 没有降级 debug key (本地 dev 体验).
+            // 之前的 TODO: Add your own signing config 已解决.
+            signingConfig = hasReleaseKey ? signingConfigs.release : signingConfigs.debug
         }
     }
 }

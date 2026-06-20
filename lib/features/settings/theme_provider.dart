@@ -38,13 +38,15 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 
 /// ThemeMode 持久化 + 切换.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
-  static const _kThemeModeKey = 'theme_mode';
+  // v0.3.8+93 (6/20 P1-3): 从 private 升 public,  main.dart 启动
+  // _applySystemUiOverlay(prefs) 要读,  不绕 ThemeModeNotifier.
+  static const kThemeModeKey = 'theme_mode';
 
   @override
   ThemeMode build() {
     // 启动时从 SharedPreferences 读, 默认 system (跟随系统).
     final prefs = ref.read(sharedPreferencesProvider);
-    final raw = prefs.getString(_kThemeModeKey);
+    final raw = prefs.getString(kThemeModeKey);
     return _parseMode(raw);
   }
 
@@ -52,7 +54,7 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   Future<void> setMode(ThemeMode mode) async {
     state = mode;
     final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_kThemeModeKey, _serializeMode(mode));
+    await prefs.setString(kThemeModeKey, _serializeMode(mode));
   }
 
   static ThemeMode _parseMode(String? raw) {

@@ -33,10 +33,20 @@ void main() async {
   // 现在改成 main 同步等 init 完成再 runApp. WidgetsFlutterBinding
   // 也必须 await, 因为 ensureInitialized 要用到 binding.
   WidgetsFlutterBinding.ensureInitialized();
-  // 卡 7 (6/17 老板需求): 状态栏需要手动设置, 否则默认黑色文字 + 透明背景
-  // 会在浅米色页面背景下看不清.  需求是浅色页面用黑状态栏文字, 深色页面
-  // 反转为白文字.  PlayerPage 自己会主动改 (黑屏看视频用白文字).
-  _applySystemUiOverlay();
+  // 6/18 P3-1: 把 PlayerService 创建提到 runApp 之前,  才可以传进
+  // PlayerRouteObserver + WidgetsBindingObserver.  media_kit Player()
+  // 必须 ensureInitialized() 后才能建,  上一步已 await 完成.
+  // 0.3.6+19: shared_preferences 也提前拿,  override 给 themeModeProvider.
+  // 跳过逻辑:  flutter_test 模式下 SharedPreferences 抛 MissingPluginException,
+  //  改成 noop override (用空内存版),  行为退化为默认 system theme.
+  final prefs = await _loadSharedPreferencesOrMock();
+  // v0.3.6+42: 加载持久化 health_score (SharedPreferences)
+  await CctvSourcePicker.loadPersistedScores();
+  // v0.3.8+93 (6/20 P1-3): 启动时先读 prefs, 再调 _applySystemUiOverlay.
+  // 之前用 system platformBrightness 近似,  用户手动切主题后启动会闪
+  // (APP 启动那一顿是错的颜色,  几帧后才被 MaterialApp 修复).
+  // 现在读 themeMode 持久化的值,  启动即正确.
+  _applySystemUiOverlay(prefs);
   // v0.3.7+50 (6/19): 强制全 APP 走 IPv4 — 国内 wifi/4G IPv6 happy-eyeballs
   // 会拖慢 1-2s.  HttpOverrides.global 一键劫持 dart:io HttpClient.
   if (IPv4Client.defaultEnabled) {
@@ -49,13 +59,6 @@ void main() async {
   ErrorWidget.builder =
       (FlutterErrorDetails details) => _CrashScreen(details: details);
   await _ensureMediaKitOrLog();
-  // 6/18 P3-1: 把 PlayerService 创建提到 runApp 之前,  才可以传进
-  // PlayerRouteObserver + WidgetsBindingObserver.  media_kit Player()
-  // 必须 ensureInitialized() 后才能建,  上一步已 await 完成.
-  // 0.3.6+19: shared_preferences 也提前拿,  override 给 themeModeProvider.
-  // 跳过逻辑:  flutter_test 模式下 SharedPreferences 抛 MissingPluginException,
-  //  改成 noop override (用空内存版),  行为退化为默认 system theme.
-  final prefs = await _loadSharedPreferencesOrMock();
   // v0.3.6+42: 加载持久化 health_score (SharedPreferences)
   await CctvSourcePicker.loadPersistedScores();
   // v0.3.7.2 (6/19): 运行时读 pubspec.yaml 真实版本号 — 替代之前 const 写死
@@ -125,15 +128,18 @@ List<String> _warmupHostnames() => const <String>[
   'ottrrs.hl.chinamobile.com', //  CCTV5 移动源
 ];
 
-void _applySystemUiOverlay() {
+void _applySystemUiOverlay(SharedPreferences prefs) {
   // v0.3.7+59 (6/19): 启动时默认 overlay 跟当前主题走 — 浅色主题用深状态栏图标 +
   // 米色导航栏; 暗色主题用白状态栏图标 + 深色导航栏.  之前 v0.3.7+50 写死浅色,
   // 暗色主题下状态栏图标深色在深背景上看不清, 导航栏还是米色扮眼.
-  // main() 启动时还没 build widget tree, 拿不到 Theme.  用系统 platformBrightness
-  // 近似:  系统是暗色 -> 默认 APP 应该 light 主题 (用户没设过),  手动切换主题后
-  // PlayerPage._applySystemUiOverlayForApp() 会重设.  这是 fallback.
-  final isDark = WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+  // v0.3.8+93 (6/20 P1-3): 从 prefs 读持久化 ThemeMode,  不用 system
+  // platformBrightness 近似 — 用户切过暗色后启动不再闪.
+  // ThemeMode.system: 跟 system 走.  light/dark: 强制跟随.  undefined: 当 system.
+  final stored = prefs.getString(ThemeModeNotifier.kThemeModeKey);
+  final platformIsDark = WidgetsBinding.instance.platformDispatcher
+          .platformBrightness ==
       Brightness.dark;
+  final isDark = stored == 'dark' || (stored != 'light' && platformIsDark);
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

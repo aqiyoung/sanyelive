@@ -1872,11 +1872,681 @@
       "sources": [
         "https://d1flvb4iqlercm.cloudfront.net/live/live_1080p_2nd.m3u8"
       ]
+    },
+    {
+      "id": "PetClubTV.tw@CNIPTV",
+      "name": "Pet Club TV",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "Pet Club TV"
+      ],
+      "logo": "https://i.imgur.com/ykPNNwQ.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://cdn-apse1-prod.tsv2.amagi.tv/linear/amg01076-lightningintern-petclub-samsungnz/playlist.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "TVBNews.tw@CNIPTV",
+      "name": "TVB News",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "TVB News"
+      ],
+      "logo": "https://i.imgur.com/Gwij0Fj.png",
+      "is_nsfw": false,
+      "sources": [
+        "http://r.jdshipin.com/CkuBd"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "BeautifulLifeTV.tw@CNIPTV",
+      "name": "Beautiful Life TV",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "Beautiful Life TV"
+      ],
+      "logo": "https://i.imgur.com/hkwcBM9.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://5ddce30eb4b55.streamlock.net/bltvhd/bltv1/playlist.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "GeniusGoGoGo.tw@CNIPTV",
+      "name": "Genius Go Go Go",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "Genius Go Go Go"
+      ],
+      "logo": "https://i.imgur.com/GGdnGqH.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV26.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "TaiwanPlusTV.tw@CNIPTV",
+      "name": "Taiwan Plus TV",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "Taiwan Plus TV"
+      ],
+      "logo": "https://i.imgur.com/SfcZyqm.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV78.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "TVBSAsia.tw@CNIPTV",
+      "name": "TVBS-Asia",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "TVBS-Asia"
+      ],
+      "logo": "https://i.imgur.com/4S1rkhm.png",
+      "is_nsfw": false,
+      "sources": [
+        "http://38.64.72.148/hls/modn/list/4005/playlist.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "CTiNews.tw@CNIPTV",
+      "name": "CTi News",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "CTi News"
+      ],
+      "logo": "https://i.imgur.com/fEUmRST.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV28.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "GlobalNews.us@CNIPTV",
+      "name": "Global News",
+      "country": "US",
+      "region": "Americas",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "Global News"
+      ],
+      "logo": "https://i.imgur.com/Q1Mrvjj.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV02.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "ETMall60.tw@CNIPTV",
+      "name": "ET Mall 60",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "ET Mall 60"
+      ],
+      "logo": "https://i.imgur.com/jkOgbLw.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV18.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": ".tw@CNIPTV",
+      "name": "寰宇新闻台",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "寰宇新闻台"
+      ],
+      "logo": "https://i.imgur.com/jkOgbLw.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV02.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": ".tw@CNIPTV",
+      "name": "东森财经新闻",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "东森财经新闻"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV03.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "Momo1.tw@CNIPTV",
+      "name": "Momo 1",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "Momo 1"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV04.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "Momo2.tw@CNIPTV",
+      "name": "Momo 2",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "Momo 2"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV05.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": ".tw@CNIPTV",
+      "name": "信大",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "信大"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV07.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "DW.de@CNIPTV",
+      "name": "DW",
+      "country": "DE",
+      "region": "Europe",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "DW"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV08.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": ".tw@CNIPTV",
+      "name": "中视新闻",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "中视新闻"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV09.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "NU.tw@CNIPTV",
+      "name": "NU",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "NU"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV10.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "NU2.tw@CNIPTV",
+      "name": "NU2",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "NU2"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV14.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "DaliTV.tw@CNIPTV",
+      "name": "Dali TV",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "Dali TV"
+      ],
+      "logo": "https://i.imgur.com/pFIMLsA.png",
+      "is_nsfw": false,
+      "sources": [
+        "http://www.dalitv.com.tw:4568/live/dali/index.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "JP1.tw@CNIPTV",
+      "name": "JP1",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "JP1"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV15.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "HD.tw@CNIPTV",
+      "name": "民视新闻HD",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "民视新闻HD"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV17.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "CCTV4K.cn@CNIPTV",
+      "name": "CCTV-4K 高清",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "CCTV-4K 高清"
+      ],
+      "logo": "https://live.fanmingming.com/tv/CCTV4.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://live-play-hls.cctvnews.cctv.com/CCTVChannel/channel_cctv4k_mbd.m3u8?auth_key=1782018000-1-b59134a2ead43d7f783f943c8f535e7bb80c5169575b2e8efcd5b3ddea21b41c-7bf6ee26845179fa282c9b2874393994&yid=b59134a2ead43d7f783f943c8f535e7bb80c5169575b2e8efcd5b3ddea21b41c"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "央视台"
+    },
+    {
+      "id": "KPop.tw@CNIPTV",
+      "name": "KPop",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "KPop"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV16.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "HD.tw@CNIPTV",
+      "name": "华视HD",
+      "country": "TW",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "华视HD"
+      ],
+      "logo": "https://i.imgur.com/k4fhcPl.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://raw.githubusercontent.com/ChiSheng9/iptv/master/TV12.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "港澳台"
+    },
+    {
+      "id": "CCTV15.cn@CNIPTV",
+      "name": "CCTV-15 音乐",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "CCTV-15 音乐"
+      ],
+      "logo": "https://live.fanmingming.com/tv/CCTV15.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://piccpndks.v.kcdnvip.com/audio/cctv15_2/index.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "央视台"
+    },
+    {
+      "id": "CCTV164K.cn@CNIPTV",
+      "name": "CCTV-16 4K",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "CCTV-16 4K"
+      ],
+      "logo": "https://live.fanmingming.com/tv/CCTV16.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://piccpndks.v.kcdnvip.com/audio/cctv16_2/index.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "央视台"
+    },
+    {
+      "id": "CCTV9.cn@CNIPTV",
+      "name": "CCTV-9 纪录",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "CCTV-9 纪录"
+      ],
+      "logo": "https://live.fanmingming.com/tv/CCTV9.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://v4-702cae17a28d6e4f0c0002bba021d934.livehwc4.com/play.kankanlive.com/live/1698423397390920.m3u8?sub_m3u8=true&edge_slice=true&user_session_id=c67571ba317f4cfb71e92fd7b8eeaebb"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "央视台"
+    },
+    {
+      "id": "CGNT.cn@CNIPTV",
+      "name": "CGNT 记录频道",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "CGNT 记录频道"
+      ],
+      "logo": "",
+      "is_nsfw": false,
+      "sources": [
+        "https://english-livebkali.cgtn.com/live/doccgtn_0.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "央视台"
+    },
+    {
+      "id": "CGNT.cn@CNIPTV",
+      "name": "CGNT 新闻频道",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "CGNT 新闻频道"
+      ],
+      "logo": "",
+      "is_nsfw": false,
+      "sources": [
+        "https://english-livebkali.cgtn.com/live/encgtn_0.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "央视台"
+    },
+    {
+      "id": ".cn@CNIPTV",
+      "name": "天津卫视",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "天津卫视"
+      ],
+      "logo": "https://live.fanmingming.com/tv/天津卫视.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://piccpndks.v.kcdnvip.com/audio/tianjin_2/index.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "卫视台"
+    },
+    {
+      "id": ".cn@CNIPTV",
+      "name": "安徽卫视",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "安徽卫视"
+      ],
+      "logo": "https://live.fanmingming.com/tv/安徽卫视.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://piccpndks.v.kcdnvip.com/audio/anhui_2/index.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "卫视台"
+    },
+    {
+      "id": ".cn@CNIPTV",
+      "name": "辽宁卫视",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "辽宁卫视"
+      ],
+      "logo": "https://live.fanmingming.com/tv/辽宁卫视.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://piccpndks.v.kcdnvip.com/audio/liaoning_2/index.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "卫视台"
+    },
+    {
+      "id": ".cn@CNIPTV",
+      "name": "云南卫视",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "云南卫视"
+      ],
+      "logo": "https://live.fanmingming.com/tv/云南卫视.png",
+      "is_nsfw": false,
+      "sources": [
+        "http://p2.ioioz.com/xgplayer.php?id=https://hwapi.yntv.net/ew265l/z1z6s5.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "卫视台"
+    },
+    {
+      "id": ".cn@CNIPTV",
+      "name": "四川卫视",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "四川卫视"
+      ],
+      "logo": "https://live.fanmingming.com/tv/四川卫视.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://piccpndks.v.kcdnvip.com/audio/sichuan_2/index.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "卫视台"
+    },
+    {
+      "id": ".cn@CNIPTV",
+      "name": "广东卫视",
+      "country": "CN",
+      "region": "Asia",
+      "categories": [
+        "general"
+      ],
+      "alt_names": [
+        "广东卫视"
+      ],
+      "logo": "https://live.fanmingming.com/tv/广东卫视.png",
+      "is_nsfw": false,
+      "sources": [
+        "https://piccpndks.v.kcdnvip.com/audio/guangdong_2/index.m3u8"
+      ],
+      "_source_repo": "hujingguang/ChinaIPTV",
+      "_source_group": "卫视台"
     }
   ],
   "_selected_at": "2026-06-20T22:30:00+08:00",
   "_selection_strategy": "country_quota + mainstream_keywords + name_length + logo",
   "_previous_count": 307,
   "_source_tested_at": "2026-06-20T22:00:00+08:00",
-  "_test_strategy": "HTTP Range 0-1 HEAD probe, 200/206/304 = OK"
+  "_test_strategy": "HTTP Range 0-1 HEAD probe, 200/206/304 = OK",
+  "_merged_at": "2026-06-20T22:55:00+08:00",
+  "_merge_strategy": "+116 iptv-org 110 + ChinaIPTV 35 OK (去重) = 145",
+  "_china_iptv_source": "hujingguang/ChinaIPTV cnTV_AutoUpdate.m3u8",
+  "_china_iptv_tested": "2026-06-20T22:50:00+08:00",
+  "_china_iptv_test": "Range HEAD 0-1, 200/206/304 = OK, 10s timeout"
 }

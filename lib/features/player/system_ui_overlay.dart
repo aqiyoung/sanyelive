@@ -9,18 +9,22 @@ import 'package:sanyelive/core/theme/colors.dart';
 /// v0.3.7+59:  systemNavigationBarColor 不用 scheme.surfaceContainer (M3 API 在
 /// ColorScheme.dark() 里可能未定义变 null,  底部导航栏会变成默认黑色扮眼).
 /// 改成显式 IptvColors.bgParchment / darkBg,  跟 AppBarTheme 一致.
+/// v0.3.8+112 (6/20 老板反馈 19:20 "全屏上白条"):
+/// 之前 statusBarColor: Colors.transparent 在 Android 14+ edge-to-edge 强制
+/// 透明, 状态栏背景 = theme scaffold bg = light 米白.  老板看到 status bar
+/// 是米白 (245,245,237) 跟视频区黑色对不上 = "上白条".
+/// 修法:  statusBarColor 改 Colors.black (跟视频区一体化) + systemNavigationBarColor
+/// 也改黑 (跟播放页黑色背景一体).  图标亮度保留 (亮色主题深图标,  暗色主题白图标).
 SystemUiOverlayStyle buildSystemUiOverlayForPlayer(
   ColorScheme scheme,
   Brightness brightness,
 ) {
   final isDark = brightness == Brightness.dark;
   return SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
+    statusBarColor: Colors.black,
     statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
     statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-    systemNavigationBarColor: isDark
-        ? IptvColors.darkBg
-        : IptvColors.bgParchment,
+    systemNavigationBarColor: Colors.black,
     systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
   );
 }

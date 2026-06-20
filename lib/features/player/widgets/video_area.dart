@@ -29,9 +29,20 @@ class VideoArea extends StatelessWidget {
     // 存在,  视频画面会 "画" 在状态栏背后 = 状态栏区域被视频像素取代,
     // 老板 14:59 反馈 "播放页状态栏还是没修复" (跟 14:34 那次是同一问题).
     // 底部不让 SafeArea 缩进,  接下方的 ChannelNowNext/控制条.
+    // v0.3.8+112 (6/20 老板反馈 19:20 "全屏左边白条 5% 屏幕宽 + 上白条"):
+    // 之前 SafeArea 默认 left/right 也是 true,  某些 Android 设备 (Mi Pad / 刘海屏)
+    // 左边有 cutout / 打孔,  让出 left 130 px ≈ 5% 屏幕宽.  Scaffold.bg = 黑
+    // 但 Android 14+ edge-to-edge 强制让透出区显示 theme scaffold bg = 米白,
+    //  老板看到 "左边白条".
+    // 修法:  SafeArea left:false, right:false — 视频区全宽填满,  状态栏 + 导航栏
+    // 颜色走 setSystemUIOverlayStyle (黑色).  top:false — 视频区撑到 status bar 后面,
+    // 让 status bar 区域看到视频黑色 (而不是 Android 14+ 强制 edge-to-edge 时显示的
+    // theme scaffold bg = 米白).  bottom:false — 接下方的 ChannelNowNext/控制条.
     return SafeArea(
-      top: true,
+      top: false,
       bottom: false,
+      left: false,
+      right: false,
       child: ClipRect(
         child: AspectRatio(
           aspectRatio: 16 / 9,

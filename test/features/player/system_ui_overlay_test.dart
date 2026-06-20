@@ -1,6 +1,10 @@
 // v0.3.7+50 (6/19): 状态栏/导航栏 brightness 跟主题走 — 纯函数测试.
 // 不 pump 整页 widget tree, 直接调 buildSystemUiOverlayForPlayer/App
 // 验证 light/dark 模式输出.
+// v0.3.8+112 (6/20): statusBarColor / systemNavigationBarColor 改 Colors.black
+// (跟视频区黑底一体化,  老板反馈 "上白条" + "左边白条" fix).  不再用 transparent
+// 也不用 IptvColors.bgParchment / darkBg.  图标亮度保留:  浅色主题深图标 /
+// 暗色主题白图标.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +36,10 @@ void main() {
           reason: 'iOS 端: 状态栏文字应匹配 dark 主题');
     });
 
-    test('statusBarColor 永远透明 (edge-to-edge)', () {
+    test('statusBarColor 永远黑色 (v0.3.8+112 跟视频区一体化, 防上白条)', () {
+      // v0.3.8+112:  之前 Colors.transparent 在 Android 14+ edge-to-edge 强制
+      // 透出 theme scaffold bg = 米白,  老板看到 "上白条".  改成 Colors.black
+      // (跟视频区黑底一体化,  状态栏看不到米白透出).
       final lightOverlay = buildSystemUiOverlayForPlayer(
         const ColorScheme.light(),
         Brightness.light,
@@ -41,31 +48,29 @@ void main() {
         const ColorScheme.dark(),
         Brightness.dark,
       );
-      expect(lightOverlay.statusBarColor, Colors.transparent);
-      expect(darkOverlay.statusBarColor, Colors.transparent);
+      expect(lightOverlay.statusBarColor, Colors.black);
+      expect(darkOverlay.statusBarColor, Colors.black);
     });
 
-    test('systemNavigationBarColor 浅色=米色 (v0.3.7+59 显式 IptvColors)', () {
-      // v0.3.7+59: 之前用 scheme.surfaceContainer (M3 API 在 ColorScheme.dark() 里
-      // 可能未定义变 null,  导航栏变默认黑色扮眼).  改成显式 IptvColors.bgParchment
-      // / darkBg,  跟 AppBarTheme 一致.
+    test('systemNavigationBarColor 浅色=黑色 (v0.3.8+112 跟播放页黑背景一体)', () {
+      // v0.3.8+112:  之前用 IptvColors.bgParchment (0xF5F4ED).  改成 Colors.black
+      // 跟播放页黑背景一体化,  老板看到 "底部米黄跟视频黑对不上".
       const scheme = ColorScheme.light();
       final overlay = buildSystemUiOverlayForPlayer(
         scheme,
         Brightness.light,
       );
-      // 浅色主题: 导航栏=米色 bgParchment (0xF5F4ED)
-      expect(overlay.systemNavigationBarColor, const Color(0xFFF5F4ED));
+      expect(overlay.systemNavigationBarColor, Colors.black);
     });
 
-    test('systemNavigationBarColor 暗色=深棕 (v0.3.7+59 显式 IptvColors)', () {
+    test('systemNavigationBarColor 暗色=黑色 (v0.3.8+112 跟播放页黑背景一体)', () {
+      // v0.3.8+112:  之前用 IptvColors.darkBg (0x1A1612).  改成 Colors.black.
       const scheme = ColorScheme.dark();
       final overlay = buildSystemUiOverlayForPlayer(
         scheme,
         Brightness.dark,
       );
-      // 暗色主题: 导航栏=深棕 darkBg (0x1A1612)
-      expect(overlay.systemNavigationBarColor, const Color(0xFF1A1612));
+      expect(overlay.systemNavigationBarColor, Colors.black);
     });
   });
 

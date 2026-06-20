@@ -28,6 +28,35 @@ CHANNELS_PATH = os.path.join(ROOT, 'assets', 'data', 'channels_cn.json')
 KNOWN_PATH = os.path.join(ROOT, 'assets', 'data', 'known_sources.json')
 
 
+def _source_priority(s):
+    """Source URL 优先级评分 — 越高越优先保留 (v0.3.8+125 限制 top-5 用)."""
+    url = s if isinstance(s, str) else (s.get('url') if isinstance(s, dict) else '')
+    if not url:
+        return -1000
+    score = 0
+    # 已知好 CDN 加分
+    good_domains = (
+        'live.fanmingming.com',
+        'ottrrs.hl.chinamobile.com',
+        'ott.mobaibox.com',
+        'cdnlive.',
+        'newlive.',
+    )
+    for d in good_domains:
+        if d in url:
+            score += 10
+            break
+    # https 略优先
+    if url.startswith('https://'):
+        score += 2
+    # localhost / 127.0.0.1 最低
+    if '127.0.0.1' in url or 'localhost' in url:
+        score -= 100
+    # 短域名略优先
+    score += max(0, 80 - len(url))
+    return score
+
+
 # 已知 ID 别名: 频道 name → known_sources key (无 .cn)
 NAME_TO_KNOWN_KEY = {
     'CCTV-5': 'CCTV5',
@@ -231,6 +260,32 @@ def merge():
         if not c.get('sources'):
             no_match.append(c.get('id', '?'))
 
+    # Step 3 (v0.3.8+125): 限制每个 channel 的 sources 数量 ≤ 5
+    # (SourceFailover 不会跳 5 个源,  CI channels_cn_asset_test 验证).  按
+    # known 优先 + 不同域名优先 选 top-5.
+    truncated = 0
+    for c in channels:
+        sources = c.get('sources') or []
+        if not sources:
+            continue
+        # Dedup URLs first
+        seen_urls = set()
+        deduped = []
+        for s in sources:
+            url = s if isinstance(s, str) else (s.get('url') if isinstance(s, dict) else None)
+            if not url or url in seen_urls:
+                continue
+            seen_urls.add(url)
+            deduped.append(s)
+        # Sort by priority (known-good CDN first)
+        sorted_sources = sorted(deduped, key=_source_priority, reverse=True)
+        # Truncate to top-5
+        if len(sorted_sources) > 5:
+            truncated += 1
+            c['sources'] = sorted_sources[:5]
+        else:
+            c['sources'] = sorted_sources
+
     with open(CHANNELS_PATH, 'w', encoding='utf-8') as f:
         json.dump(channels, f, ensure_ascii=False, indent=2)
 
@@ -240,6 +295,7 @@ def merge():
     print(f'Created (new):     {created}')
     print(f'Skipped (has src): {skipped}')
     print(f'Still empty:       {len(no_match)}')
+    print(f'Truncated (src>5): {truncated}')
 
     # 验证 CCTV5 + 卫视
     print('\n=== CCTV5 + 卫视 验证 ===')

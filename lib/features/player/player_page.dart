@@ -89,17 +89,27 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     ref.read(playerServiceProvider);
     // v0.3.8+109: 预热 channelsProvider (避免 _tryAutoPlay await channels.future 的 1-2s 延后)
     unawaited(ref.read(channelsProvider.future));
-    // v0.3.8+109: 立即设 loading 状态 (不依赖 addPostFrameCallback)
-    _primeLoadingState();
+    // v0.3.8+125 (6/21): _primeLoadingState 移到 addPostFrameCallback —
+    // 同步调会触发 ChangeNotifier.notifyListeners 在 build 中, Riverpod 抛
+    // "Tried to modify a provider while the widget tree was building" (CI
+    // navigation_test / player_theme_test / fullscreen_overlay_test 全部 fail).
+    // addPostFrameCallback 在第一帧 drawFrame 后才跑, 这时 player service
+    // 立刻变 loading,  老板点频道第二帧看到 "正在打开…"  UI.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _primeLoadingState();
+    });
     // 进入页面时尝试播放
     WidgetsBinding.instance.addPostFrameCallback((_) => _tryAutoPlay());
     // v0.3.8+114:  恢复控件隐身计时器 — 点屏幕显示 + 3s 自动隐.
     WidgetsBinding.instance.addPostFrameCallback((_) => _resetHideTimer());
   }
 
-  /// v0.3.8+109 (6/20): 立即让 player state 进入 loading — 不等
-  /// addPostFrameCallback 也不等 channelsProvider.  老板点进频道 第一帧
-  /// 就看到 "正在打开…" loading,  不会以为没响应.
+  /// v0.3.8+109 (6/20): 让 player state 进入 loading — 不等 addPostFrameCallback
+  /// 也不等 channelsProvider.  老板点进频道 第一帧/第二帧 就看到 "正在打开…"
+  /// loading,  不会以为没响应.
+  /// v0.3.8+125 (6/21): 改成 addPostFrameCallback 调 (player_page.dart initState
+  /// 注释详述) — 同步调会触发 Riverpod "modify during build" 异常.
   void _primeLoadingState() {
     final svc = ref.read(playerServiceProvider);
     svc.primeLoadingState();

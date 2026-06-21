@@ -92,6 +92,9 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         channelsProvider.overrideWith((ref) async => _channels),
+        channelsStreamProvider.overrideWith((ref) async* {
+          yield _channels;
+        }),
         favoritesServiceProvider.overrideWithValue(svc),
         // 收藏页用不到 startup,  覆盖掉避免 SharedPreferences 依赖
         startupServiceProvider.overrideWithValue(StartupService()),

@@ -84,6 +84,9 @@ class _FakeRepo extends ChannelRepository {
 
 List<Override> _testOverrides() => <Override>[
       channelsProvider.overrideWith((ref) async => _kFixtureChannels),
+      channelsStreamProvider.overrideWith((ref) async* {
+        yield _kFixtureChannels;
+      }),
       channelRepositoryProvider
           .overrideWithValue(const _FakeRepo(_kFixtureChannels)),
       mediaKitVideoControllerProvider.overrideWithValue(_FakeVideoController()),

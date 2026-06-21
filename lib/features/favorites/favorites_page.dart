@@ -20,7 +20,7 @@ class FavoritesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncFavs = ref.watch(favoritesProvider);
-    final asyncChannels = ref.watch(channelsProvider);
+    final asyncChannels = ref.watch(channelsStreamProvider);
 
     return Scaffold(
       // 6/18 v0.3.6.1 hotfix: 删 scaffold 硬编码 bgParchment,

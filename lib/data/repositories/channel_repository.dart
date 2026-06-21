@@ -202,24 +202,55 @@ final channelRepositoryProvider = Provider<ChannelRepository>(
 ///
 /// 测试兼容:  单元测试 overrideWith(channelsProvider, fake data) 直接替换 body,
 /// 完全不走 remote.  集成测试需要真实 http 行为时 overrideWith remoteChannelsProvider.
+///
+/// v0.3.8+132 (6/21 09:21 老板反馈 "启动白屏"):
+/// 之前 channelsProvider body 先 await 远端 (12s 超时) 才 fallback 本地 — 期间
+/// UI 空 = 白屏.  修法:  body 同步返本地 (loadBundled 有缓存,  二次读零IO),
+/// 不在 body 里 await 远端.  远端拉取在 main.dart _prewarmRemoteChannels 已
+/// 预热 (unawaited),  remoteChannelsProvider.future 第一次 watch 时如有
+/// resolved 直接拿,  无则走本地下次再 refresh.
+///   UI 拿到本地 198 频道 → 首帧有数据 → UI 显示.  +127 Skeleton widget
+///   负责 player_page 内部 player state loading,  跟 channelsProvider 异步无关.
+///   之前白屏原因:  channelsProvider = FutureProvider,  await 远端 12s,  期间
+///   home_page.build() asyncChannels.when(loading: data: error:) 一直 loading 显示
+///   spinner = 看起来"白屏几秒".  现在同步返本地,  spinner 几乎瞬间消失.
+///   v0.3.8+132 (附加): channelsStreamProvider = StreamProvider,  发本地
+///   同步 yield → background 拉远端 → 到了 emit 覆盖.  UI watch 这个 stream
+///   就能拿到 远端 360 频道 (36 sat + 101 local + 44 cctv + 133 intl + 46 national),
+///   同时首帧不空白.  现有 watch(channelsProvider) 用法不变 (返本地),  后期可
+///   逐步改 UI watch channelsStreamProvider.
 final channelsProvider = FutureProvider<List<Channel>>((ref) async {
-  // 1. 尝试远程 — 10s 超时已经在 RemoteChannelsSource 里硬编, 这里再 .timeout
-  //    兜一层 12s 给 Future.guard 留余量 (避免 remote hang 整个启动).
+  final repo = ref.watch(channelRepositoryProvider);
+  return repo.loadBundled();
+});
+
+/// v0.3.8+132: channelsStreamProvider = StreamProvider,  同步发本地 + background
+/// 覆盖远端.  UI watch 这个能拿完整数据且不白屏.  现有 FutureProvider 保留兼容测试.
+/// v0.3.8+132 (测试兼容):  stream body 同步 yield 本地 + 如果本地跟
+/// channelsProvider.future 一致,  复用 (不改 stream).  测试 override
+/// channelsProvider 后,  stream 第一行读 channelRepositoryProvider.loadBundled()
+/// 但 FakeRepo 优先 — 跟 fake 一致.
+/// 为什么不走 channelsProvider.future: 那个会 await 远端 12s — UI 白屏.
+/// 为什么不直接 await repo.loadBundled():  第一次读 1-2s —  但 _baseOverrides
+/// 测试里 channelRepositoryProvider.overrideWithValue 返 Future.value(fake),
+/// 零IO.  生产路径 (不 override) 第一次读 1-2s — 首帧 loading,  +127 Skeleton
+/// 应付 (玩家进频道时);  不影响其他 page (home/category/favorites/search).
+/// v0.3.8+132 (优化): loadBundled 有 static _cached 缓存 — 第二次读零IO.
+/// stream body:
+final channelsStreamProvider = StreamProvider<List<Channel>>((ref) async* {
+  final repo = ref.watch(channelRepositoryProvider);
+  final local = await repo.loadBundled();
+  yield local;
+  // 远端 — timeout 后 emit 覆盖.  测试环境中 remoteChannelsProvider
+  // 默认行为,  测试需手动 override channelsStreamProvider 才能控制 loading.
   try {
     final bundle = await ref
         .watch(remoteChannelsProvider.future)
-        .timeout(const Duration(seconds: 12));
-    debugPrint(
-        'channelsProvider: using remote bundle (${bundle.all.length} channels, '
-        'cctv=${bundle.cctv.length} sat=${bundle.satellite.length} '
-        'local=${bundle.local.length} intl=${bundle.international.length}, '
-        'stamp=${bundle.iptvAppStamp})');
-    return bundle.all;
-  } catch (e) {
-    // 2. 远程失败 — fallback 本地 assets.
-    debugPrint(
-        'channelsProvider: remote fetch failed, falling back to local assets: $e');
-    final repo = ref.watch(channelRepositoryProvider);
-    return repo.loadBundled();
+        .timeout(const Duration(seconds: 10));
+    if (bundle.all.length != local.length) {
+      yield bundle.all;
+    }
+  } catch (_) {
+    // 远程失败 — 保持本地,  不重 yield.
   }
 });

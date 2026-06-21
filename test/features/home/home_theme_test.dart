@@ -68,6 +68,9 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         channelsProvider.overrideWith((ref) async => _channels),
+        channelsStreamProvider.overrideWith((ref) async* {
+          yield _channels;
+        }),
         channelRepositoryProvider.overrideWithValue(const _FakeRepo(_channels)),
         favoritesServiceProvider.overrideWithValue(
           FavoritesService(store: InMemoryFavoritesStore()),

@@ -27,6 +27,9 @@ void main() {
           channelsProvider.overrideWith(
             (ref) async => <Channel>[],
           ),
+          channelsStreamProvider.overrideWith((ref) async* {
+            yield <Channel>[];
+          }),
           // 卡 6: HomePage 需要 StartupService + FavoritesService
           startupServiceProvider.overrideWithValue(StartupService()),
           favoritesServiceProvider.overrideWithValue(

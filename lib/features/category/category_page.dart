@@ -24,7 +24,7 @@ class CategoryPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncChannels = ref.watch(channelsProvider);
+    final asyncChannels = ref.watch(channelsStreamProvider);
 
     return Scaffold(
       body: SafeArea(

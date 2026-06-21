@@ -89,6 +89,9 @@ Future<void> _pump(
 
 List<Override> _baseOverrides() => [
       channelsProvider.overrideWith((ref) async => _channels),
+      channelsStreamProvider.overrideWith((ref) async* {
+        yield _channels;
+      }),
       channelRepositoryProvider.overrideWithValue(const _FakeRepo(_channels)),
       favoritesServiceProvider.overrideWithValue(
         FavoritesService(store: InMemoryFavoritesStore()),
@@ -229,6 +232,11 @@ void main() {
           ..._baseOverrides(),
           channelsProvider.overrideWith(
               (ref) async => await Completer<List<Channel>>().future),
+          // v0.3.8+132: channelsStreamProvider 同样测 loading — yield 前不 emit 任何事件
+          channelsStreamProvider.overrideWith(
+              (ref) async* {
+            // 等于一个永不 emit 的 stream — AsyncValue.loading 永久状态
+          }),
         ],
       );
       // 只 pump 一次, 不等 settle (让 Future 保持 pending)

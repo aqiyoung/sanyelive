@@ -95,6 +95,9 @@ Future<void> _pump(
 }) async {
   final overrides = <Override>[
     channelsProvider.overrideWith((ref) async => channels),
+    channelsStreamProvider.overrideWith((ref) async* {
+      yield channels;
+    }),
     channelRepositoryProvider.overrideWithValue(_FakeRepo(channels)),
     favoritesServiceProvider.overrideWithValue(
       FavoritesService(store: InMemoryFavoritesStore()),

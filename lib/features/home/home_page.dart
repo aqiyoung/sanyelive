@@ -46,7 +46,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final asyncChannels = ref.watch(channelsProvider);
+    // v0.3.8+132 (6/21 老板反馈 "启动白屏"):  之前用 channelsProvider (FutureProvider
+    // 返本地).  改用 channelsStreamProvider (StreamProvider 同步 yield 本地 → background
+    // 远端覆盖).  这样首帧拿到本地 198 频道,  UI 不空白;  远端 360 频道 (36 sat +
+    // 101 local + 44 cctv + 133 intl) 到了后 UI 刷新,  老板看到正确的分类 (卫视
+    // 36 个 vs 老 35 个 加上 HenanTVSatellite + 中文命名).
+    final asyncChannels = ref.watch(channelsStreamProvider);
 
     return Scaffold(
       // 6/17 v0.2.3 P1-5: TV 端 root 包 TvFocusGroup,  CategoryCard /

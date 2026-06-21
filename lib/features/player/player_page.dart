@@ -148,17 +148,17 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   }
 
   Future<void> _tryAutoPlay() async {
-    final channels = await ref.read(channelsProvider.future);
-    if (!mounted) return;
-    final ch = _findChannel(channels, widget.channelId);
-    if (ch == null) {
-      // 频道 id 找不到, 不动 player
-      return;
-    }
-    if (!mounted) return; // 再检查一次, 避免 dispose 之后调用
-    // 卡 6: 保存 last channel id, 主页下次进入会显示「继续观看」
-    unawaited(ref.read(startupServiceProvider).saveLastChannel(ch.id));
     try {
+      final channels = await ref.read(channelsProvider.future);
+      if (!mounted) return;
+      final ch = _findChannel(channels, widget.channelId);
+      if (ch == null) {
+        // 频道 id 找不到, 不动 player
+        return;
+      }
+      if (!mounted) return; // 再检查一次, 避免 dispose 之后调用
+      // 卡 6: 保存 last channel id, 主页下次进入会显示「继续观看」
+      unawaited(ref.read(startupServiceProvider).saveLastChannel(ch.id));
       await ref.read(playerServiceProvider).play(ch);
     } catch (e) {
       debugPrint('PlayerPage._tryAutoPlay failed: $e');
@@ -197,9 +197,33 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: asyncChannels.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
+          loading: () {
+            // v0.3.8+148: 如果 player state 已经是 loading (primeLoadingState 设的),
+            // 显示 _VideoArea (含 "正在打开…" loading overlay), 不是 spinner.
+            if (state.status == PlayerStatus.loading ||
+                state.status == PlayerStatus.error) {
+              return Column(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: _VideoArea(
+                      controller: controller,
+                      state: state,
+                      channel: null,
+                    ),
+                  ),
+                  _TopBar(
+                    channel: null,
+                    state: state,
+                    onBack: () => context.pop(),
+                  ),
+                ],
+              );
+            }
+            return const Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            );
+          },
           error: (e, _) => Center(
             child: Text(
               '加载失败: $e',
@@ -284,9 +308,27 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: asyncChannels.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
+          loading: () {
+            // v0.3.8+148: 如果 player state 已经是 loading, 显示 _VideoArea
+            // (含 loading overlay), 不是 spinner.
+            if (state.status == PlayerStatus.loading ||
+                state.status == PlayerStatus.error) {
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: _VideoArea(
+                      controller: controller,
+                      state: state,
+                      channel: null,
+                    ),
+                  ),
+                ],
+              );
+            }
+            return const Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            );
+          },
           error: (e, _) => Center(
             child: Text(
               '加载失败: $e',

@@ -156,10 +156,11 @@ class EpgService {
   /// v0.3.8+93 (6/20 P0-2): 拿不到 iptv-org XMLTV 时给个象样的节目卡.
   /// 实际接入 XMLTV 后这个会被覆盖.
   List<EpgEntry> _placeholderSchedule(String channelId) {
-    // v0.3.8+164: 统一用 UTC, 跟 currentProgram/nextProgram 的 toUtc() 对齐.
-    // 之前占位用本地时间 / 查询用 UTC, 导致占位 EPG 永远匹配不到.
-    final now = DateTime.now().toUtc();
-    final today = DateTime.utc(now.year, now.month, now.day);
+    // v0.3.9+3: 改用 local time (Beijing), 跟 now_next_program.dart 的
+    // DateTime.now() 对齐.  之前用 UTC 导致占位 EPG 边界算到前一天, 凌晨
+    // 06:46 Beijing 误显 "夜间档 · 午夜剧场" (UTC 22:46 → h=22).
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     String titleFor(DateTime start) {
       final h = start.hour;
       if (h < 6) return '夜间档 · 重播精选';

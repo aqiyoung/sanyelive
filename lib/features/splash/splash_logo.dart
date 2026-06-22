@@ -28,6 +28,7 @@
 //
 // 1.25× scale = SVG 192 → widget 240, 跟 motion.css #logo-root 240px 对齐.
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -285,12 +286,12 @@ class _SplashLogo extends StatelessWidget {
               opacity: antLeftScale > 0 ? 1.0 : 0.0,
               child: CustomPaint(
                 size: Size(
-                  _s((77 - 91).abs()) + _s(6),
-                  _s((68 - 56).abs()) + _s(6),
+                  _s((77.0 - 91.0).abs()) + _s(6),
+                  _s((68.0 - 56.0).abs()) + _s(6),
                 ),
                 painter: _ExtendLinePainter(
                   start: const Offset(0, 0),
-                  end: Offset(_s(77 - 91), _s(56 - 68)),
+                  end: Offset(_s(77.0 - 91.0), _s(56.0 - 68.0)),
                   progress: antLeftScale,
                   color: const Color(0xFFFFFFFF),
                   strokeWidth: _s(6),
@@ -307,12 +308,12 @@ class _SplashLogo extends StatelessWidget {
               opacity: antRightScale > 0 ? 1.0 : 0.0,
               child: CustomPaint(
                 size: Size(
-                  _s((114 - 100).abs()) + _s(6),
-                  _s((68 - 56).abs()) + _s(6),
+                  _s((114.0 - 100.0).abs()) + _s(6),
+                  _s((68.0 - 56.0).abs()) + _s(6),
                 ),
                 painter: _ExtendLinePainter(
                   start: const Offset(0, 0),
-                  end: Offset(_s(114 - 100), _s(56 - 68)),
+                  end: Offset(_s(114.0 - 100.0), _s(56.0 - 68.0)),
                   progress: antRightScale,
                   color: const Color(0xFFFFFFFF),
                   strokeWidth: _s(6),

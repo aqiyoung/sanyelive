@@ -8,8 +8,9 @@ import 'package:path/path.dart' as p;
 
 import '../core/http/ipv4_client.dart';
 import '../data/models/epg.dart';
+import '../data/sources/epg_xmltv_source.dart';
 
-/// EPG 服务 — 懒加载 + 7 天缓存 + 当前/下一档节目展示
+/// EPG 服务 — 懒加载 + 缓存 + 当前/下一档节目展示
 class EpgService {
   EpgService({http.Client? client, Database? db})
       : _client = client ?? IPv4Client(),
@@ -20,7 +21,13 @@ class EpgService {
   final http.Client _client;
   final Database? _injectedDb;
   Database? _db;
-  static const Duration _cacheMaxAge = Duration(days: 7);
+  static const Duration _cacheMaxAge = Duration(hours: 6);
+
+  // v0.3.10 (6/23): 51zmt XMLTV 全量缓存. 首次 fetch 时拉 ~1MB XML,
+  // 解析后存 _allEntries; 后续按 channel 查询走内存 (避免每频道重复拉).
+  XmltvEpgSource? _xmltvSource;
+  Map<String, List<EpgEntry>> _allEntries = const {};
+  bool _xmltvLoaded = false;
 
   static const String _table = 'epg_cache';
 
@@ -106,9 +113,18 @@ class EpgService {
 
       final raw = row['entries_json'] as String;
       final list = json.decode(raw) as List;
-      return list
+      final entries = list
           .map((e) => EpgEntry.fromJson(e as Map<String, dynamic>))
           .toList();
+
+      // v0.3.10 (6/23): EPG 是未来时刻 — 如果缓存里的所有档位都已在过去
+      // (例: 缓存是昨天拉的, 24h+2h 范围已过期), 当作 stale, 重新拉.
+      // 否则 currentProgram 返回 null, UI "暂无节目".
+      if (entries.isNotEmpty) {
+        final latestEnd = entries.map((e) => e.end).reduce((a, b) => a.isAfter(b) ? a : b);
+        if (!latestEnd.isAfter(DateTime.now())) return null;
+      }
+      return entries;
     } catch (e) {
       debugPrint('EpgService._readCache failed: $e');
       return null;
@@ -135,26 +151,62 @@ class EpgService {
 
   // ─── 网络层 ───
 
-  /// 从 iptv-org EPG API 拉取 (XMLTV 格式)
-  /// 实际 API: https://iptv-org.github.io/epg/guides/{cc}.xml.gz
-  /// 这里 stub 返回空列表, 真实项目需要 XMLTV 解析.
-  /// v0.3.8+93 (6/20 P0-2): 不再返回空 — 拿不到 EPG 时返时段占位.
-  /// 4 档占位: 上午档 (06-12) / 下午档 (12-18) / 黄金档 (18-22) / 夜间档 (22-06).
-  /// UI 看到的是「黄金档 · 电视剧」而不是「暂无节目信息」,  体验成倍提升.
-  /// iptv-org 接进后,  _fetchRemote 返真数据,  _placeholderSchedule 被覆盖.
+  /// 拉取某频道的 EPG 列表.
+  ///
+  /// v0.3.10 (6/23): 接 51zmt 真实 XMLTV 数据源
+  /// (http://epg.51zmt.top:8000/e.xml.gz, 老板 6/23 06:50 反馈
+  /// "不应该拉真实的实时数据吗").
+  ///
+  /// 1) 首次调用拉全量 XML (lazy,  ~1MB, 102 频道),
+  ///    解析后存 _allEntries (in-memory cache,  跟 sqflite 缓存不冲突:
+  ///    sqflite 缓各频道的过滤后档位 6h,  全量 XML 只在 session 内
+  ///    持有避免重复拉).
+  /// 2) 映射 iptv-org channel.id (CCTV1.cn) → 51zmt channel.id (1).
+  /// 3) 按时间过滤: 现在 -2h → 现在 +24h (避免给一堆昨天/明天的档).
+  /// 4) 拉取 / 映射失败 → fallback _placeholderSchedule (v0.3.9+3 时区
+  ///    已对齐 Beijing local).
   Future<List<EpgEntry>> _fetchRemote(String channelId) async {
-    // iptv-org 不直接提供 per-channel JSON EPG
-    // 真实实现需要下载 XMLTV gz 并解析 (卡 +5 计划内)
-    // 当前 release 用时段占位 + 频道名当档名,  老设备也能看个象样的节目卡.
-    final entries = _placeholderSchedule(channelId);
-    // ignore: avoid_print
-    debugPrint('EpgService._fetchRemote: 占位 EPG for $channelId (${entries.length} 档)');
-    return entries;
+    // 1) 首次: 拉全量 XMLTV
+    if (!_xmltvLoaded) {
+      try {
+        _xmltvSource ??= XmltvEpgSource();
+        final xml = await _xmltvSource!.fetchXml();
+        _allEntries = await _xmltvSource!.parseXml(xml);
+        _xmltvLoaded = true;
+        debugPrint(
+            'EpgService: 51zmt XMLTV loaded ${_allEntries.length} channels, '
+            '${_allEntries.values.fold(0, (a, b) => a + b.length)} programmes');
+      } catch (e) {
+        debugPrint('EpgService: 51zmt fetch failed: $e, fallback to placeholder');
+        return _placeholderSchedule(channelId);
+      }
+    }
+
+    // 2) 映射 channel.id
+    final epgChId = XmltvEpgSource.mapChannelIdToEpg(channelId);
+    if (epgChId == null || !_allEntries.containsKey(epgChId)) {
+      return _placeholderSchedule(channelId);
+    }
+
+    // 3) 过滤时间 (避免过期/超远未来档)
+    final now = DateTime.now();
+    final entries = _allEntries[epgChId]!.where((e) {
+      return e.end.isAfter(now.subtract(const Duration(hours: 2))) &&
+          e.start.isBefore(now.add(const Duration(hours: 24)));
+    }).toList();
+
+    // 4) 过滤后空 → fallback (避免返回空导致 UI "暂无节目")
+    return entries.isEmpty ? _placeholderSchedule(channelId) : entries;
   }
 
   /// 时段占位 — 按当地时间今天生成 4 档.
   /// v0.3.8+93 (6/20 P0-2): 拿不到 iptv-org XMLTV 时给个象样的节目卡.
   /// 实际接入 XMLTV 后这个会被覆盖.
+  /// v0.3.9+3: 改用 local time (Beijing), 跟 now_next_program.dart 的
+  /// DateTime.now() 对齐.  之前用 UTC 导致占位 EPG 边界算到前一天, 凌晨
+  /// 06:46 Beijing 误显 "夜间档 · 午夜剧场" (UTC 22:46 → h=22).
+  /// v0.3.10 (6/23):  51zmt 接入后, 本方法只剩 fallback 角色.  保留逻辑
+  /// 不变 (local time, 4 时段).
   List<EpgEntry> _placeholderSchedule(String channelId) {
     // v0.3.9+3: 改用 local time (Beijing), 跟 now_next_program.dart 的
     // DateTime.now() 对齐.  之前用 UTC 导致占位 EPG 边界算到前一天, 凌晨

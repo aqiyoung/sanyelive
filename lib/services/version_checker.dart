@@ -437,7 +437,9 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
             return data;
           }
           if (data is String) {
-            final s = data.trimStart();
+            // v0.3.10.9: 用 replaceFirst(RegExp('^\\s+'), '') 代替 trimStart — 
+            // trimStart 是 Dart 3.0+ 加的, 跟 Flutter 3.29.3 的 SDK 31 编译不兼容.
+            final s = data.replaceFirst(RegExp(r'^\s+'), '');
             if (s.startsWith('<') || s.startsWith('<!DOCTYPE')) {
               lastError = 'HTML response (CF protective registration?) from $url';
             } else {

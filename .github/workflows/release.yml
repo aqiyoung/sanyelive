@@ -143,10 +143,14 @@ jobs:
           echo "✅ --require-cctv --allow-empty-cctv 闸通过 (v0.3.8+108, 7 个 CCTV 主频道有源 + 11 个故意空)"
 
       - name: Build APK (release, signed)
-        # 卡 6: 明确 target-platform android-arm64, 减少体积 (电视/手机都是 arm64).
-        # flutter build apk 默认是 fat APK (arm + arm64 + x64), 体积接近 60MB;
-        # 限定 arm64 后可控制在 20MB 以内.
-        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+        # v0.3.10.9 (6/23 老板反馈 TV 盒子 x86 装不上): 之前 6/18 v0.3.5.1
+        # 只打 arm64 (--target-platform android-arm64), 体积小但 32-bit ARM 老盒
+        # 跟 x86 盒装不上. 老板拍板: "做个 32 位的包" — 改打 arm + arm64 + x64
+        # 3 个 ABI, 老板按设备选装.
+        #   - arm64-v8a.apk: arm64 设备 (2020+ 手机/盒子, 当贝/小米/创维)
+        #   - armeabi-v7a.apk: 32-bit ARM 老盒 (运营商定制盒/老电视)
+        #   - x86_64.apk: x86 盒 (阿里盒子部分型号)
+        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi
       - name: Rename APK with sanyelive + version
         run: |
           set -e
@@ -230,16 +234,18 @@ jobs:
           body: |
             ## 三页直播 ${{ github.ref_name }}
 
-            ### APK 信息
-            - **架构**: arm64-v8a (Android TV / 手机 / 盒子)
+            ### APK 信息 (3 个架构 split, 按设备选装)
+            - **arm64-v8a.apk**: arm64 设备 (2020+ 手机/盒子, 当贝/小米/创维) — 首选
+            - **armeabi-v7a.apk**: 32-bit ARM 老盒 (运营商定制盒/老电视) — 老板 6/23 反馈 32-bit 装不上, 加这个
+            - **x86_64.apk**: x86 盒 (阿里盒子部分型号)
             - **大小**: ${{ env.APK_SIZE_MB }} MB
             - **SHA256**: `${{ env.APK_SHA256 }}`
 
             ### 下载
-            下载下方 `sanyelive-${{ github.ref_name }}-arm64-v8a.apk` 即可在 Android 设备上安装。
-            `.sha256` 文件包含校验值, 可用 `sha256sum` 验证。
+            下载对应架构的 `sanyelive-${{ github.ref_name }}-<abi>.apk` (例如 `-arm64-v8a.apk`).
+            `.sha256` 文件包含校验值, 可用 `sha256sum` 验证.
 
             ### 构建信息
             - Flutter: 3.29.3
-            - Target: android-arm64, release, split-per-abi
+            - Target: android-arm + android-arm64 + android-x64, release, split-per-abi
             - Workflow: `.github/workflows/release.yml`

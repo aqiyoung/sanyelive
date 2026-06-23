@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart'
@@ -219,6 +220,52 @@ final channelsProvider = FutureProvider<List<Channel>>((ref) async {
   final repo = ref.watch(channelRepositoryProvider);
   return repo.loadBundled();
 });
+
+/// v0.3.10.6 (6/23 老板拍): 频道分类数据每日 03:00 Beijing 自动后台刷新.
+/// 启动时: 如果 _channelsLastRefresh > 1 天就立即重拉.
+Timer? _channelsRefreshTimer;
+DateTime? _channelsLastRefresh;
+
+/// 启动 channels 每日 03:00 Beijing 自动后台刷新.
+void startChannelsAutoRefresh({required ProviderContainer container}) {
+  _channelsRefreshTimer?.cancel();
+  _scheduleNextChannelsRefresh(container);
+
+  // 启动瞬间: 如果 last refresh > 1 天就立即重拉
+  final now = DateTime.now();
+  if (_channelsLastRefresh == null ||
+      now.difference(_channelsLastRefresh!) > const Duration(days: 1)) {
+    Future.microtask(() => _refreshChannelsNow(container));
+  }
+}
+
+void _scheduleNextChannelsRefresh(ProviderContainer container) {
+  final now = DateTime.now();
+  var next = DateTime(now.year, now.month, now.day, 3, 0, 0); // Beijing 03:00
+  if (next.isBefore(now)) next = next.add(const Duration(days: 1));
+  final delay = next.difference(now);
+  debugPrint('ChannelsRefresh: 下次刷新 ${delay.inHours}h ${delay.inMinutes.remainder(60)}m 后 ($next)');
+  _channelsRefreshTimer = Timer(delay, () {
+    _refreshChannelsNow(container);
+    _scheduleNextChannelsRefresh(container);
+  });
+}
+
+Future<void> _refreshChannelsNow(ProviderContainer container) async {
+  _channelsLastRefresh = DateTime.now();
+  try {
+    container.invalidate(channelRepositoryProvider);
+    container.invalidate(remoteChannelsProvider);
+    debugPrint('ChannelsRefresh: 触发 channelRepository + remoteChannels invalidate');
+  } catch (e) {
+    debugPrint('ChannelsRefresh: invalidate 失败: $e');
+  }
+}
+
+void stopChannelsAutoRefresh() {
+  _channelsRefreshTimer?.cancel();
+  _channelsRefreshTimer = null;
+}
 
 /// v0.3.8+132: channelsStreamProvider = StreamProvider,  同步发本地 + background
 /// 覆盖远端.  UI watch 这个能拿完整数据且不白屏.  现有 FutureProvider 保留兼容测试.

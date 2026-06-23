@@ -132,6 +132,9 @@ void main() async {
   // 三个 provider 一起预热:  Player + VideoController + PlayerService.
   container.read(mediaKitPlayerProvider); // 创建 Player (200-400ms)
   container.read(mediaKitVideoControllerProvider); // 创建 VideoController (300-800ms)
+  // v0.3.10.6 (6/23 老板拍): 频道分类数据每日 03:00 自动后台刷新, 不用更新 APP.
+  // 启动时: 如果 last refresh > 1 天就立即重拉一次.
+  startChannelsAutoRefresh(container: container);
   // v0.3.8+133 (6/21 09:49 老板反馈 "启动白屏"):
   //  预热 ChannelRepository — loadBundled 第一次 1-2s 读 + parse assets/data,
   //  玩家进频道 initState await channelsProvider.future 会多等这一下.

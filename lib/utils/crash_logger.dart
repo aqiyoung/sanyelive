@@ -7,6 +7,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show ErrorCallback;  // v0.3.10.11: 兼容写法 (ErrorCallback 在 dart:ui)
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -30,7 +31,11 @@ class CrashLogger {
     _initialized = true;
 
     try {
-      final dir = await getExternalFilesDir();
+      // v0.3.10.11: 用 getApplicationSupportDirectory() (path_provider 跨平台 API),
+      // Android 上写到 /data/data/<pkg>/files/ — 老板 adb pull 需要 root
+      // (但 adb shell run-as <pkg> cat ... 可读). 简单点改用
+      // getApplicationDocumentsDirectory() → /data/data/<pkg>/app_flutter
+      final dir = await getApplicationSupportDirectory();
       if (dir != null) {
         _logFile = File('${dir.path}/crash.log');
         if (!await _logFile!.exists()) {

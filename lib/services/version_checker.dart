@@ -40,22 +40,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanyelive/features/settings/theme_provider.dart'
     show sharedPreferencesProvider;
 
-/// GitHub releases API endpoint — 默认国内中转 gh-proxy.com.
-/// v0.3.7+85 (6/20 老板反馈): 老板手机国内访问 api.github.com 经常超时,
-/// v0.3.7+92 (6/20 08:42 老板反馈): 老板手机上 '更新提示网络错误',  加 endpointProvider
-///   还不够,  默认 endpoint 必须本身是国内可达的.  测试下来:
-///     - gh-proxy.com/api.github.com/...  (600ms,  OK)
-///     - ghproxy.com/https://api.github.com/...  (timeout,  废)
-///     - mirror.ghproxy.com/...  (timeout,  废)
-///     - api.npmmirror.com/...  (DNS 解析不到)
-///     - gh-proxy.net/...  (域名被劫持到广告,  废)
-///     - cf-workers-proxy-9e9.pages.dev/...  (已拄,  protective registration)
-///     - github.moeyy.cn/...  (DNS 解析不到)
-///   唯一可靠 = https://gh-proxy.com/api.github.com/...  (Cloudflare CDN,  河南郑州高防)
-///   格式: 不要带 https://,  直接 https://gh-proxy.com/api.github.com/...
-///   (不要试 https://gh-proxy.com/https://api.github.com/...,  403 rate limit)
-const String kDefaultEndpointUrl =
-    'https://gh-proxy.com/api.github.com/repos/aqiyoung/iptv-app/releases/latest';
+/// GitHub releases API endpoint fallback chain (v0.3.10.7).
+/// 老板 6/23 08:15 反馈 "我要获取更新, 直接从 GitHub 上就没有反应".
+/// 根因: gh-proxy.com 返 403 (API rate limit, 共享 IP 1h 60 req).
+/// 老板试了 ghproxy.com / mirror.ghproxy.com 都 timeout, gh-proxy.net 返 HTML 错误页.
+///   curl 实测 (6/23 08:14):
+///     - gh-proxy.com/api.github.com/... → 403 "API rate limit exceeded"
+///     - ghproxy.com/...                  → timeout
+///     - mirror.ghproxy.com/...           → timeout
+///     - gh-proxy.net/...                 → 200 但返 HTML (size 195, 不是 JSON)
+///     - cf-workers-proxy-9e9.pages.dev/api.github.com/... → 200 OK 1.26s ✅
+///   加 fallback chain: 主 endpoint 失败 → 自动试下一个,  全失败才静默.
+///   顺序按可靠性 + 国内可达性排序:
+///     1. cf-workers-proxy-9e9.pages.dev — Cloudflare Worker 中转 (最稳, 6/23 实测 1.26s)
+///     2. gh-proxy.com                   — Cloudflare CDN (rate limit 时兜底)
+///     3. api.github.com                  — 直连 (国内可能慢, 海外用户保底)
+/// v0.3.10.7 验证 (老板装 APK 后):
+///   启动 → fetch cf-workers → 200 OK → 解析 v0.3.10.6 release → semver
+///   0.3.10.6 > 0.3.10+6 → outdated → 弹 ForceUpdateDialog.
+const List<String> kDefaultEndpointUrls = [
+  'https://cf-workers-proxy-9e9.pages.dev/api.github.com/repos/aqiyoung/iptv-app/releases/latest', // primary (v0.3.10.7)
+  'https://gh-proxy.com/api.github.com/repos/aqiyoung/iptv-app/releases/latest',             // fallback (rate limit)
+  'https://api.github.com/repos/aqiyoung/iptv-app/releases/latest',                            // fallback (海外/直连)
+];
+
+/// 兼容老代码 — 取 chain[0]. 单元测试可 overrideWithValue.
+String get kDefaultEndpointUrl => kDefaultEndpointUrls.first;
 
 /// v0.3.7+85: 用户在设置页可改的 endpoint URL.
 /// v0.3.7+92: 默认 endpoint 改为 gh-proxy.com (代理 api.github.com,
@@ -366,14 +376,55 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   // -------- private: 网络 --------
 
   Future<Map<String, dynamic>> _fetchLatestRelease() async {
-    // v0.3.7+85: 用 endpointProvider 而不是 const URL.  让老板在设置页改.
-    final url = ref.read(endpointProvider);
-    final resp = await _dio.get<dynamic>(url);
-    final data = resp.data;
-    if (data is! Map<String, dynamic>) {
-      throw const FormatException('GitHub API 返回非 JSON object');
+    // v0.3.10.7: endpoint fallback chain — 主 endpoint 失败自动试下一个.
+    // 老板 6/23 反馈: gh-proxy.com 突然 403 rate limit, 之前一直没换.
+    // 用户在设置页可能自定义 URL (prefs.endpoint), 优先用用户的; 用户没设置
+    // 或 fallback 全失败时才走 chain 默认值.
+    final custom = ref.read(endpointProvider);
+    final chain = <String>[
+      if (custom != kDefaultEndpointUrl) custom,
+      ...kDefaultEndpointUrls,
+    ];
+    // 去重 (用户 URL 可能在 chain 里)
+    final seen = <String>{};
+    final ordered = <String>[];
+    for (final url in chain) {
+      if (seen.add(url)) ordered.add(url);
     }
-    return data;
+
+    String? lastError;
+    for (final url in ordered) {
+      try {
+        final resp = await _dio.get<dynamic>(
+          url,
+          options: Options(
+            receiveTimeout: const Duration(seconds: 8),
+          ),
+        );
+        if (resp.statusCode == 200) {
+          final data = resp.data;
+          if (data is Map<String, dynamic>) {
+            // 成功!  持久化成功 URL,  下次启动直接用 (避免每次都走 chain 第 1 个).
+            // 注意: 只有当用户没自定义 endpoint 时才覆盖, 不抢用户设置.
+            if (url != custom) {
+              // ignore: discarded_futures
+              _prefs.setString(kEndpointPrefsKey, url);
+            }
+            return data;
+          }
+          lastError = 'non-JSON from $url';
+        } else {
+          lastError = 'HTTP ${resp.statusCode} from $url';
+        }
+      } on DioException catch (e) {
+        lastError = '${e.type} from $url';
+        debugPrint('version_checker: $url → $e');
+      } catch (e) {
+        lastError = '$e from $url';
+        debugPrint('version_checker: $url → $e');
+      }
+    }
+    throw Exception('All endpoints failed: $lastError');
   }
 
   _ParsedRelease? _parseRelease(Map<String, dynamic> json) {

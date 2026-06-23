@@ -10,6 +10,7 @@
 //   4. TV 端 (shortestSide >= 600) 默认就走全屏覆盖 — _TopBar 渲染且
 //      永远 visible (v0.3.5.5 P0 fix).
 
+import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as sqflite_ffi;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

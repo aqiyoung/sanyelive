@@ -6,6 +6,7 @@
 //      图标用 colorScheme.onSurface (深棕) 跟浅底对比.
 //   2. 暗色主题下, 同样的 widget 用暗色板 (深底 + 浅色图标).
 //   3. Scaffold 仍是 Colors.black (视频区, 不跟主题联动).
+import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as sqflite_ffi;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

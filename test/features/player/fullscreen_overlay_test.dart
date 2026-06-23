@@ -434,7 +434,7 @@ class _FakeChannelRepository implements ChannelRepository {
 /// v0.3.10.8: channelsProvider body 走远端 enrich,  测试不连 HTTP.
 /// 返空 bundle → _enrichWithRemoteSources 走 fallback (保持本地).
 class _FakeEmptyRemoteSourcesNotifier
-    extends AsyncNotifier<RemoteSourcesBundle> {
+    extends RemoteSourcesNotifier {
   @override
   Future<RemoteSourcesBundle> build() async {
     return const RemoteSourcesBundle(

@@ -59,9 +59,9 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
 ///   启动 → fetch cf-workers → 200 OK → 解析 v0.3.10.6 release → semver
 ///   0.3.10.6 > 0.3.10+6 → outdated → 弹 ForceUpdateDialog.
 const List<String> kDefaultEndpointUrls = [
-  'https://cf-workers-proxy-9e9.pages.dev/api.github.com/repos/aqiyoung/iptv-app/releases/latest', // primary (v0.3.10.7)
-  'https://gh-proxy.com/api.github.com/repos/aqiyoung/iptv-app/releases/latest',             // fallback (rate limit)
+  'https://gh-proxy.com/api.github.com/repos/aqiyoung/iptv-app/releases/latest',             // primary (v0.3.10.9: cf-workers-proxy 6/23 11:50 返 HTML Protective Registration, 改 gh-proxy 为 primary)
   'https://api.github.com/repos/aqiyoung/iptv-app/releases/latest',                            // fallback (海外/直连)
+  'https://cf-workers-proxy-9e9.pages.dev/api.github.com/repos/aqiyoung/iptv-app/releases/latest', // fallback (历史上 1.26s 200 OK, 现在被 CF 保护, 留作兜底)
 ];
 
 /// 兼容老代码 — 取 chain[0]. 单元测试可 overrideWithValue.
@@ -263,6 +263,24 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     return const VersionCheckIdle();
   }
 
+  /// v0.3.10.9 (6/23 老板反馈): settings 手动点 "检查更新" 调 force check,
+  /// 跳过 1h cache. 1h cache 是为启动自动 check 设计, 不应该阻塞用户手动 retry.
+  Future<void> checkForce() async {
+    if (_checking) return;
+    _checking = true;
+    try {
+      // 清掉 cache + dismissed marker, 强制 fetch.
+      await _prefs.remove(_Keys.lastCheckTime);
+      await _prefs.remove(_Keys.dismissedVersion);
+      await _prefs.remove(_Keys.dismissedAt);
+      state = const VersionCheckIdle(); // 先清状态, 让 settings 弹个 loading / 直接 fetch
+      // 复用 checkOnStartup 逻辑 (清完 cache 就走 fetch path)
+      await checkOnStartup();
+    } finally {
+      _checking = false;
+    }
+  }
+
   /// 启动时调 — 走 cache 策略 + 异步 fetch.
   /// 立即返回 (microtask 里跑),  弹 dialog 由 main.dart listen state.
   Future<void> checkOnStartup() async {
@@ -395,14 +413,20 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     String? lastError;
     for (final url in ordered) {
       try {
+        // v0.3.10.9: responseType=plain,  让 dio 不自动 parse JSON.  我们自己
+        // 检测 body 是不是 JSON (cf-workers-proxy 6/23 11:50 返 HTML 会让
+        // 默认 json parser 抛 FormatException → 整个 chain 都 fail).
         final resp = await _dio.get<dynamic>(
           url,
           options: Options(
             receiveTimeout: const Duration(seconds: 8),
+            responseType: ResponseType.plain,
           ),
         );
         if (resp.statusCode == 200) {
           final data = resp.data;
+          // v0.3.10.9 (6/23 老板反馈 "更新检测失败"): cf-workers-proxy 6/23 11:50 返 HTML "Protective Registration" (Cloudflare 保护域名),
+          // dio 默认 responseType=json 会自动 parse 失败抛 DioException. 改成 plain + 自己 check body 是不是 JSON.
           if (data is Map<String, dynamic>) {
             // 成功!  持久化成功 URL,  下次启动直接用 (避免每次都走 chain 第 1 个).
             // 注意: 只有当用户没自定义 endpoint 时才覆盖, 不抢用户设置.
@@ -412,7 +436,16 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
             }
             return data;
           }
-          lastError = 'non-JSON from $url';
+          if (data is String) {
+            final s = data.trimStart();
+            if (s.startsWith('<') || s.startsWith('<!DOCTYPE')) {
+              lastError = 'HTML response (CF protective registration?) from $url';
+            } else {
+              lastError = 'non-JSON string from $url: ${s.substring(0, s.length.clamp(0, 80))}';
+            }
+          } else {
+            lastError = 'non-JSON from $url (${data.runtimeType})';
+          }
         } else {
           lastError = 'HTTP ${resp.statusCode} from $url';
         }

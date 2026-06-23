@@ -284,7 +284,7 @@ class SettingsPage extends ConsumerWidget {
     // 3. 触发 fetch (走 checkOnStartup 跟启动时一致 — 1h cache / fetch API).
     // ⚠️ 必须用 .read(provider.notifier) 而不是 .read(provider),
     // .notifier 拿 Notifier 实例,  才能调 checkOnStartup() 方法.
-    ref.read(versionCheckerProvider.notifier).checkOnStartup();
+    ref.read(versionCheckerProvider.notifier).checkForce();
   }
 
   void _showUpdateSnack(BuildContext context, String msg) {

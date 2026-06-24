@@ -101,19 +101,19 @@ class _HomePageState extends ConsumerState<HomePage> {
         icon: Icons.public,
       ),
       CategoryItem(
-        id: 'news',
+        id: '新闻',
         title: '新闻',
         subtitle: '$news 个频道',
         icon: Icons.newspaper,
       ),
       CategoryItem(
-        id: 'movies',
+        id: '影视',
         title: '影视',
         subtitle: '$movies 个频道',
         icon: Icons.movie,
       ),
       CategoryItem(
-        id: 'kids',
+        id: '少儿',
         title: '少儿',
         subtitle: '$kids 个频道',
         icon: Icons.child_care,

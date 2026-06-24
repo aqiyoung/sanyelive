@@ -137,20 +137,20 @@ class CategoryPage extends ConsumerWidget {
       // v0.3.8+110 (6/20 老板加国际频道):  i18n 中文名
       case 'international':
         return '国际';
-      // v0.3.10.13 (6/24): 中文分类名
-      case 'news':
+      // v0.3.10.13 (6/24): 中文分类名 (id 也是中文)
+      case '新闻':
         return '新闻';
-      case 'movies':
+      case '影视':
         return '影视';
-      case 'kids':
+      case '少儿':
         return '少儿';
-      case 'sports':
+      case '体育':
         return '体育';
-      case 'education':
+      case '科教':
         return '科教';
-      case 'entertainment':
+      case '娱乐':
         return '娱乐';
-      case 'finance':
+      case '财经':
         return '财经';
       default:
         return '频道';

@@ -73,11 +73,20 @@ class Channel {
     if (cats.isEmpty) return null;
     // v0.3.10.16: 英文分类名映射为中文
     const enToZh = {
-      'general': '综合', 'news': '新闻', 'movies': '影视',
-      'kids': '少儿', 'sports': '体育', 'education': '科教',
-      'entertainment': '娱乐', 'culture': '文化', 'documentary': '纪录片',
-      'animation': '动画', 'lifestyle': '生活', 'science': '科学',
-      'travel': '旅游', 'finance': '财经',
+      'general': '综合',
+      'news': '新闻',
+      'movies': '影视',
+      'kids': '少儿',
+      'sports': '体育',
+      'education': '科教',
+      'entertainment': '娱乐',
+      'culture': '文化',
+      'documentary': '纪录片',
+      'animation': '动画',
+      'lifestyle': '生活',
+      'science': '科学',
+      'travel': '旅游',
+      'finance': '财经',
     };
     return enToZh[cats.first] ?? cats.first;
   }
@@ -109,7 +118,7 @@ class Channel {
     }
     // 省级卫视 fallback: XXTV.cn / XXSatelliteTV.cn / XXInternationalChannel (不含 Satellite 关键词的)
     if ((RegExp(r'^[A-Z][a-z]+TV').hasMatch(cid) ||
-         cid.contains('InternationalChannel')) &&
+            cid.contains('InternationalChannel')) &&
         country == 'CN') {
       return ['卫视'];
     }
@@ -126,8 +135,7 @@ class Channel {
     }
 
     // 国际 (非中文区)
-    if (country.isNotEmpty &&
-        !{'CN', 'HK', 'TW', 'MO'}.contains(country)) {
+    if (country.isNotEmpty && !{'CN', 'HK', 'TW', 'MO'}.contains(country)) {
       return ['国际'];
     }
 

@@ -107,8 +107,7 @@ class DnsWarmup {
   /// 单 host 预热: Socket.connect + 立刻 close.  任何异常吞掉, 返回 ok=false.
   static Future<WarmupResult> _warmupOne(String host) async {
     try {
-      final socket =
-          await Socket.connect(host, 80).timeout(_perHostTimeout);
+      final socket = await Socket.connect(host, 80).timeout(_perHostTimeout);
       // 立刻关闭: 目的只是让 OS 把 DNS + TCP 状态缓存下来, 不真传数据.
       // v0.3.8+169: catch close 异常, 避免 unhandled exception.
       try {
@@ -119,7 +118,9 @@ class DnsWarmup {
       return WarmupResult(host: host, ok: false, error: 'SocketException: $e');
     } on TimeoutException {
       return WarmupResult(
-          host: host, ok: false, error: 'timeout ${_perHostTimeout.inMilliseconds}ms');
+          host: host,
+          ok: false,
+          error: 'timeout ${_perHostTimeout.inMilliseconds}ms');
     } catch (e) {
       return WarmupResult(host: host, ok: false, error: e.toString());
     }

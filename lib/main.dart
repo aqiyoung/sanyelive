@@ -111,7 +111,8 @@ void main() async {
   } catch (e) {
     runtimeVersion = '0.0.0+0';
     runtimeVersionCode = 0;
-    debugPrint('=== PackageInfo.fromPlatform failed, fallback to 0.0.0+0: $e ===');
+    debugPrint(
+        '=== PackageInfo.fromPlatform failed, fallback to 0.0.0+0: $e ===');
   }
   // v0.3.10.16: 预检 libmpv.so — 在创建 ProviderContainer 之前.
   // MethodChannel 走 Android System.loadLibrary, ARM 32-bit dlopen 失败
@@ -185,17 +186,17 @@ void main() async {
 /// 真实清单: 来自 assets/data/known_sources.json 的 CCTV1-15/5+/4K/35 卫视 top2 URL
 /// 抽 host.  这些是用户首屏会点的高频频道,  预热后切台硬延迟砍半.
 List<String> _warmupHostnames() => const <String>[
-  'ldncctvwbcdtxy.liveplay.myqcloud.com', // CCTV 1/2/3... myqcloud 主源
-  '198.204.240.250', //  198.204 IPTV 平台
-  'go.bkpcp.top', //  老公开源兜底
-  'ivi.bupt.edu.cn', //  北邮公开源兜底
-  'play-qukan.cztv.com', //  浙江卫视
-  '39.134.115.163', //  39.134 IPTV 平台
-  '183.207.248.71', //  江苏卫视
-  '39.134.24.166', //  上海卫视
-  '118.81.195.79', //  北京卫视
-  'ottrrs.hl.chinamobile.com', //  CCTV5 移动源
-];
+      'ldncctvwbcdtxy.liveplay.myqcloud.com', // CCTV 1/2/3... myqcloud 主源
+      '198.204.240.250', //  198.204 IPTV 平台
+      'go.bkpcp.top', //  老公开源兜底
+      'ivi.bupt.edu.cn', //  北邮公开源兜底
+      'play-qukan.cztv.com', //  浙江卫视
+      '39.134.115.163', //  39.134 IPTV 平台
+      '183.207.248.71', //  江苏卫视
+      '39.134.24.166', //  上海卫视
+      '118.81.195.79', //  北京卫视
+      'ottrrs.hl.chinamobile.com', //  CCTV5 移动源
+    ];
 
 /// v0.3.8+125 (6/21):  启动预热 remote channels — 后台 fire-and-forget.
 /// 失败静默,  channelsProvider 会自动 fallback 本地 assets/data.

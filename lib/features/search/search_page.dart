@@ -315,72 +315,72 @@ class _SearchResultTile extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
-              children: [
-                SizedBox(
-                  width: 48,
-                  child: Text(
-                    channelNumber,
-                    style: IptvTypography.serifTitle.copyWith(
-                      color: isSelected
-                          ? accent
-                          // ignore: deprecated_member_use
-                          : accent.withOpacity(0.5),
-                    ),
+            children: [
+              SizedBox(
+                width: 48,
+                child: Text(
+                  channelNumber,
+                  style: IptvTypography.serifTitle.copyWith(
+                    color: isSelected
+                        ? accent
+                        // ignore: deprecated_member_use
+                        : accent.withOpacity(0.5),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      channel.displayName,
+                      style: IptvTypography.sansTitle.copyWith(
+                        // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface (x2)
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    if (channel.country.isNotEmpty) ...[
+                      const SizedBox(height: 2),
                       Text(
-                        channel.displayName,
-                        style: IptvTypography.sansTitle.copyWith(
-                          // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface (x2)
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.onSurface
-                              : Theme.of(context).colorScheme.onSurface,
-                        ),
+                        '${channel.country} · ${channel.primaryCategory}',
+                        style: IptvTypography.caption,
                       ),
-                      if (channel.country.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          '${channel.country} · ${channel.primaryCategory}',
-                          style: IptvTypography.caption,
-                        ),
-                      ],
                     ],
+                  ],
+                ),
+              ),
+              FavoriteIcon(
+                channelId: channel.id,
+                channelName: channel.displayName,
+              ),
+              if (channel.sources.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'LIVE',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 1.0,
+                    ),
                   ),
                 ),
-                FavoriteIcon(
-                  channelId: channel.id,
-                  channelName: channel.displayName,
-                ),
-                if (channel.sources.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.only(left: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'LIVE',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                ),
-              ],
-            ),
+            ],
           ),
         ),
-      );
+      ),
+    );
   }
 }

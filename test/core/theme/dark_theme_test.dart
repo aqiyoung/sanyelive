@@ -83,7 +83,8 @@ void main() {
 
     test('surfaceContainer == bgParchment (米色一致)', () {
       final light = IptvTheme.light();
-      expect(light.colorScheme.surfaceContainer, equals(IptvColors.bgParchment));
+      expect(
+          light.colorScheme.surfaceContainer, equals(IptvColors.bgParchment));
     });
 
     test('onSurface == textPrimary (深棕字跟米色底对比度)', () {

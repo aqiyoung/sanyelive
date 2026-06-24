@@ -151,8 +151,7 @@ class ChannelRepository {
   /// (call 端选不 merge,  避免隐式吞错).
   Future<Map<String, dynamic>?> _loadKnownSources() async {
     try {
-      final raw =
-          await rootBundle.loadString('assets/data/known_sources.json');
+      final raw = await rootBundle.loadString('assets/data/known_sources.json');
       return json.decode(raw) as Map<String, dynamic>;
     } catch (e) {
       debugPrint('ChannelRepository._loadKnownSources failed: $e');
@@ -168,8 +167,6 @@ class ChannelRepository {
     _pending = null;
   }
 }
-
-
 
 /// v0.3.8+117 (6/20 22:28 老板反馈): 走 isolate 解析 channels JSON.
 /// 必须是 top-level 函数 (compute() 只能传 top-level / static — 不能传
@@ -267,7 +264,8 @@ void _scheduleNextChannelsRefresh(ProviderContainer container) {
   var next = DateTime(now.year, now.month, now.day, 3, 0, 0); // Beijing 03:00
   if (next.isBefore(now)) next = next.add(const Duration(days: 1));
   final delay = next.difference(now);
-  debugPrint('ChannelsRefresh: 下次刷新 ${delay.inHours}h ${delay.inMinutes.remainder(60)}m 后 ($next)');
+  debugPrint(
+      'ChannelsRefresh: 下次刷新 ${delay.inHours}h ${delay.inMinutes.remainder(60)}m 后 ($next)');
   _channelsRefreshTimer = Timer(delay, () {
     _refreshChannelsNow(container);
     _scheduleNextChannelsRefresh(container);
@@ -279,7 +277,8 @@ Future<void> _refreshChannelsNow(ProviderContainer container) async {
   try {
     container.invalidate(channelRepositoryProvider);
     container.invalidate(remoteChannelsProvider);
-    debugPrint('ChannelsRefresh: 触发 channelRepository + remoteChannels invalidate');
+    debugPrint(
+        'ChannelsRefresh: 触发 channelRepository + remoteChannels invalidate');
   } catch (e) {
     debugPrint('ChannelsRefresh: invalidate 失败: $e');
   }
@@ -314,7 +313,8 @@ final channelsStreamProvider = StreamProvider<List<Channel>>((ref) async* {
   // v0.3.10.8 (6/23 老板拍): 本地 loadBundled 后立即 enrich 远端 sources.
   // 首帧 emit enriched 结果 (本地 + 远端 sources URLs).
   // 远端失败 fallback 本地 (_enrichWithRemoteSources 内部吞错).
-  final localEnriched = await _enrichWithRemoteSources(ref: ref, channels: local);
+  final localEnriched =
+      await _enrichWithRemoteSources(ref: ref, channels: local);
   yield localEnriched;
   // 远端 — timeout 后 emit 覆盖.  测试环境中 remoteChannelsProvider
   // 默认行为,  测试需手动 override channelsStreamProvider 才能控制 loading.
@@ -492,4 +492,3 @@ List<Channel> _mergeRemoteSources(
     );
   }).toList(growable: false);
 }
-

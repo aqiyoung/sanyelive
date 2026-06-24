@@ -50,7 +50,9 @@ class _FavoriteButtonState extends ConsumerState<FavoriteButton> {
     return IconButton(
       icon: Icon(
         _isFav ? Icons.favorite : Icons.favorite_border,
-        color: _isFav ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+        color: _isFav
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurfaceVariant,
         size: widget.size,
       ),
       onPressed: _toggle,
@@ -113,8 +115,9 @@ class _FavoriteIconState extends ConsumerState<FavoriteIcon> {
         padding: const EdgeInsets.all(4),
         child: Icon(
           _isFav ? Icons.favorite : Icons.favorite_border,
-          color:
-              _isFav ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+          color: _isFav
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurfaceVariant,
           size: widget.size,
         ),
       ),

@@ -15,9 +15,14 @@ void main() {
   group('sortByHealthScore', () {
     test('A score=0.9, B=0.6, C=0.3 → 优先选 A', () {
       final sources = <CctvSource>[
-        const CctvSource(url: 'http://a.com/playlist.m3u8', score: 0.9, method: 'tencent_cloud'),
-        const CctvSource(url: 'http://b.com/playlist.m3u8', score: 0.6, method: 'legacy'),
-        const CctvSource(url: 'http://c.com/playlist.m3u8', score: 0.3, method: 'legacy'),
+        const CctvSource(
+            url: 'http://a.com/playlist.m3u8',
+            score: 0.9,
+            method: 'tencent_cloud'),
+        const CctvSource(
+            url: 'http://b.com/playlist.m3u8', score: 0.6, method: 'legacy'),
+        const CctvSource(
+            url: 'http://c.com/playlist.m3u8', score: 0.3, method: 'legacy'),
       ];
       final sorted = sortByHealthScore(sources);
       expect(sorted.first.url, 'http://a.com/playlist.m3u8');
@@ -26,8 +31,12 @@ void main() {
 
     test('死源 (score=0) 排最后', () {
       final sources = <CctvSource>[
-        const CctvSource(url: 'http://dead.com/playlist.m3u8', score: 0.0, method: 'legacy'),
-        const CctvSource(url: 'http://alive.com/playlist.m3u8', score: 0.7, method: 'tencent_cloud'),
+        const CctvSource(
+            url: 'http://dead.com/playlist.m3u8', score: 0.0, method: 'legacy'),
+        const CctvSource(
+            url: 'http://alive.com/playlist.m3u8',
+            score: 0.7,
+            method: 'tencent_cloud'),
       ];
       final sorted = sortByHealthScore(sources);
       expect(sorted.first.url, 'http://alive.com/playlist.m3u8');
@@ -41,8 +50,10 @@ void main() {
 
     test('同分 → 保持输入顺序 (stable sort)', () {
       final sources = <CctvSource>[
-        const CctvSource(url: 'http://first.com/playlist.m3u8', score: 0.8, method: 'a'),
-        const CctvSource(url: 'http://second.com/playlist.m3u8', score: 0.8, method: 'b'),
+        const CctvSource(
+            url: 'http://first.com/playlist.m3u8', score: 0.8, method: 'a'),
+        const CctvSource(
+            url: 'http://second.com/playlist.m3u8', score: 0.8, method: 'b'),
       ];
       final sorted = sortByHealthScore(sources);
       expect(sorted[0].url, 'http://first.com/playlist.m3u8');

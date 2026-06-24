@@ -217,7 +217,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   /// 明 + 白图标, 让视频占满整个屏幕并隐藏状态栏/导航栏.  退出: edgeToEdge
   /// + portrait (默认) + 还原成全 APP 默认 (黑图标 + colorScheme nav bar).
   /// v0.3.5.4: 退出全屏时 nav bar 用 colorScheme.surfaceContainer 跟主题联动.
-    /// P2-2: 切真全屏 ↔ 退出.  全屏: immersiveSticky + landscape + 状态栏透
+  /// P2-2: 切真全屏 ↔ 退出.  全屏: immersiveSticky + landscape + 状态栏透
   /// 明 + 白图标, 让视频占满整个屏幕并隐藏状态栏/导航栏.  退出: edgeToEdge
   /// + portrait (默认) + 还原成全 APP 默认 (黑图标 + colorScheme nav bar).
   /// v0.3.5.4: 退出全屏时 nav bar 用 colorScheme.surfaceContainer 跟主题联动.
@@ -354,60 +354,62 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         child: _isInitializing
             ? const _PlayerPageSkeleton()
             : asyncChannels.when(
-          loading: () => Center(
-            child: CircularProgressIndicator(color: scheme.onSurfaceVariant),
-          ),
-          error: (e, _) => Center(
-            child: Text(
-              '加载失败: $e',
-              style: TextStyle(color: scheme.onSurfaceVariant),
-            ),
-          ),
-          data: (channels) {
-            final channel = _findChannel(channels, widget.channelId);
-            return Column(
-              children: [
-                // 视频区 (16:9)
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: VideoArea(
-                    controller: controller,
-                    state: state,
-                    channel: channel,
+                loading: () => Center(
+                  child:
+                      CircularProgressIndicator(color: scheme.onSurfaceVariant),
+                ),
+                error: (e, _) => Center(
+                  child: Text(
+                    '加载失败: $e',
+                    style: TextStyle(color: scheme.onSurfaceVariant),
                   ),
                 ),
-                // 顶栏 (返回 / 频道名 / 时钟)
-                // v0.3.8+115: 嵌入布局用 _onTopBarBack (现在只 pop, 因为嵌入
-                // 布局 _isFullscreen=false — 跟全屏 _buildFullscreenOverlay 一致).
-                // v0.3.8+131: 嵌入布局背景 scheme.surface (浅米色),  深棕字.
-                TopBar(
-                  channel: channel,
-                  state: state,
-                  onBack: _onTopBarBack,
-                  isFullscreen: false,
-                ),
-                // 节目卡 + 频道横滑 (可滚动)
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (channel != null) NowNextProgram(channel: channel),
-                        if (channel != null)
-                          NextChannelsStrip(
-                            currentChannelId: channel.id,
-                            allChannels: channels,
-                            onChannelTap: _switchTo,
+                data: (channels) {
+                  final channel = _findChannel(channels, widget.channelId);
+                  return Column(
+                    children: [
+                      // 视频区 (16:9)
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: VideoArea(
+                          controller: controller,
+                          state: state,
+                          channel: channel,
+                        ),
+                      ),
+                      // 顶栏 (返回 / 频道名 / 时钟)
+                      // v0.3.8+115: 嵌入布局用 _onTopBarBack (现在只 pop, 因为嵌入
+                      // 布局 _isFullscreen=false — 跟全屏 _buildFullscreenOverlay 一致).
+                      // v0.3.8+131: 嵌入布局背景 scheme.surface (浅米色),  深棕字.
+                      TopBar(
+                        channel: channel,
+                        state: state,
+                        onBack: _onTopBarBack,
+                        isFullscreen: false,
+                      ),
+                      // 节目卡 + 频道横滑 (可滚动)
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (channel != null)
+                                NowNextProgram(channel: channel),
+                              if (channel != null)
+                                NextChannelsStrip(
+                                  currentChannelId: channel.id,
+                                  allChannels: channels,
+                                  onChannelTap: _switchTo,
+                                ),
+                              const SizedBox(height: 24),
+                            ],
                           ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
       ),
     );
   }
@@ -447,197 +449,197 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       body: _isInitializing
           ? const _PlayerFullscreenSkeleton()
           : asyncChannels.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: scheme.onSurfaceVariant),
-        ),
-        error: (e, _) => Center(
-          child: Text(
-            '加载失败: $e',
-            style: TextStyle(color: scheme.onSurfaceVariant),
-          ),
-        ),
-        data: (channels) {
-          final channel = _findChannel(channels, widget.channelId);
-          // P0-1: 视频区点一下切控件可见性 (原本不可见 -> 显示, 显示中 -> 立即隐藏)
-          return Stack(
-            children: [
-              // 视频区填满全屏 (控件盖在上面, 隐身时露出视频)
-              // v0.3.7+79 (6/19 老板反馈): 加 onDoubleTap handler 防止双击切频道误触.
-              //  老板反馈 "全屏播放双击后切换频道的 bug".
-              // 根因: GestureDetector 默认有 double-tap recognizer,  双击拆成 2 次
-              //  onTap,  看着像 控件显示/隐藏快速切换,  加上 _controlsVisible 切
-              //  节目卡 + 横滑 立即显/隐,  老板误以为 "切频道".
-              // 修法: 显式 onDoubleTap handler (什么都不做,  只 触发一次),  让 Flutter
-              //  gesture arena 把双击识别为 "双击" 而不是 2 次单击,  控件不会快速切换.
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  // v0.3.8+114: 恢复 +111 之前的设计 — onTap 切控件显隐.
-                  // 老板 20:37 反馈: "你那点一下出来, 等 3 秒它自动隐藏,
-                  // 这个必须要有的, 要不然一直挂着不好看".  +113 删 3s 隐
-                  // 是错的逻辑.  恢复 +111 的 IgnorePointer + AnimatedOpacity
-                  // 设计 (3s 自动隐 + 防切频道 bug).
-                  onTap: () {
-                    if (_controlsVisible) {
-                      // 显示中: 立即隐藏, 不重置计时器
-                      _hideControlsTimer?.cancel();
-                      setState(() => _controlsVisible = false);
-                    } else {
-                      // 隐藏中: 显示并重置计时器
-                      _resetHideTimer();
-                    }
-                  },
-                  onDoubleTap: () {
-                    // v0.3.7+79: 显式空 handler.  让 Flutter gesture arena
-                    // 识别为双击 (不拆成 2 次 onTap).  实际行为: 什么都不做.
-                  },
-                  child: VideoArea(
-                    controller: controller,
-                    state: state,
-                    channel: channel,
-                  ),
+              loading: () => Center(
+                child:
+                    CircularProgressIndicator(color: scheme.onSurfaceVariant),
+              ),
+              error: (e, _) => Center(
+                child: Text(
+                  '加载失败: $e',
+                  style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
               ),
-              // v0.3.7+64 (6/19 老板反馈): 全屏态下 TopBar 也参与 _controlsVisible
-              // 隐身 — 之前 v0.3.5.5 永远 visible 导致全屏时台标 (CCTV 频道名 + LIVE
-              // + 状态条 + 心形收藏) 一直显示挡视频.  现在 3s 后整体隐,  视频是
-              // 唯一视觉中心. 退出全屏按钮改成独立浮动按钮 (右上角 small icon),
-              // 全屏隐身后仍可点 (用户最关键操作).
-              // 6/18 P1 hotfix: 控件层 — 整体走 _controlsVisible 隐身
-              // (TopBar + 节目卡 + 频道横滑一起进 AnimatedOpacity).
-              // v0.3.8+107 (6/20 老板反馈 16:38 "全屏上白边和左边白边"):
-              // 之前只有 Container(半透明黑) 包 节目卡+横滑,  TopBar 区域
-              // 透明渲染在 Scaffold background 上.  某些设备在 immersive 模式
-              // 状态栏不完全隐,  状态栏区域泄露是白色,  老板看到 "上白边".
-              // 修法: 整控件层 Column 外面包 Container(半透明黑 0.55) =
-              // 整控件一致.  删内部重复的 Container.
-              // v0.3.8+111 (6/20 老板反馈 19:13 "点左下/右下切频道 bug"):
-              // 之前只有 AnimatedOpacity 包控件层,  opacity=0 时 children 仍
-              // 响应 tap.  NextChannelsStrip 底部是 InkWell chip 阵列,  第一个
-              // chip 在左下/最后一个在右下, 控件隐藏后仍能点 → 切频道.
-              // 根因:  Flutter Opacity widget 不阻止 hit test.  需要套
-              // IgnorePointer(ignoring: !_controlsVisible).
-              // 修法:  AnimatedOpacity 外包 IgnorePointer,  invisible 时控件
-              // 整体不响应 tap.  visible 时跟之前一样.
-              // v0.3.8+114 (6/20 老板 20:37 反馈):
-              //   - 老板要: 点一下显示控件 + 3s 自动隐 (恢复 +111 设计)
-              //   - TopBar 永远显示 (不参与 3s 隐) — 含台标 + 返回 + 退出全屏
-              //   - 节目卡 + 横滑进 AnimatedOpacity — 3s 自动隐
-              //   - IgnorePointer 防切频道 bug (控件隐时)
-              //   - 删右下角 6×6 px 小点 (老板问 "是什么", 不需要了)
-              //
-              // 结构:
-              //   Stack
-              //     ├── [0] 视频区 GestureDetector (onTap 切显隐)
-              //     ├── [1] TopBar (永远显示, 无 opacity wrap)
-              //     └── [2] IgnorePointer + AnimatedOpacity (节目卡 + 横滑)
-              //
-              // 为什么不把 TopBar 也放进 AnimatedOpacity?
-              //   老板 20:25 反馈 "点一下也要显示台标和返回 + 退出全屏按钮".
-              //   这意味着 TopBar 必须永远显示 (或只被 IgnorePointer 跟 AnimatedOpacity 控制).
-              //   选 "永远显示" — 避免隐藏时老板找不到退出按钮 / 返回按钮.
+              data: (channels) {
+                final channel = _findChannel(channels, widget.channelId);
+                // P0-1: 视频区点一下切控件可见性 (原本不可见 -> 显示, 显示中 -> 立即隐藏)
+                return Stack(
+                  children: [
+                    // 视频区填满全屏 (控件盖在上面, 隐身时露出视频)
+                    // v0.3.7+79 (6/19 老板反馈): 加 onDoubleTap handler 防止双击切频道误触.
+                    //  老板反馈 "全屏播放双击后切换频道的 bug".
+                    // 根因: GestureDetector 默认有 double-tap recognizer,  双击拆成 2 次
+                    //  onTap,  看着像 控件显示/隐藏快速切换,  加上 _controlsVisible 切
+                    //  节目卡 + 横滑 立即显/隐,  老板误以为 "切频道".
+                    // 修法: 显式 onDoubleTap handler (什么都不做,  只 触发一次),  让 Flutter
+                    //  gesture arena 把双击识别为 "双击" 而不是 2 次单击,  控件不会快速切换.
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        // v0.3.8+114: 恢复 +111 之前的设计 — onTap 切控件显隐.
+                        // 老板 20:37 反馈: "你那点一下出来, 等 3 秒它自动隐藏,
+                        // 这个必须要有的, 要不然一直挂着不好看".  +113 删 3s 隐
+                        // 是错的逻辑.  恢复 +111 的 IgnorePointer + AnimatedOpacity
+                        // 设计 (3s 自动隐 + 防切频道 bug).
+                        onTap: () {
+                          if (_controlsVisible) {
+                            // 显示中: 立即隐藏, 不重置计时器
+                            _hideControlsTimer?.cancel();
+                            setState(() => _controlsVisible = false);
+                          } else {
+                            // 隐藏中: 显示并重置计时器
+                            _resetHideTimer();
+                          }
+                        },
+                        onDoubleTap: () {
+                          // v0.3.7+79: 显式空 handler.  让 Flutter gesture arena
+                          // 识别为双击 (不拆成 2 次 onTap).  实际行为: 什么都不做.
+                        },
+                        child: VideoArea(
+                          controller: controller,
+                          state: state,
+                          channel: channel,
+                        ),
+                      ),
+                    ),
+                    // v0.3.7+64 (6/19 老板反馈): 全屏态下 TopBar 也参与 _controlsVisible
+                    // 隐身 — 之前 v0.3.5.5 永远 visible 导致全屏时台标 (CCTV 频道名 + LIVE
+                    // + 状态条 + 心形收藏) 一直显示挡视频.  现在 3s 后整体隐,  视频是
+                    // 唯一视觉中心. 退出全屏按钮改成独立浮动按钮 (右上角 small icon),
+                    // 全屏隐身后仍可点 (用户最关键操作).
+                    // 6/18 P1 hotfix: 控件层 — 整体走 _controlsVisible 隐身
+                    // (TopBar + 节目卡 + 频道横滑一起进 AnimatedOpacity).
+                    // v0.3.8+107 (6/20 老板反馈 16:38 "全屏上白边和左边白边"):
+                    // 之前只有 Container(半透明黑) 包 节目卡+横滑,  TopBar 区域
+                    // 透明渲染在 Scaffold background 上.  某些设备在 immersive 模式
+                    // 状态栏不完全隐,  状态栏区域泄露是白色,  老板看到 "上白边".
+                    // 修法: 整控件层 Column 外面包 Container(半透明黑 0.55) =
+                    // 整控件一致.  删内部重复的 Container.
+                    // v0.3.8+111 (6/20 老板反馈 19:13 "点左下/右下切频道 bug"):
+                    // 之前只有 AnimatedOpacity 包控件层,  opacity=0 时 children 仍
+                    // 响应 tap.  NextChannelsStrip 底部是 InkWell chip 阵列,  第一个
+                    // chip 在左下/最后一个在右下, 控件隐藏后仍能点 → 切频道.
+                    // 根因:  Flutter Opacity widget 不阻止 hit test.  需要套
+                    // IgnorePointer(ignoring: !_controlsVisible).
+                    // 修法:  AnimatedOpacity 外包 IgnorePointer,  invisible 时控件
+                    // 整体不响应 tap.  visible 时跟之前一样.
+                    // v0.3.8+114 (6/20 老板 20:37 反馈):
+                    //   - 老板要: 点一下显示控件 + 3s 自动隐 (恢复 +111 设计)
+                    //   - TopBar 永远显示 (不参与 3s 隐) — 含台标 + 返回 + 退出全屏
+                    //   - 节目卡 + 横滑进 AnimatedOpacity — 3s 自动隐
+                    //   - IgnorePointer 防切频道 bug (控件隐时)
+                    //   - 删右下角 6×6 px 小点 (老板问 "是什么", 不需要了)
+                    //
+                    // 结构:
+                    //   Stack
+                    //     ├── [0] 视频区 GestureDetector (onTap 切显隐)
+                    //     ├── [1] TopBar (永远显示, 无 opacity wrap)
+                    //     └── [2] IgnorePointer + AnimatedOpacity (节目卡 + 横滑)
+                    //
+                    // 为什么不把 TopBar 也放进 AnimatedOpacity?
+                    //   老板 20:25 反馈 "点一下也要显示台标和返回 + 退出全屏按钮".
+                    //   这意味着 TopBar 必须永远显示 (或只被 IgnorePointer 跟 AnimatedOpacity 控制).
+                    //   选 "永远显示" — 避免隐藏时老板找不到退出按钮 / 返回按钮.
 
-              // v0.3.8+115 (6/20 21:07 老板反馈): 整控件层 (TopBar + 节目卡 +
-              // 横滑) 一起 3s 隐.  之前 +114 只 TopBar 永远显示 — 老板反馈
-              // "多了三个控件右侧中间" (⋮ ♡ ↔) + "台标不是一直显示 要自动隐藏
-              // 点击后再出现".  我之前误判 "老板要台标永远显示" 是错的.
-              //  真正需求: 整控件层 3s 隐 + onTap 显示 + 隐.
-              //  +115 修法:  TopBar 进 [2] 的 IgnorePointer + AnimatedOpacity
-              //  一起.  TopBar 简化成只有 ← 返回 (删 ⋮ ♡ ↔ — 删 onExitFullscreen
-              //  删 FavoriteIcon 删 Icons.more_vert).  退出全屏靠 Android back
-              //  (系统行为,  _buildFullscreenOverlay 顶层 PopScope 处理 — 见下面).
-              // v0.3.8+129 (6/21 08:20 老板反馈反转 "台标和返回 要3s影藏啊 点屏幕显示"):
-              // +128 改 TopBar 永远显示是错的.  老板 6/21 08:20 明确反:
-              //  "台标和返回 要3s影藏啊 点屏幕显示".  恢复 +115 设计:  TopBar + 节目
-              // 卡 + 横滑 一起 3s 隐,  点视频区 onTap 唤出.  TopBar 单独显示会跳
-              // 出 控制层 (不如统一隐),  老板全屏时点视频控制台都隐,  看视频清静.
-              //  +129 修法:  TopBar + 节目卡 + 横滑 统一在 _controlsVisible 控制下
-              //  3s 隐.  onTap 视频区 切显示.  跟 +115 一致,  跟 +128 反.
-              // v0.3.8+130 (6/21 08:38 老板反馈 "全屏的台标 有显示了 透明的看不清 改成白色 而且没有返回按钮"):
-              // 老板说 "没有返回按钮"  — 但 TopBar 里 Icons.arrow_back 还在,  问题
-              // 是 Colors.black.withValues(alpha: 0.55) 太浅 + TopBar 文字用
-              // scheme.onSurface (浅色主题是深色)  在黑底视频上几乎隐形 — 看不到
-              // 按了.  修法:  Container 背景加深到 0.85 + TopBar 里全部强制
-              // Colors.white / Colors.white70 不靠主题.  返回按钮 + 台标 + LIVE 状态 +
-              // 时钟  全都清晰可见.
-              IgnorePointer(
-                ignoring: !_controlsVisible,
-                child: AnimatedOpacity(
-                  opacity: _controlsVisible ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 250),
-                  child: Container(
-                    color: Colors.black.withOpacity(0.85),
-                    child: SafeArea(
-                      bottom: false,
-                      child: TopBar(
-                        channel: channel,
-                        state: state,
-                        onBack: _onTopBarBack,
-                        // v0.3.8+131: 全屏黑底,  白字 (v0.3.8+130 行为).
-                        isFullscreen: true,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // [2] 节目卡 + 频道横滑 — IgnorePointer + AnimatedOpacity 一起,
-              //  3s 自动隐 + 防切频道 bug.  +115: 整控件层 3s 隐 (含 TopBar).
-              //  TopBar 在 [1] 也走 _controlsVisible (跟 [2] 同步显隐).
-              //  关键:  Positioned 放底部 — NowNextProgram + NextChannelsStrip.
-              //  整体结构:
-              //    Stack
-              //      ├── [0] Positioned.fill → 视频 GestureDetector (onTap 切显隐)
-              //      ├── [1] Padding → TopBar (always show in tree, 走 [2] opacity)
-              //      └── [2] Positioned(bottom) → IgnorePointer + AnimatedOpacity (TopBar + 节目卡 + 横滑)
-              //  但实际 +115 还是分开 [1] 和 [2] 各自有自己的 opacity wrap — 这样
-              //  TopBar 是 Padding non-Positioned, 节目卡是 Positioned bottom,
-              //  两者 opacity 同步 (都 _controlsVisible).
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: IgnorePointer(
-                  ignoring: !_controlsVisible,
-                  child: AnimatedOpacity(
-                    opacity: _controlsVisible ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 250),
-                    child: Container(
-                      color: Colors.black.withOpacity(0.55),
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (channel != null)
-                            NowNextProgram(channel: channel),
-                          if (channel != null)
-                            NextChannelsStrip(
-                              currentChannelId: channel.id,
-                              allChannels: channels,
-                              onChannelTap: _switchTo,
+                    // v0.3.8+115 (6/20 21:07 老板反馈): 整控件层 (TopBar + 节目卡 +
+                    // 横滑) 一起 3s 隐.  之前 +114 只 TopBar 永远显示 — 老板反馈
+                    // "多了三个控件右侧中间" (⋮ ♡ ↔) + "台标不是一直显示 要自动隐藏
+                    // 点击后再出现".  我之前误判 "老板要台标永远显示" 是错的.
+                    //  真正需求: 整控件层 3s 隐 + onTap 显示 + 隐.
+                    //  +115 修法:  TopBar 进 [2] 的 IgnorePointer + AnimatedOpacity
+                    //  一起.  TopBar 简化成只有 ← 返回 (删 ⋮ ♡ ↔ — 删 onExitFullscreen
+                    //  删 FavoriteIcon 删 Icons.more_vert).  退出全屏靠 Android back
+                    //  (系统行为,  _buildFullscreenOverlay 顶层 PopScope 处理 — 见下面).
+                    // v0.3.8+129 (6/21 08:20 老板反馈反转 "台标和返回 要3s影藏啊 点屏幕显示"):
+                    // +128 改 TopBar 永远显示是错的.  老板 6/21 08:20 明确反:
+                    //  "台标和返回 要3s影藏啊 点屏幕显示".  恢复 +115 设计:  TopBar + 节目
+                    // 卡 + 横滑 一起 3s 隐,  点视频区 onTap 唤出.  TopBar 单独显示会跳
+                    // 出 控制层 (不如统一隐),  老板全屏时点视频控制台都隐,  看视频清静.
+                    //  +129 修法:  TopBar + 节目卡 + 横滑 统一在 _controlsVisible 控制下
+                    //  3s 隐.  onTap 视频区 切显示.  跟 +115 一致,  跟 +128 反.
+                    // v0.3.8+130 (6/21 08:38 老板反馈 "全屏的台标 有显示了 透明的看不清 改成白色 而且没有返回按钮"):
+                    // 老板说 "没有返回按钮"  — 但 TopBar 里 Icons.arrow_back 还在,  问题
+                    // 是 Colors.black.withValues(alpha: 0.55) 太浅 + TopBar 文字用
+                    // scheme.onSurface (浅色主题是深色)  在黑底视频上几乎隐形 — 看不到
+                    // 按了.  修法:  Container 背景加深到 0.85 + TopBar 里全部强制
+                    // Colors.white / Colors.white70 不靠主题.  返回按钮 + 台标 + LIVE 状态 +
+                    // 时钟  全都清晰可见.
+                    IgnorePointer(
+                      ignoring: !_controlsVisible,
+                      child: AnimatedOpacity(
+                        opacity: _controlsVisible ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 250),
+                        child: Container(
+                          color: Colors.black.withOpacity(0.85),
+                          child: SafeArea(
+                            bottom: false,
+                            child: TopBar(
+                              channel: channel,
+                              state: state,
+                              onBack: _onTopBarBack,
+                              // v0.3.8+131: 全屏黑底,  白字 (v0.3.8+130 行为).
+                              isFullscreen: true,
                             ),
-                        ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-              // v0.3.7+79 (6/19 老板反馈): 删右上角退出全屏浮动按钮.
-              // 老板反馈: "右上角的退出全屏 去掉吧".  v0.3.7+64 加的浮动按钮
-              // 干扰老板,  老板要干净的全屏体验.  退出全屏靠:
-              //   1. Android back (标准行为)
-              //   2. TopBar 里的 fullscreen_exit (v0.3.7+64 在 _buildMobile
-              //      TopBar 里也有全屏/退出全屏按钮,  _controlsVisible=false 时
-              //      TopBar 隐,  但 Android back 总能用)
-              //   3. 双击视频不响应 (下面 onDoubleTap 显式 null)
-              //
-            ],
-          );
-        },
-      ),
+                    // [2] 节目卡 + 频道横滑 — IgnorePointer + AnimatedOpacity 一起,
+                    //  3s 自动隐 + 防切频道 bug.  +115: 整控件层 3s 隐 (含 TopBar).
+                    //  TopBar 在 [1] 也走 _controlsVisible (跟 [2] 同步显隐).
+                    //  关键:  Positioned 放底部 — NowNextProgram + NextChannelsStrip.
+                    //  整体结构:
+                    //    Stack
+                    //      ├── [0] Positioned.fill → 视频 GestureDetector (onTap 切显隐)
+                    //      ├── [1] Padding → TopBar (always show in tree, 走 [2] opacity)
+                    //      └── [2] Positioned(bottom) → IgnorePointer + AnimatedOpacity (TopBar + 节目卡 + 横滑)
+                    //  但实际 +115 还是分开 [1] 和 [2] 各自有自己的 opacity wrap — 这样
+                    //  TopBar 是 Padding non-Positioned, 节目卡是 Positioned bottom,
+                    //  两者 opacity 同步 (都 _controlsVisible).
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: IgnorePointer(
+                        ignoring: !_controlsVisible,
+                        child: AnimatedOpacity(
+                          opacity: _controlsVisible ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 250),
+                          child: Container(
+                            color: Colors.black.withOpacity(0.55),
+                            padding: const EdgeInsets.only(bottom: 24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (channel != null)
+                                  NowNextProgram(channel: channel),
+                                if (channel != null)
+                                  NextChannelsStrip(
+                                    currentChannelId: channel.id,
+                                    allChannels: channels,
+                                    onChannelTap: _switchTo,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // v0.3.7+79 (6/19 老板反馈): 删右上角退出全屏浮动按钮.
+                    // 老板反馈: "右上角的退出全屏 去掉吧".  v0.3.7+64 加的浮动按钮
+                    // 干扰老板,  老板要干净的全屏体验.  退出全屏靠:
+                    //   1. Android back (标准行为)
+                    //   2. TopBar 里的 fullscreen_exit (v0.3.7+64 在 _buildMobile
+                    //      TopBar 里也有全屏/退出全屏按钮,  _controlsVisible=false 时
+                    //      TopBar 隐,  但 Android back 总能用)
+                    //   3. 双击视频不响应 (下面 onDoubleTap 显式 null)
+                    //
+                  ],
+                );
+              },
+            ),
     );
   }
 }
-
 
 /// v0.3.8+127 (6/21 老板反馈 "启动白屏几秒后出现"):
 /// 嵌入布局骨架屏 — 首帧显示: 16:9 黑色视频区 + 顶栏灰条 + 节目卡占位.

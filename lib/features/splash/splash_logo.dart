@@ -107,7 +107,8 @@ class _SanyeliveSplashState extends State<SanyeliveSplash>
                 return Center(
                   child: Opacity(
                     // 最后 10% (2.7s - 3.0s) 整体淡出 1.0 → 0.0.
-                    opacity: t < 0.9 ? 1.0 : (1.0 - (t - 0.9) / 0.1).clamp(0.0, 1.0),
+                    opacity:
+                        t < 0.9 ? 1.0 : (1.0 - (t - 0.9) / 0.1).clamp(0.0, 1.0),
                     child: _SplashLogo(progress: _entranceProgress(t)),
                   ),
                 );
@@ -378,8 +379,7 @@ class _ExtendLinePainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
-    final currentEnd =
-        Offset.lerp(start, end, progress.clamp(0.0, 1.0))!;
+    final currentEnd = Offset.lerp(start, end, progress.clamp(0.0, 1.0))!;
     canvas.drawLine(start, currentEnd, paint);
   }
 

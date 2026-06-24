@@ -26,7 +26,8 @@ const _repoBase =
 
 /// 远程频道数据源 — 启动时拉一次.
 class RemoteChannelsSource {
-  RemoteChannelsSource({http.Client? client}) : _client = client ?? http.Client();
+  RemoteChannelsSource({http.Client? client})
+      : _client = client ?? http.Client();
   final http.Client _client;
 
   /// 拉远程 meta + 4 个分类 JSON.  返回 RemoteChannelsBundle.
@@ -121,8 +122,7 @@ class RemoteChannelsBundle {
 
   /// 合并所有分类 — UI 喂这个 list (跟 ChannelFilter / ChannelRepository
   /// 兼容:  都是 List<Channel>,  ChannelFilter.cctv/satellite/local 不动).
-  List<Channel> get all =>
-      [...cctv, ...satellite, ...local, ...international];
+  List<Channel> get all => [...cctv, ...satellite, ...local, ...international];
 
   /// meta.sources.iptv_app 字段 — release version stamp.
   String get iptvAppStamp {

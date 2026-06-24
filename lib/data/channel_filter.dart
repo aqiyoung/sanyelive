@@ -39,11 +39,13 @@ class ChannelFilter {
     final cctvIds = cctv(all).map((e) => e.id).toSet();
     final intlIds = international(all).map((e) => e.id).toSet();
     const contentCats = {'新闻', '影视', '少儿', '体育', '科教', '娱乐', '财经'};
-    return all.where((c) =>
-        !sat.contains(c.id) &&
-        !cctvIds.contains(c.id) &&
-        !intlIds.contains(c.id) &&
-        !c.categories.any((cat) => contentCats.contains(cat))).toList();
+    return all
+        .where((c) =>
+            !sat.contains(c.id) &&
+            !cctvIds.contains(c.id) &&
+            !intlIds.contains(c.id) &&
+            !c.categories.any((cat) => contentCats.contains(cat)))
+        .toList();
   }
 
   /// v0.3.8+133 (6/21 09:49 老板反馈 "地方分类里还有几个卫视"):

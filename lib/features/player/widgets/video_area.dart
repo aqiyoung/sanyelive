@@ -93,14 +93,14 @@ class VideoArea extends StatelessWidget {
               // v0.3.10.11: controller == null (libmpv 加载失败) 时不渲染
               // Video widget — 它会崩.  改为 SizedBox.shrink + 让
               // ErrorOverlay 在上层显示 "本机播放器不可用" 信息.
-              child: (state.status == PlayerStatus.playing &&
-                      controller != null)
-                  ? Video(
-                      controller: controller!,
-                      fit: BoxFit.contain,
-                      aspectRatio: 16 / 9,
-                    )
-                  : const SizedBox.shrink(),
+              child:
+                  (state.status == PlayerStatus.playing && controller != null)
+                      ? Video(
+                          controller: controller!,
+                          fit: BoxFit.contain,
+                          aspectRatio: 16 / 9,
+                        )
+                      : const SizedBox.shrink(),
             ),
           ),
           // 加载 / 错误 / 空 占位 (覆盖在视频上方)
@@ -110,8 +110,7 @@ class VideoArea extends StatelessWidget {
                     ? '正在打开…'
                     : '尝试源 ${state.attempt!.index}/${state.attempt!.total}',
               ),
-            PlayerStatus.error =>
-              ErrorOverlay(message: state.error ?? '播放失败'),
+            PlayerStatus.error => ErrorOverlay(message: state.error ?? '播放失败'),
             PlayerStatus.playing => const SizedBox.shrink(),
           },
         ],

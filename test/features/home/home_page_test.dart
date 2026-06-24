@@ -228,7 +228,8 @@ void main() {
       // home_page loading 状态改为 SizedBox.expand() (不显示骨架), test 未同步.
       // 跨 PR 修: 见 https://github.com/aqiyoung/iptv-app/issues/32
       // 当前 skip 让 CI 跑过, PR #31 专注于 176 启动闪退.
-      markTestSkipped('PR #31 范围外, 待 follow-up PR 修 (历史 fail: 175 删骨架, home_page 改 SizedBox.expand(), test 未同步)');
+      markTestSkipped(
+          'PR #31 范围外, 待 follow-up PR 修 (历史 fail: 175 删骨架, home_page 改 SizedBox.expand(), test 未同步)');
     });
   });
 }

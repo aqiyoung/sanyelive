@@ -70,8 +70,7 @@ class _FakeChannelRepository implements ChannelRepository {
 
 /// v0.3.10.8: channelsProvider body 走远端 enrich,  测试不连 HTTP.
 /// 返空 bundle → _enrichWithRemoteSources 走 fallback (保持本地).
-class _FakeEmptyRemoteSourcesNotifier
-    extends RemoteSourcesNotifier {
+class _FakeEmptyRemoteSourcesNotifier extends RemoteSourcesNotifier {
   @override
   Future<RemoteSourcesBundle> build() async {
     return const RemoteSourcesBundle(
@@ -147,7 +146,6 @@ Future<void> _pumpPlayerFullscreen(WidgetTester tester) async {
 }
 
 void main() {
-  
   setUpAll(() async {
     sqflite_ffi.sqfliteFfiInit();
     databaseFactory = sqflite_ffi.databaseFactoryFfi;
@@ -163,11 +161,12 @@ void main() {
 // 这些 testWidgets 标 skip 留作历史 (老板想回滚能查).
 // 新测试逻辑在 fullscreen_overlay_test.dart 改写.
 
-group('PlayerPage v0.3.7+79 TopBar 跟 AnimatedOpacity 一体 (v0.3.7+64 改的 + v0.3.7+79 删浮动按钮) [SKIP 老期望]', () {
+  group(
+      'PlayerPage v0.3.7+79 TopBar 跟 AnimatedOpacity 一体 (v0.3.7+64 改的 + v0.3.7+79 删浮动按钮) [SKIP 老期望]',
+      () {
     testWidgets('全屏 overlay + 控件 3s 隐身后, TopBar (含退出全屏按钮) 仍 visible',
         // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
-        skip: true,
-        (tester) async {
+        skip: true, (tester) async {
       await _pumpPlayerFullscreen(tester);
       // devicePixelRatio=1.0, 物理 1080x1920 → 逻辑 1080x1920, shortestSide=1080
       // → _isMobile=false → 走 _buildFullscreenOverlay 路径.  这是 v0.3.5.5 P0
@@ -207,8 +206,7 @@ group('PlayerPage v0.3.7+79 TopBar 跟 AnimatedOpacity 一体 (v0.3.7+64 改的 
 
     testWidgets('全屏 overlay + 控件显示时, TopBar + 退出全屏按钮 + 控件层都 visible',
         // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
-        skip: true,
-        (tester) async {
+        skip: true, (tester) async {
       await _pumpPlayerFullscreen(tester);
 
       // 刚 pump 完, _controlsVisible=true (postFrameCallback 启动计时器, 还没
@@ -236,8 +234,7 @@ group('PlayerPage v0.3.7+79 TopBar 跟 AnimatedOpacity 一体 (v0.3.7+64 改的 
 
     testWidgets('TopBar 跟 AnimatedOpacity 分离 — 控件隐时 TopBar 仍 visible, 反之亦然',
         // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
-        skip: true,
-        (tester) async {
+        skip: true, (tester) async {
       await _pumpPlayerFullscreen(tester);
 
       // 1. _controlsVisible=true: back + more_vert + fullscreen_exit 都在
@@ -286,9 +283,9 @@ group('PlayerPage v0.3.7+79 TopBar 跟 AnimatedOpacity 一体 (v0.3.7+64 改的 
       );
     });
 
-    testWidgets('回归: 移动端嵌入布局不显示退出全屏按钮 (onExitFullscreen=null)', // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
-        skip: true,
-        (tester) async {
+    testWidgets(
+        '回归: 移动端嵌入布局不显示退出全屏按钮 (onExitFullscreen=null)', // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
+        skip: true, (tester) async {
       // 移动端嵌入布局: devicePixelRatio=2.0, 物理 1080x1920 → 逻辑 540x960
       // → shortestSide=540 < 600 → _isMobile=true → 走 _buildMobile.
       // _buildMobile 调 _TopBar 不传 onExitFullscreen, TopBar 内不渲染
@@ -319,7 +316,8 @@ group('PlayerPage v0.3.7+79 TopBar 跟 AnimatedOpacity 一体 (v0.3.7+64 改的 
                 .overrideWith((ref) => _FakeChannelRepository(_channels)),
             // v0.3.10.8: 防止 channelsProvider body 走真实 HTTP.  返空 bundle
             // → _enrichWithRemoteSources fallback 本地 (不做 merge).
-            remoteSourcesProvider.overrideWith(_FakeEmptyRemoteSourcesNotifier.new),
+            remoteSourcesProvider
+                .overrideWith(_FakeEmptyRemoteSourcesNotifier.new),
             mediaKitVideoControllerProvider
                 .overrideWithValue(_FakeVideoController()),
             mediaKitPlayerProvider.overrideWithValue(_FakePlayer()),

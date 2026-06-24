@@ -67,146 +67,150 @@ class _ForceUpdateDialogContentState
     final s = widget.state;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final dialogBg = isDark ? theme.colorScheme.surfaceContainerHighest : theme.colorScheme.surface;
+    final dialogBg = isDark
+        ? theme.colorScheme.surfaceContainerHighest
+        : theme.colorScheme.surface;
     final titleColor =
         isDark ? theme.colorScheme.onSurface : theme.colorScheme.onSurface;
-    final bodyColor =
-        isDark ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurfaceVariant;
+    final bodyColor = isDark
+        ? theme.colorScheme.onSurfaceVariant
+        : theme.colorScheme.onSurfaceVariant;
 
     // v0.3.8+169: PopScope(canPop: false) 阻止 Android 返回键关闭弹窗.
     // barrierDismissible: false 只阻止点击外部,  不阻止返回键.
     return PopScope(
       canPop: false,
       child: AlertDialog(
-      backgroundColor: dialogBg,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-      title: Row(
-        children: [
-          Icon(
-            s.isCritical ? Icons.priority_high : Icons.system_update_alt,
-            color: s.isCritical
-                ? Colors.red.shade700
-                : theme.colorScheme.primary,
-            size: 28,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              s.isCritical ? '重要更新' : '发现新版本',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: titleColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        backgroundColor: dialogBg,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        title: Row(
           children: [
-            Text(
-              '${s.currentVersion} → ${s.latestVersion}',
-              style: TextStyle(
-                fontSize: 15,
-                color: bodyColor,
-                fontWeight: FontWeight.w500,
-              ),
+            Icon(
+              s.isCritical ? Icons.priority_high : Icons.system_update_alt,
+              color: s.isCritical
+                  ? Colors.red.shade700
+                  : theme.colorScheme.primary,
+              size: 28,
             ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.maxFinite,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? theme.colorScheme.surfaceContainerHighest
-                    : theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
-                // v0.3.8+99: 删边框线,  靠背景色区分 release notes 区域.
-              ),
+            const SizedBox(width: 12),
+            Expanded(
               child: Text(
-                s.releaseNotes.isEmpty ? '（无变更日志）' : s.releaseNotes,
+                s.isCritical ? '重要更新' : '发现新版本',
                 style: TextStyle(
-                  fontSize: 13,
-                  height: 1.5,
-                  color: bodyColor,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
                 ),
               ),
             ),
-            if (_phase == _DownloadPhase.downloading) ...[
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${s.currentVersion} → ${s.latestVersion}',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: bodyColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: _progress > 0 ? _progress : null,
-                  minHeight: 6,
-                  backgroundColor:
-                      isDark ? theme.colorScheme.outline : theme.colorScheme.outlineVariant,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    theme.colorScheme.primary,
+              Container(
+                width: double.maxFinite,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? theme.colorScheme.surfaceContainerHighest
+                      : theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  // v0.3.8+99: 删边框线,  靠背景色区分 release notes 区域.
+                ),
+                child: Text(
+                  s.releaseNotes.isEmpty ? '（无变更日志）' : s.releaseNotes,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: bodyColor,
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                '${(_progress * 100).toStringAsFixed(0)}% — 下载中...',
-                style: TextStyle(fontSize: 12, color: bodyColor),
-              ),
-            ],
-            if (_phase == _DownloadPhase.failed) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(6),
+              if (_phase == _DownloadPhase.downloading) ...[
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _progress > 0 ? _progress : null,
+                    minHeight: 6,
+                    backgroundColor: isDark
+                        ? theme.colorScheme.outline
+                        : theme.colorScheme.outlineVariant,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.colorScheme.primary,
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline,
-                        size: 16, color: Colors.red.shade700),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _errorMessage ?? '下载失败',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.red.shade900,
+                const SizedBox(height: 8),
+                Text(
+                  '${(_progress * 100).toStringAsFixed(0)}% — 下载中...',
+                  style: TextStyle(fontSize: 12, color: bodyColor),
+                ),
+              ],
+              if (_phase == _DownloadPhase.failed) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline,
+                          size: 16, color: Colors.red.shade700),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _errorMessage ?? '下载失败',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.red.shade900,
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ],
+              if (_phase == _DownloadPhase.installing) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '正在唤起安装器...',
+                      style: TextStyle(fontSize: 13, color: bodyColor),
                     ),
                   ],
                 ),
-              ),
+              ],
             ],
-            if (_phase == _DownloadPhase.installing) ...[
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '正在唤起安装器...',
-                    style: TextStyle(fontSize: 13, color: bodyColor),
-                  ),
-                ],
-              ),
-            ],
-          ],
+          ),
         ),
+        actions: _buildActions(s, theme),
       ),
-      actions: _buildActions(s, theme),
-    ),
     );
   }
 

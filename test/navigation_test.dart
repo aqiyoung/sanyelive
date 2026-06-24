@@ -19,6 +19,7 @@ import 'package:sanyelive/services/startup_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sanyelive/data/sources/remote_sources_source.dart';
+
 const List<Channel> _kFixtureChannels = <Channel>[
   Channel(
     id: 'CCTV1.cn',
@@ -83,8 +84,7 @@ class _NoopOpener implements StreamOpener {
 /// ChannelRepository fake — 返回预置频道, 避免 assets 加载
 /// v0.3.10.8: channelsProvider body 走远端 enrich, 测试不连 HTTP + sqflite.
 /// 返空 bundle → _enrichWithRemoteSources 走 fallback (保持本地).
-class _FakeEmptyRemoteSourcesNotifier
-    extends RemoteSourcesNotifier {
+class _FakeEmptyRemoteSourcesNotifier extends RemoteSourcesNotifier {
   @override
   Future<RemoteSourcesBundle> build() async {
     return const RemoteSourcesBundle(
@@ -128,7 +128,6 @@ Widget _app() => MaterialApp.router(
     );
 
 void main() {
-  
   setUpAll(() async {
     sqflite_ffi.sqfliteFfiInit();
     databaseFactory = sqflite_ffi.databaseFactoryFfi;

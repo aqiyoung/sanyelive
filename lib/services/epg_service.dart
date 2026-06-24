@@ -17,7 +17,7 @@ class EpgService {
       : _client = client ?? IPv4Client(),
         _injectedDb = db;
 
-  /// 注入 http client (test 用); 传给 XmltvEpgSource (默认 IPv4Client, 
+  /// 注入 http client (test 用); 传给 XmltvEpgSource (默认 IPv4Client,
   /// 跟 v0.3.7+50 一致).
   final http.Client _client;
   final Database? _injectedDb;
@@ -153,7 +153,8 @@ class EpgService {
       // (例: 缓存是昨天拉的, 24h+2h 范围已过期), 当作 stale, 重新拉.
       // 否则 currentProgram 返回 null, UI "暂无节目".
       if (entries.isNotEmpty) {
-        final latestEnd = entries.map((e) => e.end).reduce((a, b) => a.isAfter(b) ? a : b);
+        final latestEnd =
+            entries.map((e) => e.end).reduce((a, b) => a.isAfter(b) ? a : b);
         if (!latestEnd.isAfter(DateTime.now())) return null;
       }
       return entries;
@@ -212,8 +213,7 @@ class EpgService {
       }
       if (lastEnd != null &&
           DateTime.now().isAfter(lastEnd.add(const Duration(minutes: 30)))) {
-        debugPrint(
-            'EpgService: 数据过期 (lastEnd=$lastEnd), 强制重拉');
+        debugPrint('EpgService: 数据过期 (lastEnd=$lastEnd), 强制重拉');
         _xmltvLoaded = false;
         _allEntries = const {};
       }
@@ -231,7 +231,8 @@ class EpgService {
           'EpgService: suzukua XMLTV loaded ${_allEntries.length} channels, '
           '${_allEntries.values.fold(0, (a, b) => a + b.length)} programmes');
     } catch (e) {
-      debugPrint('EpgService: suzukua fetch failed: $e, fallback to placeholder');
+      debugPrint(
+          'EpgService: suzukua fetch failed: $e, fallback to placeholder');
       return _placeholderSchedule(channelId);
     }
 

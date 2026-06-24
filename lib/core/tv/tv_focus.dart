@@ -95,7 +95,10 @@ class _TvFocusState extends State<TvFocus> {
               //  4dp 太厚遮卡片内容,  2px + scale 1.05 远距离也清晰.
               border: _focused
                   ? Border.all(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.6),
                       width: 2,
                     )
                   : null,

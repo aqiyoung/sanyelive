@@ -102,7 +102,8 @@ class _SourcePickerContent extends StatelessWidget {
                               ? Text(
                                   'CCTV 源 · 健康分 ${(CctvSourcePicker.healthScore(url) * 100).round()}%',
                                   style: IptvTypography.caption.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                     fontSize: 10,
                                   ),
                                 )

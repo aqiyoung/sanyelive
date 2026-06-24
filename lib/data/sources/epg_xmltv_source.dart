@@ -42,9 +42,7 @@ class XmltvEpgSource {
       throw Exception('HTTP ${resp.statusCode} from $endpoint');
     }
     final bodyBytes = resp.bodyBytes;
-    if (bodyBytes.length >= 2 &&
-        bodyBytes[0] == 0x1f &&
-        bodyBytes[1] == 0x8b) {
+    if (bodyBytes.length >= 2 && bodyBytes[0] == 0x1f && bodyBytes[1] == 0x8b) {
       // gzip magic number — 解压后再 utf-8 decode
       return utf8.decode(gzip.decode(bodyBytes), allowMalformed: true);
     }
@@ -86,11 +84,11 @@ class XmltvEpgSource {
         // 防呆: start >= end 跳过
         if (!end.isAfter(start)) continue;
         entries.putIfAbsent(chId, () => []).add(EpgEntry(
-          channelId: chId,
-          title: title,
-          start: start,
-          end: end,
-        ));
+              channelId: chId,
+              title: title,
+              start: start,
+              end: end,
+            ));
       } catch (_) {
         // skip invalid entry — 不让一条脏数据炸整次解析
       }

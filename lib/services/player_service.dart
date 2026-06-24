@@ -131,7 +131,8 @@ class PlayerService extends ChangeNotifier {
     FallbackMediaPlayer? fallbackPlayer,
   })  : _player = player,
         _failover = failover ?? SourceFailover(opener: opener),
-        _fallbackPlayer = fallbackPlayer ?? (player == null ? FallbackMediaPlayer() : null);
+        _fallbackPlayer =
+            fallbackPlayer ?? (player == null ? FallbackMediaPlayer() : null);
 
   /// media_kit 的 native player. libmpv.so 加载失败时为 null (v0.3.10.11).
   final Player? _player;
@@ -140,7 +141,7 @@ class PlayerService extends ChangeNotifier {
   // MediaPlayer (如果 native 端没注册实现,  静默失败).  null = 用 libmpv 正常路径.
   final FallbackMediaPlayer? _fallbackPlayer;
   bool _disposed = false;
-  bool _playing = false;  // v0.3.8+169: 防并发 play() 覆盖状态.
+  bool _playing = false; // v0.3.8+169: 防并发 play() 覆盖状态.
 
   /// v0.3.10.11: libmpv 是否被 fallback 替换. true = 视频放不出来,
   /// UI 端拿到的 controller 也是 null (Video widget 不渲染),  老板看 error.
@@ -242,7 +243,10 @@ class PlayerService extends ChangeNotifier {
         ),
       );
     } on AllSourcesFailedException catch (e) {
-      if (_disposed) { _playing = false; return; }
+      if (_disposed) {
+        _playing = false;
+        return;
+      }
       // v0.3.6+42: health_score 动态恢复 — 所有源失败时, 给每个失败源扣分
       for (final attempt in e.attempts) {
         unawaited(CctvSourcePicker.recordFailure(attempt.url));
@@ -502,7 +506,8 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
       ),
     );
   } catch (e, st) {
-    debugPrint('mediaKitVideoControllerProvider: VideoController() threw: $e\n$st');
+    debugPrint(
+        'mediaKitVideoControllerProvider: VideoController() threw: $e\n$st');
     unawaited(CrashLogger.log('VideoController() construction failed: $e'));
     return null;
   }

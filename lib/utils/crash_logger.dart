@@ -7,7 +7,8 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show ErrorCallback;  // v0.3.10.11: 兼容写法 (ErrorCallback 在 dart:ui)
+import 'dart:ui'
+    show ErrorCallback; // v0.3.10.11: 兼容写法 (ErrorCallback 在 dart:ui)
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';

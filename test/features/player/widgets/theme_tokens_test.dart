@@ -19,8 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('v0.3.7+50 player widgets 主题 token 真修 (5 个文件 grep 自查)', () {
-    const widgetsDir =
-        'lib/features/player/widgets';
+    const widgetsDir = 'lib/features/player/widgets';
     const files = <String>[
       'now_next_program.dart',
       'next_channels_strip.dart',

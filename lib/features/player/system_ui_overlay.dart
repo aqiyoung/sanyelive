@@ -24,7 +24,8 @@ SystemUiOverlayStyle buildSystemUiOverlayForPlayer(
     statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
     statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
     systemNavigationBarColor: Colors.black,
-    systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    systemNavigationBarIconBrightness:
+        isDark ? Brightness.light : Brightness.dark,
   );
 }
 

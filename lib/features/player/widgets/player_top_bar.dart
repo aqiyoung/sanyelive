@@ -83,8 +83,7 @@ class _TopBarState extends State<TopBar> {
     // - 全屏 (黑底视频): 白字 (v0.3.8+130 修台标透明看不清)
     // - 嵌入布局 (scheme.surface 浅米色): 深棕字 (本次修)
     final scheme = Theme.of(context).colorScheme;
-    final titleColor =
-        widget.isFullscreen ? Colors.white : scheme.onSurface;
+    final titleColor = widget.isFullscreen ? Colors.white : scheme.onSurface;
     final subColor =
         widget.isFullscreen ? Colors.white70 : scheme.onSurfaceVariant;
     final iconColor = widget.isFullscreen ? Colors.white : scheme.onSurface;

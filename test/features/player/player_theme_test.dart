@@ -68,8 +68,7 @@ class _FakeChannelRepository implements ChannelRepository {
 
 /// v0.3.10.8: channelsProvider body 走远端 enrich,  测试不连 HTTP.
 /// 返空 bundle → _enrichWithRemoteSources 走 fallback (保持本地).
-class _FakeEmptyRemoteSourcesNotifier
-    extends RemoteSourcesNotifier {
+class _FakeEmptyRemoteSourcesNotifier extends RemoteSourcesNotifier {
   @override
   Future<RemoteSourcesBundle> build() async {
     return const RemoteSourcesBundle(
@@ -145,7 +144,6 @@ Future<void> _pumpPlayer(
 }
 
 void main() {
-  
   setUpAll(() async {
     sqflite_ffi.sqfliteFfiInit();
     databaseFactory = sqflite_ffi.databaseFactoryFfi;
@@ -170,7 +168,8 @@ void main() {
       markTestSkipped('PR #31 范围外, 待 follow-up PR 修 (历史 fail)');
     });
 
-    testWidgets('浅色主题: 视频区 Scaffold bg = scheme.surface (= bgParchment)', (tester) async {
+    testWidgets('浅色主题: 视频区 Scaffold bg = scheme.surface (= bgParchment)',
+        (tester) async {
       // v0.3.5.20: 视频区 Scaffold bg 跟主题走,  浅色=bgParchment.
       await _pumpPlayer(
         tester,
@@ -178,11 +177,14 @@ void main() {
         physicalSize: const Size(1080, 1920),
       );
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.backgroundColor, equals(IptvTheme.light().colorScheme.surface),
-          reason: 'v0.3.5.20: 浅色主题下视频区 Scaffold bg = bgParchment (scheme.surface)');
+      expect(scaffold.backgroundColor,
+          equals(IptvTheme.light().colorScheme.surface),
+          reason:
+              'v0.3.5.20: 浅色主题下视频区 Scaffold bg = bgParchment (scheme.surface)');
     });
 
-    testWidgets('暗色主题: 视频区 Scaffold bg = scheme.surface (= darkBg)', (tester) async {
+    testWidgets('暗色主题: 视频区 Scaffold bg = scheme.surface (= darkBg)',
+        (tester) async {
       // v0.3.5.20: 视频区 Scaffold bg 跟主题走,  暗色=darkSurface.
       await _pumpPlayer(
         tester,
@@ -190,8 +192,10 @@ void main() {
         physicalSize: const Size(1080, 1920),
       );
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.backgroundColor, equals(IptvTheme.dark().colorScheme.surface),
-          reason: 'v0.3.5.20: 暗色主题下视频区 Scaffold bg = darkSurface (scheme.surface)');
+      expect(scaffold.backgroundColor,
+          equals(IptvTheme.dark().colorScheme.surface),
+          reason:
+              'v0.3.5.20: 暗色主题下视频区 Scaffold bg = darkSurface (scheme.surface)');
     });
   });
 }

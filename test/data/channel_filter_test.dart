@@ -34,8 +34,7 @@ void main() {
   // 澳门 (MO),  1 个美帝 (US),  1 个日本 (JP) — 后 4 个是 international.
   final cctv = _ch(id: 'CCTV1.cn', name: 'CCTV-1', country: 'CN');
   final sat = _ch(id: 'HunanTVSatellite.cn', name: '湖南卫视', country: 'CN');
-  final localCn =
-      _ch(id: 'SomeLocalTV.cn', name: '某地市台', country: 'CN');
+  final localCn = _ch(id: 'SomeLocalTV.cn', name: '某地市台', country: 'CN');
   final hk = _ch(id: 'TVB.hk', name: 'TVB', country: 'HK');
   final tw = _ch(id: 'TTV.tw', name: '台视', country: 'TW');
   final mo = _ch(id: 'TDM.mo', name: '澳广视', country: 'MO');

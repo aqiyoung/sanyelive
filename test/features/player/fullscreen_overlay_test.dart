@@ -31,7 +31,6 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  
   setUpAll(() async {
     sqflite_ffi.sqfliteFfiInit();
     databaseFactory = sqflite_ffi.databaseFactoryFfi;
@@ -69,7 +68,8 @@ void main() {
       expect(
         find.byType(SafeArea),
         findsAtLeastNWidgets(1),
-        reason: '移动端嵌入布局 (非全屏) 至少有 1 个 SafeArea (v0.3.5 行为,  v0.3.7+61 VideoArea 也加 1 个)',
+        reason:
+            '移动端嵌入布局 (非全屏) 至少有 1 个 SafeArea (v0.3.5 行为,  v0.3.7+61 VideoArea 也加 1 个)',
       );
       // 频道名应该在 _TopBar
       expect(find.text('CCTV-1 综合'), findsOneWidget);
@@ -112,7 +112,8 @@ void main() {
       expect(
         find.byType(SafeArea),
         findsOneWidget,
-        reason: '全屏态下 VideoArea SafeArea 保留 (v0.3.7+61 让出状态栏),  _buildMobile 被 Overlay 代替',
+        reason:
+            '全屏态下 VideoArea SafeArea 保留 (v0.3.7+61 让出状态栏),  _buildMobile 被 Overlay 代替',
       );
       // 全屏后: 退出全屏按钮 (fullscreen_exit) 出现
       expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
@@ -120,8 +121,7 @@ void main() {
 
     testWidgets('全屏 (v0.3.5.5 P0 fix): 控件层 3s 后 opacity=0, TopBar 仍 visible',
         // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
-        skip: true,
-        (tester) async {
+        skip: true, (tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -187,8 +187,7 @@ void main() {
 
     testWidgets('全屏: 退出全屏按钮 (fullscreen_exit) 在 _TopBar 内 (v0.3.5.5 移入)',
         // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
-        skip: true,
-        (tester) async {
+        skip: true, (tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -238,10 +237,10 @@ void main() {
       );
     });
 
-    testWidgets('TV 端 (短边 >= 600): 默认走全屏覆盖, _TopBar 永远 visible (v0.3.5.5 P0 fix) [v0.3.7+79 skip]',
-    // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
-        skip: true,
-        (tester) async {
+    testWidgets(
+        'TV 端 (短边 >= 600): 默认走全屏覆盖, _TopBar 永远 visible (v0.3.5.5 P0 fix) [v0.3.7+79 skip]',
+        // v0.3.7+79: skip 老期望 (TopBar 现在跟控件一起隐 + 退出按钮删了)
+        skip: true, (tester) async {
       // TV 端: logical 1920x1080 (短边 1080 >= 600)
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1.0;
@@ -274,7 +273,8 @@ void main() {
       expect(
         find.byType(SafeArea),
         findsAtLeastNWidgets(1),
-        reason: 'TV 端默认全屏覆盖,  至少有 1 个 SafeArea (跟 mobile 嵌入布局一致,  v0.3.7+61 VideoArea 加了)',
+        reason:
+            'TV 端默认全屏覆盖,  至少有 1 个 SafeArea (跟 mobile 嵌入布局一致,  v0.3.7+61 VideoArea 加了)',
       );
 
       // TV 端: 没有"进入全屏"按钮 (因为已经全屏了).
@@ -441,8 +441,7 @@ class _FakeChannelRepository implements ChannelRepository {
 
 /// v0.3.10.8: channelsProvider body 走远端 enrich,  测试不连 HTTP.
 /// 返空 bundle → _enrichWithRemoteSources 走 fallback (保持本地).
-class _FakeEmptyRemoteSourcesNotifier
-    extends RemoteSourcesNotifier {
+class _FakeEmptyRemoteSourcesNotifier extends RemoteSourcesNotifier {
   @override
   Future<RemoteSourcesBundle> build() async {
     return const RemoteSourcesBundle(

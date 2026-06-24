@@ -52,7 +52,7 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
 ///   APP 运行环境 (用户手机/盒子) 未必能直连 GitHub,  所以保留 cf-worker 兜底.
 ///   gh-proxy.com 彻底弃用 (403 频率太高, chain 里放它只会浪费一次超时).
 const List<String> kDefaultEndpointUrls = [
-  'https://api.github.com/repos/aqiyoung/iptv-app/releases/latest',                            // primary: 直连 (0.6s, 6/24 实测)
+  'https://api.github.com/repos/aqiyoung/iptv-app/releases/latest', // primary: 直连 (0.6s, 6/24 实测)
   'https://cf-workers-proxy-9e9.pages.dev/api.github.com/repos/aqiyoung/iptv-app/releases/latest', // fallback: CF Worker (国内不能直连时)
 ];
 
@@ -130,7 +130,8 @@ class EndpointNotifier extends Notifier<String> {
   }
 }
 
-final endpointProvider = NotifierProvider<EndpointNotifier, String>(EndpointNotifier.new);
+final endpointProvider =
+    NotifierProvider<EndpointNotifier, String>(EndpointNotifier.new);
 
 /// 兼容旧代码 — get kGitHubReleasesUrl 改成 get endpoint.
 @Deprecated('Use endpointProvider instead')
@@ -236,7 +237,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       await _prefs.remove(_Keys.lastCheckTime);
       await _prefs.remove(_Keys.dismissedVersion);
       await _prefs.remove(_Keys.dismissedAt);
-      state = const VersionCheckIdle(); // 先清状态, 让 settings 弹个 loading / 直接 fetch
+      state =
+          const VersionCheckIdle(); // 先清状态, 让 settings 弹个 loading / 直接 fetch
       // 复用 checkOnStartup 逻辑 (清完 cache 就走 fetch path)
       await checkOnStartup();
     } finally {
@@ -282,8 +284,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       //   currentStr     = '0.3.9'  或 '0.3.10+5' (pubspec current)
       //  _compareVersions 接受 'v' 前缀 + 可选 '+N',  容错.
       final cmp = _compareVersions(parsed.tagName, currentStr);
-      final isOutdated = cmp > 0 ||
-          (cmp == 0 && parsed.versionCode > currentCode);
+      final isOutdated =
+          cmp > 0 || (cmp == 0 && parsed.versionCode > currentCode);
 
       if (isOutdated) {
         // 3. outdated — 检查是否被用户 dismiss 过
@@ -315,10 +317,12 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     } on DioException catch (e) {
       state = VersionCheckFailed('network: ${e.type}');
       // 失败也写 last_check_time,  避免每启都重试刷流量.  下次 1h 后再试.
-      await _prefs.setInt(_Keys.lastCheckTime, DateTime.now().millisecondsSinceEpoch);
+      await _prefs.setInt(
+          _Keys.lastCheckTime, DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
       state = VersionCheckFailed('error: $e');
-      await _prefs.setInt(_Keys.lastCheckTime, DateTime.now().millisecondsSinceEpoch);
+      await _prefs.setInt(
+          _Keys.lastCheckTime, DateTime.now().millisecondsSinceEpoch);
     } finally {
       _checking = false;
     }
@@ -393,7 +397,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
           if (data is String) {
             final s = data.replaceFirst(RegExp(r'^\s+'), '');
             if (s.startsWith('<') || s.startsWith('<!DOCTYPE')) {
-              lastError = 'HTML response (CF protective registration?) from $url';
+              lastError =
+                  'HTML response (CF protective registration?) from $url';
               continue;
             }
             try {
@@ -407,7 +412,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
               }
               lastError = 'non-Map JSON from $url';
             } catch (_) {
-              lastError = 'invalid JSON from $url: ${s.substring(0, s.length.clamp(0, 80))}';
+              lastError =
+                  'invalid JSON from $url: ${s.substring(0, s.length.clamp(0, 80))}';
             }
           } else {
             lastError = 'unexpected data type from $url (${data.runtimeType})';
@@ -506,7 +512,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       cleaned = cleaned.substring(1);
     }
     // 接受两种 4 段格式: '0.3.10+N' 或 '0.3.10.N'.  两者第 4 段都是 build.
-    final m = RegExp(r'^(\d+)\.(\d+)\.(\d+)(?:[.+](\d+))?$').firstMatch(cleaned);
+    final m =
+        RegExp(r'^(\d+)\.(\d+)\.(\d+)(?:[.+](\d+))?$').firstMatch(cleaned);
     if (m == null) return null;
     return (
       [

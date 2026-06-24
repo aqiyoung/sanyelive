@@ -127,7 +127,7 @@ class PlayerRouteObserver extends NavigatorObserver {
 
   @override
   void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    super.didRemove(route: route, previousRoute: previousRoute);
+    super.didRemove(route, previousRoute);
     if (_isPlayerRoute(route)) {
       _releasePlayer();
     }

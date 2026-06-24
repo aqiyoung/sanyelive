@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:sanyelive/data/models/channel.dart';
 import 'package:sanyelive/features/favorites/favorites_service.dart';
 import 'package:sanyelive/widgets/channel_tile.dart';
 
@@ -17,10 +18,19 @@ Widget _wrap(Widget child) => ProviderScope(
 
 void main() {
   testWidgets('ChannelTile renders number, name, category', (tester) async {
+    final ch = Channel(
+      id: 'CCTV1.cn',
+      name: 'CCTV-1',
+      country: 'CN',
+      categories: const ['央视'],
+      sources: const [],
+    );
     await tester.pumpWidget(
-      _wrap(const ChannelTile(
+      _wrap(ChannelTile(
         channelNumber: '01',
         channelName: 'CCTV-1',
+        channel: ch,
+        isLive: true,
       )),
     );
     expect(find.text('01'), findsOneWidget);

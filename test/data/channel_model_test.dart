@@ -19,7 +19,8 @@ void main() {
       expect(c.id, 'CCTV1.cn');
       expect(c.name, 'CCTV-1');
       expect(c.country, 'CN');
-      expect(c.categories, <String>['general', 'news']);
+      // v0.3.10.16: categories 从属性推导, 不再直接用 JSON 值
+      expect(c.categories, <String>['央视']);
       expect(c.altNames, <String>['央视一套']);
       expect(c.website, 'http://www.cctv.com/');
       expect(c.logoUrl, 'http://example.com/logo.png');
@@ -53,24 +54,24 @@ void main() {
       expect(c.isChinese, false);
     });
 
-    test('primaryCategory falls back to general', () {
+    test('primaryCategory: US channel → 国际', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'X.us',
         'name': 'X',
         'country': 'US',
         'categories': <String>[],
       });
-      expect(c.primaryCategory, 'general');
+      expect(c.primaryCategory, '国际');
     });
 
-    test('primaryCategory returns first', () {
+    test('primaryCategory: CN news channel → 新闻', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'X.cn',
-        'name': 'X',
+        'name': '新闻频道',
         'country': 'CN',
         'categories': <String>['news', 'general'],
       });
-      expect(c.primaryCategory, 'news');
+      expect(c.primaryCategory, '新闻');
     });
   });
 
@@ -79,14 +80,15 @@ void main() {
       id: 'A.cn',
       name: 'A',
       country: 'CN',
-      categories: <String>['news'],
+      categories: <String>['新闻'],
     );
     final j = c.toJson();
     final c2 = Channel.fromJson(j);
     expect(c2.id, c.id);
     expect(c2.name, c.name);
     expect(c2.country, c.country);
-    expect(c2.categories, c.categories);
+    // categories 会从属性推导, 只要 JSON 非空就不会被覆盖为空
+    expect(c2.categories, isNotEmpty);
   });
 
   group('sources 字段 (卡 6)', () {
@@ -171,7 +173,7 @@ void main() {
       expect(c.displayName, 'CCTV+ 1 (海外版)');
     });
 
-    test('displaySubtitle: 中文化后, 原名作为副标题', () {
+    test('displaySubtitle: 中文化后, 副标题显示分类名', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CCTV13.cn',
         'name': 'CCTV-13',
@@ -179,10 +181,11 @@ void main() {
         'alt_names': <String>['CCTV-13 新闻'],
       });
       expect(c.displayName, 'CCTV-13 新闻');
-      expect(c.displaySubtitle, 'CCTV-13');
+      // v0.3.10.16: 副标题显示分类名 (不再显示英文原名)
+      expect(c.displaySubtitle, '央视');
     });
 
-    test('displaySubtitle: 已经是原名 (没中文化) → null', () {
+    test('displaySubtitle: 国际频道 → 国际', () {
       final c = Channel.fromJson(<String, dynamic>{
         'id': 'CNN.us',
         'name': 'CNN',
@@ -190,7 +193,7 @@ void main() {
         'alt_names': <String>[],
       });
       expect(c.displayName, 'CNN');
-      expect(c.displaySubtitle, isNull);
+      expect(c.displaySubtitle, '国际');
     });
 
     test('非中国频道, 纯英文 → displayName 就是 name', () {

@@ -68,11 +68,12 @@ class Channel {
 
   /// 中英对照的副标题 — 原名跟 displayName 不同时才返, 否则 null
   String? get displaySubtitle {
-    final dn = displayName;
-    if (dn == name) return null; // 已经是原名了
-    // 中文名字 + 英文原名
-    if (_hasChinese(dn) && !_hasChinese(name)) return name;
-    return null;
+    // v0.3.10.13 (6/24): 副标题显示分类名 (中文), 不再显示英文原名.
+    // 英文原名作为字幕太乱 (CCTV-1 / CCTV-4 America / Hunan TV 混搭),
+    // 分类名更实用 (新闻/影视/少儿/体育 等).
+    final cats = categories;
+    if (cats.isEmpty) return null;
+    return cats.first;
   }
 
   static final RegExp _chineseRe = RegExp(r'[\u4e00-\u9fff]');

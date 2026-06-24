@@ -41,9 +41,9 @@ class CrashLogger {
         debugPrint('CrashLogger: getApplicationSupportDirectory failed: $e');
         // fallback: 尝试外部存储
         try {
-          dir = await getExternalFilesDirectory();
+          dir = await getExternalStorageDirectory();
         } catch (e2) {
-          debugPrint('CrashLogger: getExternalFilesDirectory also failed: $e2');
+          debugPrint('CrashLogger: getExternalStorageDirectory also failed: $e2');
         }
       }
 

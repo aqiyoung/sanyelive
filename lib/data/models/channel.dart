@@ -142,31 +142,31 @@ class Channel {
 
     // 内容分类 (按名称关键词)
     final allNames = [name, ...altNames].join(' ');
-    if (RegExp(r'新闻|News|CGTN', caseSensitive: false).hasMatch(allNames) ||
+    if (RegExp(r'新闻|News|CGTN|资讯|信息|报道|journal|report', caseSensitive: false).hasMatch(allNames) ||
         cid.contains('news')) {
       return ['新闻'];
     }
-    if (RegExp(r'电影|Movie|影院|剧场|Drama|CHC', caseSensitive: false)
+    if (RegExp(r'电影|Movie|影院|剧场|Drama|CHC|影视|视频|Video|Film', caseSensitive: false)
         .hasMatch(allNames)) {
       return ['影视'];
     }
-    if (RegExp(r'少儿|Kids|卡通|Cartoon|Children', caseSensitive: false)
+    if (RegExp(r'少儿|Kids|卡通|Cartoon|Children|儿童|动画|亲子', caseSensitive: false)
         .hasMatch(allNames)) {
       return ['少儿'];
     }
-    if (RegExp(r'体育|Sports|足球|Football', caseSensitive: false)
+    if (RegExp(r'体育|Sports|足球|Football|运动|比赛', caseSensitive: false)
         .hasMatch(allNames)) {
       return ['体育'];
     }
-    if (RegExp(r'教育|Education|科学|Science|科教', caseSensitive: false)
+    if (RegExp(r'教育|Education|科学|Science|科教|知识|科普', caseSensitive: false)
         .hasMatch(allNames)) {
       return ['科教'];
     }
-    if (RegExp(r'娱乐|Variety|综艺|音乐|Music', caseSensitive: false)
+    if (RegExp(r'娱乐|Variety|综艺|音乐|Music|游戏|才艺', caseSensitive: false)
         .hasMatch(allNames)) {
       return ['娱乐'];
     }
-    if (RegExp(r'财经|Finance|经济|Economic', caseSensitive: false)
+    if (RegExp(r'财经|Finance|经济|Economic|股市|金融|商贸', caseSensitive: false)
         .hasMatch(allNames)) {
       return ['财经'];
     }

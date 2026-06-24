@@ -451,26 +451,17 @@ class FallbackMediaPlayer {
 
 /// 共享的 [Player] 实例 (整个 APP 一个 native player)
 ///
-/// 6/17 修复合并到 main.dart: 之前 v0.2.0 启动崩
-/// 'MediaKit.ensureInitialized must be called', 现在 main 里 await
-/// ensureInitialized 同步完成才 runApp, 这里 Player() 不会报这个错.
-///
-/// 6/17 修声音残留: native player 的 dispose 由 [playerServiceProvider]
-/// 间接处理 (PlayerService.dispose() 调 _player.dispose()).  这里
-/// 只管创建,  不重复释放.
-///
-/// v0.3.10.11 (6/23 腾讯极光盒子 6 闪退): libmpv.so 加载失败时
-/// return null, PlayerService 自动切换到 FallbackMediaPlayer.  老板装上
-/// 后视频放不出来但 APP 不闪退, CrashLogger 记 libmpv dlopen 失败日志.
+/// v0.3.10.14: MediaKit.ensureInitialized() + Player() 全部从 main() 移到这里.
+/// main() 里调会触发 native SIGSEGV (libmpv.so dlopen 失败) 直接杀进程,
+/// Dart try-catch 捕获不到.  移到这里后只在用户进播放页时才触发,
+/// 首页/频道列表/设置页都不受影响.
 final mediaKitPlayerProvider = Provider<Player?>((ref) {
   try {
+    MediaKit.ensureInitialized();
     return Player();
   } catch (e, st) {
-    // v0.3.10.13: libmpv.so 加载失败 (Amlogic S905X3 等 TV box).
-    // catch Error 和 Exception — UnsatisfiedLinkError 是 Error 子类.
-    debugPrint('mediaKitPlayerProvider: Player() threw: $e\n$st');
-    // fire-and-forget, CrashLogger.init() 必须先调过.
-    unawaited(CrashLogger.log('Player() construction failed: $e'));
+    debugPrint('mediaKitPlayerProvider: failed: $e\n$st');
+    unawaited(CrashLogger.log('Player init failed: $e'));
     return null;
   }
 });

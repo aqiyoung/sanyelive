@@ -94,9 +94,10 @@ void main() async {
   // Global error widget builder
   ErrorWidget.builder =
       (FlutterErrorDetails details) => _CrashScreen(details: details);
-  // v0.3.10.13: MediaKit 初始化 — 延长 timeout + catch Error
-  // 不再在 main() 里预热 Player/VideoController (移到 PlayerPage 懒加载)
-  await _ensureMediaKitOrLog();
+  // v0.3.10.14: 不再在 main() 调 MediaKit.ensureInitialized() —
+  // 这是 native 调用, libmpv.so dlopen 失败时触发 SIGSEGV,
+  // Dart try-catch 捕获不到, 进程直接被杀 (TV box 白屏闪退根因).
+  // 改为 mediaKitPlayerProvider 里懒初始化, Player() 创建时才调.
   // '0.3.5+37' (subagent 漏改,  设置页永远停在老版本号).  现在每次 release
   // bump pubspec,  设置页/版本检查/强制更新都能读到新版本号.
   // test 环境读不到 PackageInfo,  catch + fallback 到 '0.0.0+0'.
@@ -122,7 +123,6 @@ void main() async {
       currentVersionStringProvider.overrideWithValue(runtimeVersion),
     ],
   );
-  final playerService = container.read(playerServiceProvider);
   // v0.3.10.6 (6/23 老板拍): 频道分类数据每日 03:00 自动后台刷新, 不用更新 APP.
   // 启动时: 如果 last refresh > 1 天就立即重拉一次.
   startChannelsAutoRefresh(container: container);
@@ -138,10 +138,14 @@ void main() async {
   //  tests 环境 (overrideWithValue 零 IO) 不受影响 — 这里是 main() 路径,  测试
   //  走 setUpAll 里自己的 ProviderContainer.
   unawaited(container.read(channelRepositoryProvider).loadBundled());
+  // v0.3.10.14: 不再 container.read(playerServiceProvider) —
+  // 这会触发 mediaKitPlayerProvider → MediaKit.ensureInitialized() +
+  // Player() 构造,  native dlopen libmpv.so 失败时 SIGSEGV 直接杀进程.
+  // 改为懒加载: 生命周期/路由观察器持有 container 引用,  事件触发时才读 provider.
   // 路由观察器: 离开 /player/* 时 stop + dispose.
-  final playerObserver = PlayerRouteObserver(playerService);
+  final playerObserver = PlayerRouteObserver(container);
   // APP 生命周期观察器: paused/inactive/hidden → pause, detached → stop+dispose.
-  final lifecycleListener = _AppLifecycleListener(playerService);
+  final lifecycleListener = _AppLifecycleListener(container);
   WidgetsBinding.instance.addObserver(lifecycleListener);
   runApp(
     UncontrolledProviderScope(
@@ -228,28 +232,6 @@ void _applySystemUiOverlay(SharedPreferences prefs) {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-}
-
-Future<void> _ensureMediaKitOrLog() async {
-  if (_shouldSkipMediaKit) return;
-  try {
-    // v0.3.10.13: 延长 timeout 到 15s — 部分低端 TV box (Amlogic S905X3)
-    // dlopen libmpv.so 需要更长时间.  同时 catch Error (不只是 Exception),
-    // 因为某些 native 错误抛的是 Error 子类.
-    await Future<void>.sync(MediaKit.ensureInitialized)
-        .timeout(const Duration(seconds: 15));
-  } catch (e, st) {
-    debugPrint('=== MediaKit init FAILED, 降级启动 ===');
-    debugPrint('$e');
-    debugPrint('$st');
-    unawaited(CrashLogger.log('MediaKit.ensureInitialized failed: $e'));
-    // 不 throw, 继续 runApp — Player() 会在 provider 里被 catch 返回 null
-  }
-}
-
-bool get _shouldSkipMediaKit {
-  // dart.vm.arguments 在 flutter_test 中包含 'flutter:test'
-  return const bool.fromEnvironment('FLUTTER_TEST') == true;
 }
 
 /// 0.3.6+19: 拿 SharedPreferences.  生产等异步 init,  测试时调用方
@@ -396,46 +378,48 @@ class _CrashScreen extends StatelessWidget {
 /// 6/18 P3-1: APP 生命周期监听器.  切后台 (home 键) 时暂停推流,  系统
 /// 杀进程 (detached) 时彻底释放.  配合 Android manifest 的
 /// android:stopWithTask=true + PlayerRouteObserver,  三层保险.
+///
+/// v0.3.10.14: 持有 ProviderContainer 而非 PlayerService —
+/// 启动时不读 playerServiceProvider (避免触发 libmpv native crash).
+/// 生命周期事件触发时才懒读,  如果 libmpv 没初始化成功则 noop.
 class _AppLifecycleListener with WidgetsBindingObserver {
-  _AppLifecycleListener(this._player);
+  _AppLifecycleListener(this._container);
 
-  final PlayerService _player;
+  final ProviderContainer _container;
 
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
   }
 
+  PlayerService? _tryGetService() {
+    try {
+      return _container.read(playerServiceProvider);
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    final player = _tryGetService();
+    if (player == null) return;
     switch (state) {
       case AppLifecycleState.paused:
-        // 切后台 (home 键 / 多任务) — 暂停推流,  保留 libmpv 实例.
-        // 用户回前台 (resumed) 不会自动恢复,  需要点播放键,  这是预期.
-        _player.pause();
+        player.pause();
         break;
       case AppLifecycleState.inactive:
-        // 多窗口/来电/控制中心 — 跟 paused 同样处理,  防止音频透过
-        // 其他 APP 听到底声.
-        _player.pause();
+        player.pause();
         break;
       case AppLifecycleState.hidden:
-        // Flutter 3.13+ 新增:  类似 inactive,  但 UI 已完全不可见.
-        _player.pause();
+        player.pause();
         break;
       case AppLifecycleState.detached:
-        // APP 进程即将被销毁 (系统杀 / 任务划掉 + stopWithTask=true).
-        // 彻底释放,  避免 libmpv handle 泄漏.
-        _player.stop();
-        // dispose 是 ChangeNotifier override,  同步生效;  不能 await,
-        // 因为当前 isolate 即将死亡.  释放后 widget 引用本 service 的
-        // 状态会失效,  但反正进程要没了.
+        player.stop();
         // ignore: discarded_futures
-        _player.dispose();
+        player.dispose();
         break;
       case AppLifecycleState.resumed:
-        // 回前台 — 故意不自动 resume,  让用户主动点播放,  避免
-        // 切回 APP 时突然出声吓一跳 (尤其半夜追剧).
         break;
     }
   }

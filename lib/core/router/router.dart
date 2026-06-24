@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/category/category_page.dart';
@@ -123,9 +124,9 @@ class _RouterErrorPage extends StatelessWidget {
 /// 声音还在响.  配合 main.dart 的 WidgetsBindingObserver (后台) +
 /// Android manifest android:stopWithTask=true (任务杀), 三层保险.
 class PlayerRouteObserver extends NavigatorObserver {
-  PlayerRouteObserver(this._playerService);
+  PlayerRouteObserver(this._container);
 
-  final PlayerService _playerService;
+  final ProviderContainer _container;
 
   /// 路由名以 /player/ 开头则视为 player 路由,  要释放资源.
   /// AppRoutes.player = '/player/:channelId',  匹配 'player' 后面的部分
@@ -136,6 +137,40 @@ class PlayerRouteObserver extends NavigatorObserver {
     // GoRoute name 是 'player' (见上面 routes 定义).
     return name == 'player';
   }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    if (_isPlayerRoute(route)) {
+      _releasePlayer();
+    }
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (_isPlayerRoute(oldRoute)) {
+      _releasePlayer();
+    }
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didRemove(route: route, previousRoute: previousRoute);
+    if (_isPlayerRoute(route)) {
+      _releasePlayer();
+    }
+  }
+
+  void _releasePlayer() {
+    try {
+      final svc = _container.read(playerServiceProvider);
+      svc.stop();
+    } catch (_) {
+      // libmpv 没初始化,  noop.
+    }
+  }
+}
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {

@@ -21,7 +21,7 @@ void main() {
   group('SourceFailover.play', () {
     test('第一个源成功 → 立即返回第一个', () async {
       final opener = _ScriptedOpener([
-        _ScriptedResult.success(),
+        const _ScriptedResult.success(),
       ]);
       final failover = SourceFailover(
         opener: opener,
@@ -35,8 +35,8 @@ void main() {
 
     test('源 1 失败 → 切到源 2 成功', () async {
       final opener = _ScriptedOpener([
-        _ScriptedResult.failure(),
-        _ScriptedResult.success(),
+        const _ScriptedResult.failure(),
+        const _ScriptedResult.success(),
       ]);
       final failover = SourceFailover(
         opener: opener,
@@ -51,7 +51,7 @@ void main() {
     test('源 1 超时 → 切到源 2 成功', () async {
       final opener = _ScriptedOpener([
         const _ScriptedResult.timeout(),
-        _ScriptedResult.success(),
+        const _ScriptedResult.success(),
       ]);
       final failover = SourceFailover(
         opener: opener,
@@ -65,7 +65,7 @@ void main() {
     test('源 1 抛异常 → 切到源 2 成功 (不中断)', () async {
       final opener = _ScriptedOpener([
         _ScriptedResult.throwError(Exception('net error')),
-        _ScriptedResult.success(),
+        const _ScriptedResult.success(),
       ]);
       final failover = SourceFailover(
         opener: opener,
@@ -78,7 +78,7 @@ void main() {
 
     test('所有源都失败 → 抛 AllSourcesFailedException, 列出所有尝试', () async {
       final opener = _ScriptedOpener([
-        _ScriptedResult.failure(),
+        const _ScriptedResult.failure(),
         const _ScriptedResult.timeout(),
         _ScriptedResult.throwError(Exception('oops')),
       ]);
@@ -115,9 +115,9 @@ void main() {
 
     test('onAttempt 回调: 每次切换前触发, 含 index/total/url', () async {
       final opener = _ScriptedOpener([
-        _ScriptedResult.failure(),
-        _ScriptedResult.failure(),
-        _ScriptedResult.success(),
+        const _ScriptedResult.failure(),
+        const _ScriptedResult.failure(),
+        const _ScriptedResult.success(),
       ]);
       final failover = SourceFailover(
         opener: opener,
@@ -152,8 +152,8 @@ void main() {
 
     test('正常播放: 源 1 失败 → 源 2 成功 → playing 状态', () async {
       final opener = _ScriptedOpener([
-        _ScriptedResult.failure(),
-        _ScriptedResult.success(),
+        const _ScriptedResult.failure(),
+        const _ScriptedResult.success(),
       ]);
       final service = PlayerService(opener: opener);
       final channel = _FakeChannel(
@@ -170,8 +170,8 @@ void main() {
 
     test('所有源失败 → error 状态, error 信息包含尝试数', () async {
       final opener = _ScriptedOpener([
-        _ScriptedResult.failure(),
-        _ScriptedResult.failure(),
+        const _ScriptedResult.failure(),
+        const _ScriptedResult.failure(),
       ]);
       final service = PlayerService(opener: opener);
       final channel = _FakeChannel(
@@ -190,7 +190,7 @@ void main() {
   // 6/17 v0.2.3 P0-4: playSingle 为「换源」按钮提供单源播放能力
   group('SourceFailover.playSingle', () {
     test('单源成功 → 返回 true', () async {
-      final opener = _ScriptedOpener([_ScriptedResult.success()]);
+      final opener = _ScriptedOpener([const _ScriptedResult.success()]);
       final failover = SourceFailover(
         opener: opener,
         perSourceTimeout: const Duration(milliseconds: 500),
@@ -200,7 +200,7 @@ void main() {
     });
 
     test('单源 opener 返回 false → 返回 false (不抛)', () async {
-      final opener = _ScriptedOpener([_ScriptedResult.failure()]);
+      final opener = _ScriptedOpener([const _ScriptedResult.failure()]);
       final failover = SourceFailover(opener: opener);
       expect(await failover.playSingle('http://x'), isFalse);
     });

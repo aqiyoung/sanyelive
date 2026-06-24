@@ -114,8 +114,8 @@ Map<String, List<String>> indexStreamsByChannel(List<dynamic> streams) {
       final qb = qPriority[b['quality'] as String? ?? ''] ?? 0;
       if (qa != qb) return qb.compareTo(qa); // 高的在前
       // feed 优先 HD
-      final fa = (a["feed"] == "HD") ? 1 : 0;
-      final fb = (b["feed"] == "HD") ? 1 : 0;
+      final fa = (a['feed'] == 'HD') ? 1 : 0;
+      final fb = (b['feed'] == 'HD') ? 1 : 0;
       if (fa != fb) return fb.compareTo(fa);
       return 0;
     });

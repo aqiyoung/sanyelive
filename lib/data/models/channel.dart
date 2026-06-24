@@ -1,4 +1,5 @@
 /// iptv-org 频道模型
+library;
 import '../channel_name_zh.dart';
 
 class Channel {

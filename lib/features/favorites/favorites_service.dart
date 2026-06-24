@@ -26,8 +26,9 @@ class SqfliteFavoritesStore implements FavoritesStore {
   static const String _table = 'favorites';
 
   Future<Database> get _database async {
-    if (_injectedDb != null)
+    if (_injectedDb != null) {
       return _injectedDb!; // ignore: unnecessary_non_null_assertion
+    }
     if (_db != null) return _db!;
     // v0.3.7+86: 用 _initLock 保证 _initDb() 只跑一次.  后续 caller await
     // 同一个 Future, 不会重新打开 Database.

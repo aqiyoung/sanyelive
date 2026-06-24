@@ -156,6 +156,6 @@ class WarmupReport {
   bool get allOk => failed.isEmpty;
 
   @override
-  String toString() => 'WarmupReport(${success.length}/${total} ok, '
-      '${failed.length} fail, ${skipped} skipped, ${elapsedMs}ms)';
+  String toString() => 'WarmupReport(${success.length}/$total ok, '
+      '${failed.length} fail, $skipped skipped, ${elapsedMs}ms)';
 }

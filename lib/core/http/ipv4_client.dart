@@ -86,7 +86,7 @@ class IPv4Client extends http.BaseClient {
       // 强制返回正常 ConnectionTask 会跳过代理, 跟 dart:io 设计冲突.
       return ConnectionTask.fromSocket(
         Future<Socket>.error(
-            SocketException('Proxy not supported, use system')),
+            const SocketException('Proxy not supported, use system')),
         () {},
       );
     };

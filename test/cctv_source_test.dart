@@ -131,16 +131,16 @@ void main() {
     test('case 3: pickSources 优先级 cctvSource[0] > sources[0] > known_sources',
         () {
       // CCTV-1 模拟 3 层源
-      final c = Channel(
+      const c = Channel(
         id: 'CCTV1.cn',
         name: 'CCTV-1',
         country: 'CN',
-        categories: const ['general'],
-        sources: const <String>[
+        categories: ['general'],
+        sources: <String>[
           'http://iptv-org/cctv1.m3u8',
           'http://legacy/cctv1.m3u8',
         ],
-        cctvSource: const <String>[
+        cctvSource: <String>[
           'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1/index.m3u8',
           'http://198.204.240.250:82/live/cctv1.m3u8',
         ],
@@ -168,15 +168,15 @@ void main() {
     test('case 4: cctvSource 为空 → 降级到 sources + known_sources (老逻辑)', () {
       // 老 release 升级, cctvSource 字段缺失 (空数组), 必须降级到老逻辑,
       // 不丢源 (channel.sources + known_sources).
-      final c = Channel(
+      const c = Channel(
         id: 'CCTV1.cn',
         name: 'CCTV-1',
         country: 'CN',
-        categories: const ['general'],
-        sources: const <String>[
+        categories: ['general'],
+        sources: <String>[
           'http://iptv-org/cctv1.m3u8',
         ],
-        cctvSource: const <String>[], // v0.3.5.3 之前默认
+        cctvSource: <String>[], // v0.3.5.3 之前默认
       );
 
       final known = <String, List<String>>{
@@ -197,16 +197,16 @@ void main() {
 
     test('case 4b: cctvSource 跟 sources 重复 → 去重, cctvSource 在前', () {
       // 同 URL 在 cctvSource 和 sources 都有, cctvSource 优先, sources 那份不重复加
-      final c = Channel(
+      const c = Channel(
         id: 'CCTV6.cn',
         name: 'CCTV-6',
         country: 'CN',
-        categories: const ['movies'],
-        sources: const <String>[
+        categories: ['movies'],
+        sources: <String>[
           'http://198.204.240.250:82/live/cctv6.m3u8', // 跟 cctvSource[0] 重复
           'http://iptv-org/cctv6.m3u8',
         ],
-        cctvSource: const <String>[
+        cctvSource: <String>[
           'http://198.204.240.250:82/live/cctv6.m3u8', // 重复
         ],
       );
@@ -224,7 +224,7 @@ void main() {
         'case 5: SourceDispatcher.dispatch CCTV 走 cctvSource, 非 CCTV 走 sources',
         () {
       // CCTV 频道: dispatch 走 cctvSource 优先
-      final cctvChannel = const Channel(
+      const cctvChannel = Channel(
         id: 'CCTV1.cn',
         name: 'CCTV-1',
         country: 'CN',

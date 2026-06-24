@@ -25,7 +25,7 @@ import '../../../services/player_service.dart';
 
 /// 播放页顶栏 — 返回 + 频道名 + 状态 + 时钟.
 class TopBar extends StatefulWidget {
-  const TopBar({
+  const TopBar({super.key, 
     required this.channel,
     required this.state,
     required this.onBack,

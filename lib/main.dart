@@ -240,7 +240,7 @@ void _applySystemUiOverlay(SharedPreferences prefs) {
   // 持久化 themeMode 控制 status bar / nav bar 颜色,  现在强制浅色.
   // prefs 参数保留但暂未用 (其他功能如 favorite / endpoint / version cache 还用).
   SystemChrome.setSystemUIOverlayStyle(
-    SystemUiOverlayStyle(
+    const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
       statusBarBrightness: Brightness.light,
@@ -360,10 +360,10 @@ class _CrashScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 13, color: Color(0xFF7F0000)),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 '崩溃日志: /sdcard/Download/iptv_crash.log\n'
                 '用盒子文件管理器打开 Download 文件夹查看',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11,
                     fontFamily: 'monospace',
                     color: Color(0xFF1565C0)),

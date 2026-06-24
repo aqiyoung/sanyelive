@@ -192,7 +192,7 @@ class _FavoritesAppBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('我的收藏', style: IptvTypography.serifHeadline),
+                const Text('我的收藏', style: IptvTypography.serifHeadline),
                 Text(
                   count == 0 ? '暂无收藏' : '共 $count 个频道',
                   style: IptvTypography.caption,
@@ -237,7 +237,7 @@ class _ErrorState extends StatelessWidget {
               size: 48,
             ),
             const SizedBox(height: 16),
-            Text('加载失败', style: IptvTypography.serifTitle),
+            const Text('加载失败', style: IptvTypography.serifTitle),
             const SizedBox(height: 8),
             Text(
               message,
@@ -270,9 +270,9 @@ class _EmptyState extends StatelessWidget {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
-            Text('还没有收藏', style: IptvTypography.serifTitle),
+            const Text('还没有收藏', style: IptvTypography.serifTitle),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               '去频道页或搜索页,  点 ♡ 收藏喜欢的频道',
               style: IptvTypography.caption,
               textAlign: TextAlign.center,

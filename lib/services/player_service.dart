@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
-import '../data/cctv_source.dart';
 import '../data/models/channel.dart';
 import '../data/source_dispatcher.dart';
 import '../utils/crash_logger.dart';

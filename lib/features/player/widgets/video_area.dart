@@ -15,7 +15,7 @@ import 'source_picker_sheet.dart';
 
 /// 视频区: media_kit + loading/error overlay.
 class VideoArea extends StatelessWidget {
-  const VideoArea({
+  const VideoArea({super.key, 
     required this.controller,
     required this.state,
     required this.channel,
@@ -121,7 +121,7 @@ class VideoArea extends StatelessWidget {
 
 /// 加载动画 overlay.
 class LoadingOverlay extends StatelessWidget {
-  const LoadingOverlay({required this.text});
+  const LoadingOverlay({super.key, required this.text});
   final String text;
 
   @override
@@ -133,10 +133,10 @@ class LoadingOverlay extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
+            const SizedBox(
               width: 36,
               height: 36,
-              child: const CircularProgressIndicator(
+              child: CircularProgressIndicator(
                 strokeWidth: 3,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   Colors.white,
@@ -154,7 +154,7 @@ class LoadingOverlay extends StatelessWidget {
 
 /// 错误 UI + 重试/换源按钮.
 class ErrorOverlay extends ConsumerWidget {
-  const ErrorOverlay({required this.message});
+  const ErrorOverlay({super.key, required this.message});
   final String message;
 
   @override

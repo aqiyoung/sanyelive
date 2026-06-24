@@ -656,7 +656,7 @@ class _PlayerPageSkeleton extends StatelessWidget {
     return Column(
       children: [
         // 16:9 黑色视频区 (跟 data 状态一致)
-        AspectRatio(
+        const AspectRatio(
           aspectRatio: 16 / 9,
           child: ColoredBox(color: Colors.black),
         ),

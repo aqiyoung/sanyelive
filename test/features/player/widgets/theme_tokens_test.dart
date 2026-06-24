@@ -38,7 +38,7 @@ void main() {
         // 找到 import '...colors.dart' 块, 记录行号区间
         final importLineIndices = <int>[];
         for (var i = 0; i < lines.length; i++) {
-          if (lines[i].contains("theme/colors.dart") ||
+          if (lines[i].contains('theme/colors.dart') ||
               lines[i].contains('colors.dart')) {
             importLineIndices.add(i);
           }

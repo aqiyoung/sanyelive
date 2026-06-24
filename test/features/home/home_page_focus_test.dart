@@ -1,7 +1,6 @@
 // P2-1: HomePage 焦点项数上限测试
 // 验收 (proof): home_page 一屏焦点项 ≤ 9, 超出 TvFocusScope 报 assert
 // 6/18 老板拍 ChatGPT 6/17 21:18 建议.
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

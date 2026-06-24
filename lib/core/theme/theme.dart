@@ -53,7 +53,7 @@ class IptvTheme {
         bodyColor: IptvColors.textPrimary,
         displayColor: IptvColors.textPrimary,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: IptvColors.bgParchment,
         foregroundColor: IptvColors.textPrimary,
         elevation: 0,

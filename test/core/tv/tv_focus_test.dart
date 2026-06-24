@@ -11,7 +11,7 @@ void main() {
     test('焦点环颜色是朱砂 (接近 #E24A1A 暖红色)', () {
       expect(kTvFocusColor, isA<Color>());
       // 红色主导, 不是纯红 (朱砂有暖色调)
-      final c = kTvFocusColor;
+      const c = kTvFocusColor;
       // 6/17 fix: Flutter 3.24.5 没有 c.r/g/b (3.27+ 才有), 改 int 0-255.
       // 1847e58 改过, 5f8e668 误回退, 这次写清楚别再动.
       expect(c.red, greaterThan(128));

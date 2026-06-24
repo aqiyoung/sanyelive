@@ -48,7 +48,7 @@ void main() {
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final opener = _ScriptedOpener([_ScriptedResult.failure()]);
+      final opener = _ScriptedOpener([const _ScriptedResult.failure()]);
       await _pumpPlayerPage(
         tester,
         opener: opener,
@@ -82,7 +82,7 @@ void main() {
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final opener = _ScriptedOpener([_ScriptedResult.failure()]);
+      final opener = _ScriptedOpener([const _ScriptedResult.failure()]);
       await _pumpPlayerPage(
         tester,
         opener: opener,
@@ -126,7 +126,7 @@ void main() {
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final opener = _ScriptedOpener([_ScriptedResult.failure()]);
+      final opener = _ScriptedOpener([const _ScriptedResult.failure()]);
       await _pumpPlayerPage(
         tester,
         opener: opener,
@@ -192,7 +192,7 @@ void main() {
       tester.view.devicePixelRatio = 2.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final opener = _ScriptedOpener([_ScriptedResult.failure()]);
+      final opener = _ScriptedOpener([const _ScriptedResult.failure()]);
       await _pumpPlayerPage(
         tester,
         opener: opener,
@@ -246,7 +246,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final opener = _ScriptedOpener([_ScriptedResult.failure()]);
+      final opener = _ScriptedOpener([const _ScriptedResult.failure()]);
       await _pumpPlayerPage(
         tester,
         opener: opener,

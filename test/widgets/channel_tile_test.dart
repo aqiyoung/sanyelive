@@ -18,15 +18,15 @@ Widget _wrap(Widget child) => ProviderScope(
 
 void main() {
   testWidgets('ChannelTile renders number, name, category', (tester) async {
-    final ch = Channel(
+    const ch = Channel(
       id: 'CCTV1.cn',
       name: 'CCTV-1',
       country: 'CN',
-      categories: const ['央视'],
-      sources: const [],
+      categories: ['央视'],
+      sources: [],
     );
     await tester.pumpWidget(
-      _wrap(ChannelTile(
+      _wrap(const ChannelTile(
         channelNumber: '01',
         channelName: 'CCTV-1',
         channel: ch,

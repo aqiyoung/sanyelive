@@ -328,7 +328,7 @@ class CctvSourceStats {
       return '$channelId: 无验证源 (标 "全活" 但本次未测到)';
     }
     final pct = (avgHealth * 100).round();
-    return '$channelId: $sourceCount 源, 平均健康 ${pct}%';
+    return '$channelId: $sourceCount 源, 平均健康 $pct%';
   }
 }
 

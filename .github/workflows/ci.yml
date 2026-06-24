@@ -68,16 +68,7 @@ jobs:
         # --no-fatal-infos: info 级 lints (例如 prefer_const_constructors) 
         # 不阻断 CI, 避免老板提交后被一个不重要的 lint 警告打归.
         # error + warning 仍 fatal.  卡 6 修复后收敛.
-        # v0.3.10.16: 只阻断 error/warning 级, info 级 (prefer_const_constructors 等) 不阻断
-        run: |
-          OUTPUT=$(flutter analyze --no-fatal-infos 2>&1)
-          echo "$OUTPUT"
-          # 检查是否有 error 或 warning 级问题 (忽略 info)
-          if echo "$OUTPUT" | grep -qE "^\s+(error|warning)"; then
-            echo "❌ 存在 error/warning 级问题"
-            exit 1
-          fi
-          echo "✅ 无 error/warning 级问题"
+        run: flutter analyze --no-fatal-infos
 
       - name: Run tests
         # v0.3.8+125 (6/21): 恢复 fatal — 11 个 test fail 全部修通 (commit 323384f).

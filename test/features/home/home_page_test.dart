@@ -1,6 +1,5 @@
 // 卡 6 单元测试: HomePage 集成 — 上次观看 / 搜索入口 / 频道分类
 // 验收 (proof): 收藏 5 个频道, 重启 APP 仍在; 搜索 "CCTV" 1s 内出结果
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

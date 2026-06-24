@@ -235,8 +235,8 @@ void main() {
             home: Builder(
               builder: (context) {
                 ctx = context;
-                return Scaffold(
-                  body: const Center(child: Text('underneath')),
+                return const Scaffold(
+                  body: Center(child: Text('underneath')),
                 );
               },
             ),

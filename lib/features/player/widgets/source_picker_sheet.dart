@@ -54,7 +54,7 @@ class _SourcePickerContent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('选择播放源', style: IptvTypography.serifTitle),
+                  const Text('选择播放源', style: IptvTypography.serifTitle),
                   const SizedBox(height: 4),
                   Text(
                     '${channel.displayName} · ${sources.length} 个候选源'

@@ -32,7 +32,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import '../../../core/responsive/breakpoints.dart';
 
 /// Splash 展示总时长 (3s — 跟 v0.3.8+177 保持一致, 老板实测节奏).
 const Duration kSplashDuration = Duration(milliseconds: 3000);

@@ -76,16 +76,11 @@ void main() async {
     prefs = await _loadSharedPreferencesOrMock();
     await CrashLogger.log('step3: SharedPreferences OK');
   } catch (e) {
-    debugPrint('=== SharedPreferences failed (non-fatal): $e ===');
-    await CrashLogger.log('step3: SharedPreferences FAILED: $e');
-    // SharedPreferences 不可用时重试一次 — 可能是瞬态 IO 错误.
-    try {
-      prefs = await SharedPreferences.getInstance();
-    } catch (_) {
-      // 彻底失败: 用空 Prefs 兜底,  后续读写走内存不崩.
-      // 用 _EmptyPrefs 替代 null,  避免下游全部加 null check.
-      prefs = _EmptyPrefs();
-    }
+    debugPrint('=== SharedPreferences failed, retrying: $e ===');
+    await CrashLogger.log('step3: SharedPreferences FAILED, retrying: $e');
+    // 瞬态 IO 错误时重试一次;  彻底失败会让下游 prefs 操作抛异常,
+    // 但 runApp() 已经能执行,  不会白屏闪退.
+    prefs = await SharedPreferences.getInstance();
   }
   try {
     await CrashLogger.log('step4: before loadPersistedScores');
@@ -425,70 +420,4 @@ class _AppLifecycleListener with WidgetsBindingObserver {
   }
 }
 
-/// SharedPreferences 不可用时的空实现 — 所有读写走内存,  不崩.
-/// 下次启动 SharedPreferences 恢复正常后自动覆盖.
-class _EmptyPrefs extends SharedPreferences {
-  final Map<String, Object> _map = {};
-  @override
-  Future<bool> setString(String key, String value) async {
-    _map[key] = value;
-    return true;
-  }
 
-  @override
-  String? getString(String key) => _map[key] as String?;
-
-  @override
-  Future<bool> setInt(String key, int value) async {
-    _map[key] = value;
-    return true;
-  }
-
-  @override
-  int? getInt(String key) => _map[key] as int?;
-
-  @override
-  Future<bool> setBool(String key, bool value) async {
-    _map[key] = value;
-    return true;
-  }
-
-  @override
-  bool? getBool(String key) => _map[key] as bool?;
-
-  @override
-  Future<bool> setDouble(String key, double value) async {
-    _map[key] = value;
-    return true;
-  }
-
-  @override
-  double? getDouble(String key) => _map[key] as double?;
-
-  @override
-  Future<bool> setStringList(String key, List<String> value) async {
-    _map[key] = value;
-    return true;
-  }
-
-  @override
-  List<String>? getStringList(String key) => _map[key] as List<String>?;
-
-  @override
-  Future<bool> remove(String key) async {
-    _map.remove(key);
-    return true;
-  }
-
-  @override
-  Future<bool> clear() async {
-    _map.clear();
-    return true;
-  }
-
-  @override
-  bool containsKey(String key) => _map.containsKey(key);
-
-  @override
-  Set<String> getKeys() => _map.keys.toSet();
-}

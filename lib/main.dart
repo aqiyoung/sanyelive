@@ -52,85 +52,81 @@ import 'utils/crash_logger.dart';
 // const currentVersionCode = 0;
 
 void main() async {
-  // 卡 7 (6/17 修复): 之前 v0.2.0 启动崩
-  // 'MediaKit.ensureInitialized must be called', 因为 bootstrap 是 async
-  // 跳到 runApp 才走完 await, 期间某个 widget build 触发了 Player() 构造.
-  // 现在改成 main 同步等 init 完成再 runApp. WidgetsFlutterBinding
-  // 也必须 await, 因为 ensureInitialized 要用到 binding.
+  // v0.3.10.20: TV box 白屏闪退修复 — 所有 init 步骤加 CrashLogger.log
+  // 追踪到哪一步挂了,  同时每步 try-catch 确保 runApp() 一定能执行.
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await CrashLogger.init();
-    await CrashLogger.log('v0.3.10.15 step1: CrashLogger OK');
+    await CrashLogger.log('step1: CrashLogger OK');
   } catch (e) {
     debugPrint('=== CrashLogger init failed (non-fatal): $e ===');
   }
-  await CrashLogger.log('v0.3.10.15 step2: before orientations');
-  // v0.3.8+120: 启动时全局允许 portrait + landscape
+  await CrashLogger.log('step2: before orientations');
   SystemChrome.setPreferredOrientations(const [
     DeviceOrientation.portraitUp,
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
-  // 6/18 P3-1: shared_preferences 提前拿
-  final prefs = await _loadSharedPreferencesOrMock();
-  // v0.3.6+42: 加载持久化 health_score
-  await CctvSourcePicker.loadPersistedScores();
-  // v0.3.8+93: 启动时读 prefs 设 system UI
+  // v0.3.10.20: prefs 加 try-catch — SharedPreferences 在某些 TV box 上
+  // 可能因权限 / 存储异常失败,  之前没 catch 导致 main() 中断 runApp 永远
+  // 不执行 → 白屏闪退.
+  SharedPreferences prefs;
+  try {
+    await CrashLogger.log('step3: before SharedPreferences');
+    prefs = await _loadSharedPreferencesOrMock();
+    await CrashLogger.log('step3: SharedPreferences OK');
+  } catch (e) {
+    debugPrint('=== SharedPreferences failed (non-fatal): $e ===');
+    await CrashLogger.log('step3: SharedPreferences FAILED: $e');
+    // SharedPreferences 不可用时用空 mock 兜底 — 后续 prefs 读写
+    // 都走内存,  不崩.  下次启动自动恢复 (SharedPreferences 实例
+    // 会在磁盘重建).
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+  }
+  try {
+    await CrashLogger.log('step4: before loadPersistedScores');
+    await CctvSourcePicker.loadPersistedScores();
+    await CrashLogger.log('step4: loadPersistedScores OK');
+  } catch (e) {
+    debugPrint('=== loadPersistedScores failed (non-fatal): $e ===');
+    await CrashLogger.log('step4: loadPersistedScores FAILED: $e');
+  }
   _applySystemUiOverlay(prefs);
-  // v0.3.7+50: 强制 IPv4
   if (IPv4Client.defaultEnabled) {
     HttpOverrides.global = Ipv4HttpOverrides();
   }
-  // v0.3.7+50: DNS 预热 — fire-and-forget, 不阻塞
   unawaited(DnsWarmup.warmup(_warmupHostnames()));
-  // v0.3.8+125: 远程频道预热 — fire-and-forget
   unawaited(_prewarmRemoteChannels());
-  // v0.3.10.8: 远程 video sources 预热 — fire-and-forget
   unawaited(_prewarmRemoteSources());
-  // Global error widget builder
   ErrorWidget.builder =
       (FlutterErrorDetails details) => _CrashScreen(details: details);
-  // v0.3.10.16: 预检 libmpv.so 是否可加载 — 通过 MethodChannel 走 Android
-  // System.loadLibrary, 如果 dlopen 失败 (ARM 32-bit SIGSEGV), Java 层
-  // UnsatisfiedLinkError 能捕获到.  结果写入 libmpvAvailableProvider,
-  // mediaKitPlayerProvider 读到 false 就直接返 null (走 FallbackMediaPlayer),
-  // 避免 Dart 端调 MediaKit.ensureInitialized() 触发进程级 SIGSEGV.
-  // v0.3.10.14: 不再在 main() 调 MediaKit.ensureInitialized() —
-  // 这是 native 调用, libmpv.so dlopen 失败时触发 SIGSEGV,
-  // Dart try-catch 捕获不到, 进程直接被杀 (TV box 白屏闪退根因).
-  // 改为 mediaKitPlayerProvider 里懒初始化, Player() 创建时才调.
-  // '0.3.5+37' (subagent 漏改,  设置页永远停在老版本号).  现在每次 release
-  // bump pubspec,  设置页/版本检查/强制更新都能读到新版本号.
-  // test 环境读不到 PackageInfo,  catch + fallback 到 '0.0.0+0'.
   String runtimeVersion;
   int runtimeVersionCode;
   try {
+    await CrashLogger.log('step5: before PackageInfo');
     final info = await PackageInfo.fromPlatform();
     runtimeVersion = '${info.version}+${info.buildNumber}';
     runtimeVersionCode = int.tryParse(info.buildNumber) ?? 0;
+    await CrashLogger.log('step5: PackageInfo OK: $runtimeVersion');
   } catch (e) {
     runtimeVersion = '0.0.0+0';
     runtimeVersionCode = 0;
-    debugPrint(
-        '=== PackageInfo.fromPlatform failed, fallback to 0.0.0+0: $e ===');
+    await CrashLogger.log('step5: PackageInfo FAILED: $e');
+    debugPrint('=== PackageInfo.fromPlatform failed, fallback: $e ===');
   }
-  // v0.3.10.16: 预检 libmpv.so — 在创建 ProviderContainer 之前.
-  // MethodChannel 走 Android System.loadLibrary, ARM 32-bit dlopen 失败
-  // 触发 UnsatisfiedLinkError (Java 层能捕获), 不走到 Dart SIGSEGV.
   bool libmpvAvailable = true;
   try {
+    await CrashLogger.log('step6: before checkLibmpv');
     const channel = MethodChannel('com.threelive.iptv/check_libmpv');
     libmpvAvailable = await channel.invokeMethod<bool>('checkLibmpv') ?? false;
-    debugPrint('=== libmpv 预检结果: $libmpvAvailable ===');
-    await CrashLogger.log('libmpv check: available=$libmpvAvailable');
+    await CrashLogger.log('step6: checkLibmpv OK: $libmpvAvailable');
   } catch (e) {
+    await CrashLogger.log('step6: checkLibmpv FAILED: $e');
     debugPrint('=== libmpv 预检异常 (非致命): $e ===');
-    libmpvAvailable = true; // 探测失败时假设可用, 走正常路径
+    libmpvAvailable = true;
   }
-  // 0.3.7+20 (6/18): 后台强制更新 — 注入当前 versionCode + versionString.
-  // 编译期 const 来自 pubspec.yaml,  跟 release workflow 跑出来的 APK
-  // tag +versionCode 一致.  也跟 services/version_checker.dart 里 parse
-  // APK asset 名的 +N 格式对齐.
+  await CrashLogger.log('step7: before ProviderContainer');
   final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
@@ -139,44 +135,28 @@ void main() async {
       libmpvAvailableProvider.overrideWithValue(libmpvAvailable),
     ],
   );
-  // v0.3.10.6 (6/23 老板拍): 频道分类数据每日 03:00 自动后台刷新, 不用更新 APP.
-  // 启动时: 如果 last refresh > 1 天就立即重拉一次.
-  startChannelsAutoRefresh(container: container);
-  // v0.3.10.8 (6/23 老板拍): 视频源每日 03:00 自动后台拉远端.
-  // 跟 channels 完全平行 —  启动时 last refresh > 1 天立即重拉,
-  // 后续 03:00 Beijing 调度 invalidate.  老板拍板 "视频源每天拉一次就够".
-  startSourcesAutoRefresh(container: container);
-  // v0.3.8+133 (6/21 09:49 老板反馈 "启动白屏"):
-  //  预热 ChannelRepository — loadBundled 第一次 1-2s 读 + parse assets/data,
-  //  玩家进频道 initState await channelsProvider.future 会多等这一下.
-  //  跟 +124 media_kit 预热是同样思路:  runApp 之前 fire-and-forget 让
-  //  static _cached 缓存就绪,  后续 loadBundled 零 IO.
-  //  tests 环境 (overrideWithValue 零 IO) 不受影响 — 这里是 main() 路径,  测试
-  //  走 setUpAll 里自己的 ProviderContainer.
+  try {
+    startChannelsAutoRefresh(container: container);
+    startSourcesAutoRefresh(container: container);
+  } catch (e) {
+    debugPrint('=== auto refresh start failed (non-fatal): $e ===');
+    await CrashLogger.log('step8: autoRefresh FAILED: $e');
+  }
   unawaited(container.read(channelRepositoryProvider).loadBundled());
-  // v0.3.10.14: 不再 container.read(playerServiceProvider) —
-  // 这会触发 mediaKitPlayerProvider → MediaKit.ensureInitialized() +
-  // Player() 构造,  native dlopen libmpv.so 失败时 SIGSEGV 直接杀进程.
-  // 改为懒加载: 生命周期/路由观察器持有 container 引用,  事件触发时才读 provider.
-  // 路由观察器: 离开 /player/* 时 stop + dispose.
   final playerObserver = PlayerRouteObserver(container);
   final lifecycleListener = _AppLifecycleListener(container);
   WidgetsBinding.instance.addObserver(lifecycleListener);
-  await CrashLogger.log('v0.3.10.15 step3: before runApp');
+  await CrashLogger.log('step9: before runApp');
   runApp(
     UncontrolledProviderScope(
       container: container,
       child: IptvApp(playerObserver: playerObserver),
     ),
   );
-  // 0.3.7+20 (6/18): 后台强制更新 — runApp 后 microtask 异步 check,  不阻塞
-  // 启动.  1h 内有 cache 走 cache,  失败静默吞掉,  弹窗只对 outdated 触发.
-  // 用 Future.microtask 而不是 scheduleMicrotask 是为了 async/await 一致.
   Future.microtask(() async {
     try {
       await container.read(versionCheckerProvider.notifier).checkOnStartup();
     } catch (e) {
-      // 静默 — 后台任务, 失败不骚扰用户.
       debugPrint('=== version check failed (silenced): $e ===');
     }
   });

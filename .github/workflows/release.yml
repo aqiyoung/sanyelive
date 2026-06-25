@@ -143,14 +143,14 @@ jobs:
           echo "✅ --require-cctv --allow-empty-cctv 闸通过 (v0.3.8+108, 7 个 CCTV 主频道有源 + 11 个故意空)"
 
       - name: Build APK (release, signed)
-        # v0.3.10.9 (6/23 老板反馈 TV 盒子 x86 装不上): 之前 6/18 v0.3.5.1
-        # 只打 arm64 (--target-platform android-arm64), 体积小但 32-bit ARM 老盒
-        # 跟 x86 盒装不上. 老板拍板: "做个 32 位的包" — 改打 arm + arm64 + x64
-        # 3 个 ABI, 老板按设备选装.
-        #   - arm64-v8a.apk: arm64 设备 (2020+ 手机/盒子, 当贝/小米/创维)
-        #   - armeabi-v7a.apk: 32-bit ARM 老盒 (运营商定制盒/老电视)
-        #   - x86_64.apk: x86 盒 (阿里盒子部分型号)
-        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi
+        # v0.3.10.25: 3 个 ABI 分开构建 — armeabi-v7a 关闭 Impeller (老盒子兼容),
+        # arm64/x64 保持 Impeller 默认开启 (现代设备性能更好).
+        # v0.3.10.9 (6/23): 老板拍板 "做个 32 位的包" — 改打 arm + arm64 + x64
+        run: |
+          set -e
+          flutter build apk --release --target-platform android-arm
+          flutter build apk --release --target-platform android-arm64 --enable-impeller
+          flutter build apk --release --target-platform android-x64 --enable-impeller
       - name: Rename APK with sanyelive + version
         run: |
           set -e

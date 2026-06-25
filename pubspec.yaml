@@ -100,7 +100,7 @@ publish_to: "none"
 #   threely 14:49 + 15:58 反馈 2 件事.  v0.3.5.4 subagent 漏修 26 处, 主会话
 #   16:08 grep 验证.  TopBar 分离 v0.3.5.5 (#15) 已先修, 这次只补 5 widget.
 #   pubspec 0.3.5+24 → 0.3.5+25, tag v0.3.5.6, versionCode 25 (上一个 24).
-version: 0.3.10+22
+version: 0.3.10+23
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

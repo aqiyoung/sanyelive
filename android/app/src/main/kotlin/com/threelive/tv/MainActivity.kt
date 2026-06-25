@@ -44,14 +44,6 @@ class MainActivity : FlutterActivity() {
     // v0.3.10.22: 在 Flutter 引擎启动前就请求存储权限 —
     // 某些 TV 盒子 ROM 会在 app 不请求权限时直接杀进程.
     override fun onCreate(savedInstanceState: Bundle?) {
-        // v0.3.10.24: 最早加载 native crash handler — 在 super.onCreate 之前
-        try {
-            System.loadLibrary("crash_handler")
-            Log.i(TAG, "crash_handler.so loaded")
-        } catch (e: Throwable) {
-            Log.w(TAG, "crash_handler.so load failed: ${e.message}")
-        }
-        // 安装 native crash handler 尽早 — 在 super.onCreate 之前
         installNativeCrashHandler()
         requestStoragePermissions()
         super.onCreate(savedInstanceState)

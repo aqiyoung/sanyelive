@@ -55,19 +55,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        // v0.3.10.24: NDK build for native crash handler
-        externalNativeBuild {
-            cmake {
-                cFlags "-DANDROID"
-            }
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.10.2+"
-        }
     }
 
     signingConfigs {

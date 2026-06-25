@@ -135,7 +135,20 @@ class MainActivity : FlutterActivity() {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to write native crash log", e)
             }
-            // 调用原始 handler (让系统默认 crash 流程继续)
+            // v0.3.10.22: 弹 CrashActivity 显示错误 — 用户不用 adb 也能看到崩溃原因
+            try {
+                val sw2 = StringWriter()
+                throwable.printStackTrace(PrintWriter(sw2))
+                val intent = Intent(this, CrashActivity::class.java).apply {
+                    putExtra("error", "${throwable.javaClass.name}: ${throwable.message}")
+                    putExtra("stack", sw2.toString())
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                startActivity(intent)
+                Thread.sleep(2000)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to launch CrashActivity", e)
+            }
             defaultHandler?.uncaughtException(thread, throwable)
         }
     }

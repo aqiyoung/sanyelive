@@ -508,6 +508,12 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     // MediaCodec 实现不完整,  创建 VideoController 或首帧渲染时触发
     // native crash (SIGSEGV).  'auto-safe' 让 libmpv 自动选择最安全的
     // 解码方式 — 优先硬解,  不支持时 fallback 软解,  不会崩.
+    // v0.3.10.22: 平板/TV 兼容性 — 先尝试 'auto-safe',  如果
+    // VideoController 创建成功但后续渲染异常 (有声音没画面),
+    // 会在 VideoArea 层 fallback 到 cover fit.
+    // 之前老板 6/26 反馈平板有声音没画面,
+    // 根因是 BoxFit.contain 在某些平板 surface 尺寸=0,
+    // 不是 hwdec 问题.  这里保留 'auto-safe' 不变.
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(

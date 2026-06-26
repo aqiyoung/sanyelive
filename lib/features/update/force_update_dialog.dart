@@ -54,26 +54,45 @@ class _ForceUpdateDialogContentState
     extends ConsumerState<_ForceUpdateDialogContent> {
   bool _launching = false;
 
-  /// 构建 GitHub releases 页面 URL.
+  /// 构建 GitHub releases 页面 URL (fallback).
   String _buildReleasesUrl(String tagName) {
     return 'https://github.com/aqiyoung/iptv-app/releases/tag/$tagName';
   }
 
-  Future<void> _openGitHub(BuildContext context, String tagName) async {
+  Future<void> _openGitHub(BuildContext context, VersionCheckOutdated state) async {
     setState(() => _launching = true);
+    // v0.3.10.22: 在 async gap 之前 capture ScaffoldMessenger 引用,
+    // 避免 use_build_context_synchronously lint 警告.
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      final url = Uri.parse(_buildReleasesUrl(tagName));
-      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('无法打开浏览器, 请手动访问 GitHub')),
-          );
+      // v0.3.10.22: 优先用 apkDownloadUrl 直链下载,  失败 fallback 到 releases 页面.
+      // apkDownloadUrl 已经是 browser_download_url (如 sanyelive-v0.3.10.20-arm64-v8a.apk),
+      // 直接下载 APK,  避免用户还要在 releases 页面找哪个文件.
+      final urlsToTry = <String>[
+        state.apkDownloadUrl, // 优先: APK 直链
+        _buildReleasesUrl(state.latestVersion), // fallback: releases 页面
+      ];
+      bool launched = false;
+      for (final url in urlsToTry) {
+        try {
+          final uri = Uri.parse(url);
+          if (await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+            launched = true;
+            break;
+          }
+        } catch (e) {
+          debugPrint('打开 $url 失败: $e');
         }
+      }
+      if (!launched && mounted) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('无法打开浏览器, 请手动访问 GitHub')),
+        );
       }
     } catch (e) {
       debugPrint('打开 GitHub 失败: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(content: Text('打开失败: $e')),
         );
       }
@@ -166,7 +185,8 @@ class _ForceUpdateDialogContentState
                 '点击"去下载"将跳转 GitHub 下载最新 APK',
                 style: TextStyle(
                   fontSize: 12,
-                  color: bodyColor.withValues(alpha: 0.6),
+                  // v0.3.10.22: withValues 替代 withOpacity (deprecated)
+                color: bodyColor.withValues(alpha: 0.6), // v0.3.10.22: withValues (withOpacity deprecated)
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -199,8 +219,11 @@ class _ForceUpdateDialogContentState
       actions.add(
         TextButton(
           onPressed: () async {
+            // v0.3.10.22: 先 capture navigator, 避免 async gap 后
+            // 使用 context 触发 use_build_context_synchronously lint.
+            final navigator = Navigator.of(context);
             await ref.read(versionCheckerProvider.notifier).markDismissed();
-            if (mounted) Navigator.of(context).pop();
+            if (mounted) navigator.pop();
           },
           child: const Text('稍后'),
         ),
@@ -209,7 +232,7 @@ class _ForceUpdateDialogContentState
 
     actions.add(
       FilledButton(
-        onPressed: () => _openGitHub(context, s.latestVersion),
+        onPressed: () => _openGitHub(context, s),
         style: FilledButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,

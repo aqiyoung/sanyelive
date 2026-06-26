@@ -93,12 +93,31 @@ class VideoArea extends StatelessWidget {
               // v0.3.10.11: controller == null (libmpv 加载失败) 时不渲染
               // Video widget — 它会崩.  改为 SizedBox.shrink + 让
               // ErrorOverlay 在上层显示 "本机播放器不可用" 信息.
+              // v0.3.10.22: 平板/TV 修复 — LayoutBuilder 检测父容器尺寸,
+              // 在 tablet (shortestSide >= 600) 时 fallback 到 BoxFit.cover
+              // 确保视频铺满可用空间; 手机保持 BoxFit.contain.
+              // SizedBox.expand 确保 Video widget 有正确的布局约束.
               child:
                   (state.status == PlayerStatus.playing && controller != null)
-                      ? Video(
-                          controller: controller!,
-                          fit: BoxFit.contain,
-                          aspectRatio: 16 / 9,
+                      ? LayoutBuilder(
+                          builder: (context, constraints) {
+                            final screenSize = MediaQuery.of(context).size;
+                            final isTablet = screenSize.shortestSide >= 600;
+                            // 平板/TV: 使用 cover 确保视频铺满屏幕
+                            // 手机: 使用 contain 保持视频完整可见
+                            final fit = isTablet ? BoxFit.cover : BoxFit.contain;
+                            // v0.3.10.22: ValueKey(channel.id) 强制
+                          // Video widget 在切台时全新重建 — 防止 media_kit
+                          // 复用旧 State 导致 surface 尺寸=0 (平板黑屏).
+                          return SizedBox.expand(
+                              child: Video(
+                                key: ValueKey(channel?.id ?? 'no-channel'),
+                                controller: controller!,
+                                fit: fit,
+                                aspectRatio: 16 / 9,
+                              ),
+                            );
+                          },
                         )
                       : const SizedBox.shrink(),
             ),

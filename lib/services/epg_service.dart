@@ -11,7 +11,7 @@ import '../core/http/ipv4_client.dart';
 import '../data/models/epg.dart';
 import '../data/sources/epg_xmltv_source.dart';
 
-/// EPG 服务 — 懒加载 + 缓存 + 当前/下一档节目展示 + 后台自动刷新.
+/// EPG 服务 - 懒加载 + 缓存 + 当前/下一档节目展示 + 后台自动刷新.
 class EpgService {
   EpgService({http.Client? client, Database? db})
       : _client = client ?? IPv4Client(),
@@ -19,7 +19,7 @@ class EpgService {
 
   /// 注入 http client (test 用); 传给 XmltvEpgSource (默认 IPv4Client,
   /// 跟 v0.3.7+50 一致).
-  // ignore: unused_field — 恢复 suzukua fetch 时会用到
+  // ignore: unused_field - 恢复 suzukua fetch 时会用到
   final http.Client _client;
   final Database? _injectedDb;
   Database? _db;
@@ -33,7 +33,7 @@ class EpgService {
   Map<String, List<EpgEntry>> _allEntries = const {};
   bool _xmltvLoaded = false;
 
-  // v0.3.10 (6/23): 后台自动刷新 — 老板 06:57 反馈 "自动后台更新数据
+  // v0.3.10 (6/23): 后台自动刷新 - 老板 06:57 反馈 "自动后台更新数据
   // 不要我们更新app来更新".  每日 Beijing 凌晨 03:00 重新拉 XMLTV, 不需
   // 用户动手.  Timer 由 startAutoRefresh 启动, dispose() 释放.
   Timer? _refreshTimer;
@@ -64,7 +64,7 @@ class EpgService {
   /// 获取某个频道的 EPG 列表 (优先缓存, 过期则拉取).
   ///
   /// v0.3.10 (6/23): 优先走内存 _allEntries (过滤后精确值), 避免 sqflite
-  /// 缓存返回 24h 前的过期档位.  sqflite 仍保留 — app 退出后再开, 先走
+  /// 缓存返回 24h 前的过期档位.  sqflite 仍保留 - app 退出后再开, 先走
   /// sqflite 顶一下, 内存空后第一次 fetch 重新拉.
   Future<List<EpgEntry>> fetch(String channelId) async {
     // 1. 内存有 _allEntries → 走内存过滤 (定时刷新后这里是新数据)
@@ -76,7 +76,7 @@ class EpgService {
     final cached = await _readCache(channelId);
     if (cached != null) return cached;
 
-    // 3. 懒加载 — 仅在有网络时拉取
+    // 3. 懒加载 - 仅在有网络时拉取
     try {
       final entries = await _fetchRemote(channelId);
       await _writeCache(channelId, entries);
@@ -150,7 +150,7 @@ class EpgService {
           .map((e) => EpgEntry.fromJson(e as Map<String, dynamic>))
           .toList();
 
-      // v0.3.10 (6/23): EPG 是未来时刻 — 如果缓存里的所有档位都已在过去
+      // v0.3.10 (6/23): EPG 是未来时刻 - 如果缓存里的所有档位都已在过去
       // (例: 缓存是昨天拉的, 24h+2h 范围已过期), 当作 stale, 重新拉.
       // 否则 currentProgram 返回 null, UI "暂无节目".
       if (entries.isNotEmpty) {
@@ -202,7 +202,7 @@ class EpgService {
   /// 4) 拉取 / 映射失败 → fallback _placeholderSchedule (v0.3.9+3 时区
   ///    已对齐 Beijing local).
   Future<List<EpgEntry>> _fetchRemote(String channelId) async {
-    // 0) v0.3.10 (6/23): 过期检测 — 如果上次拉的数据最晚的 programme.end
+    // 0) v0.3.10 (6/23): 过期检测 - 如果上次拉的数据最晚的 programme.end
     //  已过去 30min 以上 (例: 03:00 定时拉后坐了一天半, 现在 第二天 12:00),
     //  强制重拉.  避免 UI 一直显示「朝闻天下」明明中午 12 点.
     if (_xmltvLoaded && _allEntries.isNotEmpty) {
@@ -240,56 +240,24 @@ class EpgService {
     */
   }
 
-  /// 时段占位 — 按当地时间今天生成 4 档.
-  /// v0.3.8+93 (6/20 P0-2): 拿不到 iptv-org XMLTV 时给个象样的节目卡.
-  /// 实际接入 XMLTV 后这个会被覆盖.
-  /// v0.3.9+3: 改用 local time (Beijing), 跟 now_next_program.dart 的
-  /// DateTime.now() 对齐.  之前用 UTC 导致占位 EPG 边界算到前一天, 凌晨
-  /// 06:46 Beijing 误显 "夜间档 · 午夜剧场" (UTC 22:46 → h=22).
-  /// v0.3.10 (6/23):  51zmt 接入后, 本方法只剩 fallback 角色.  保留逻辑
-  /// 不变 (local time, 4 时段).
+  /// v0.3.10.22 (6/27): 占位节目单 — 全天显示“敬请期待”.
   List<EpgEntry> _placeholderSchedule(String channelId) {
-    // v0.3.9+3: 改用 local time (Beijing), 跟 now_next_program.dart 的
-    // DateTime.now() 对齐.  之前用 UTC 导致占位 EPG 边界算到前一天, 凌晨
-    // 06:46 Beijing 误显 "夜间档 · 午夜剧场" (UTC 22:46 → h=22).
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    String titleFor(DateTime start) {
-      final h = start.hour;
-      if (h < 6) return '夜间档 · 重播精选';
-      if (h < 12) return '上午档 · 资讯杂志';
-      if (h < 18) return '下午档 · 综艺生活';
-      if (h < 22) return '黄金档 · 电视剧';
-      return '夜间档 · 午夜剧场';
-    }
-
-    final boundaries = [6, 12, 18, 22];
-    final entries = <EpgEntry>[];
-    DateTime start = today;
-    for (final h in boundaries) {
-      final end = today.add(Duration(hours: h));
-      entries.add(EpgEntry(
+    return [
+      EpgEntry(
         channelId: channelId,
-        title: titleFor(start),
-        start: start,
-        end: end,
-      ));
-      start = end;
-    }
-    // 最后一个档到明天早上 6:00
-    entries.add(EpgEntry(
-      channelId: channelId,
-      title: titleFor(start),
-      start: start,
-      end: today.add(const Duration(hours: 30)),
-    ));
-    return entries;
+        title: '敬请期待',
+        start: today,
+        end: today.add(const Duration(hours: 24)),
+      ),
+    ];
   }
 
   // ─── 后台自动刷新 (v0.3.10 / 6/23) ───
 
   /// 启动每日定时刷新 (Beijing 凌晨 03:00).
-  /// 在 epgServiceProvider 里调一次.  可重入 — 重复调取消旧 timer 再排.
+  /// 在 epgServiceProvider 里调一次.  可重入 - 重复调取消旧 timer 再排.
   void startAutoRefresh() {
     _refreshTimer?.cancel();
     _scheduleNextRefresh();
@@ -312,7 +280,7 @@ class EpgService {
     });
   }
 
-  /// 执行一次刷新 — 把 _xmltvLoaded=false, 下次 fetch 自然重拉.
+  /// 执行一次刷新 - 把 _xmltvLoaded=false, 下次 fetch 自然重拉.
   /// 不主动 await 拉取, 让用户首次请求触发 (避免后台网络费用).
   /// 同时调底层 HttpClient (client.close()) 走重连, 避开 socket 复用问题.
   Future<void> _refreshNow() async {
@@ -321,7 +289,7 @@ class EpgService {
     debugPrint('EpgService: 定时刷新触发, 下次 fetch 重新拉 XMLTV');
   }
 
-  /// 释放资源 — app 退出 / 测试 teardown 调.
+  /// 释放资源 - app 退出 / 测试 teardown 调.
   /// 取消 timer, 关闭 http client.
   void dispose() {
     _refreshTimer?.cancel();
@@ -333,10 +301,10 @@ class EpgService {
   }
 }
 
-/// Riverpod provider — 生产环境自动创建 sqflite 数据库.
+/// Riverpod provider - 生产环境自动创建 sqflite 数据库.
 /// 测试可 overrideWithValue(EpgService(db: mockDb)).
 ///
-/// v0.3.10 (6/23): 启动时调 startAutoRefresh() — 每日 Beijing 03:00 自动
+/// v0.3.10 (6/23): 启动时调 startAutoRefresh() - 每日 Beijing 03:00 自动
 /// 重新拉 suzukua/epg XMLTV, 老板不需手动.  ref.onDispose 跟 Riverpod 生命周期
 /// 绑定, app 退出时释放 timer + http client.
 final epgServiceProvider = Provider<EpgService>((ref) {

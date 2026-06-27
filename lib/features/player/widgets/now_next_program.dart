@@ -78,6 +78,7 @@ class _ProgramCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPlaceholder = current?.title == '敬请期待';
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: GlassContainer(
@@ -87,36 +88,42 @@ class _ProgramCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _SectionLabel(
-                text: '正在直播', accent: Theme.of(context).colorScheme.primary),
+                text: '节目单', accent: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 6),
-            Text(
-              current?.title ?? '暂无节目信息',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: IptvTypography.serifTitle.copyWith(fontSize: 18),
-            ),
-            if (current != null) ...[
-              const SizedBox(height: 8),
-              _ProgressBar(
-                start: current!.start,
-                end: current!.end,
-                now: now,
-              ),
-              const SizedBox(height: 4),
+            if (isPlaceholder) ...[
               Text(
-                '${_fmt(current!.start.toLocal())} – '
-                '${_fmt(current!.end.toLocal())}  '
-                '·  剩余 ${_remaining(current!.end, now)}',
-                style: IptvTypography.caption.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                '敬请期待',
+                style: IptvTypography.serifTitle.copyWith(fontSize: 18),
               ),
-            ],
-            if (next != null) ...[
-              const SizedBox(height: 12),
-              _SectionLabel(
-                  text: '即将播出',
-                  accent: Theme.of(context).colorScheme.secondary),
-              const SizedBox(height: 4),
+            ] else ...[
+              Text(
+                current?.title ?? '暂无节目信息',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: IptvTypography.serifTitle.copyWith(fontSize: 18),
+              ),
+              if (current != null) ...[
+                const SizedBox(height: 8),
+                _ProgressBar(
+                  start: current!.start,
+                  end: current!.end,
+                  now: now,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_fmt(current!.start.toLocal())} – '
+                  '${_fmt(current!.end.toLocal())}  '
+                  '·  剩余 ${_remaining(current!.end, now)}',
+                  style: IptvTypography.caption.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+              ],
+              if (next != null) ...[
+                const SizedBox(height: 12),
+                _SectionLabel(
+                    text: '即将播出',
+                    accent: Theme.of(context).colorScheme.secondary),
+                const SizedBox(height: 4),
               Text(
                 next!.title,
                 maxLines: 1,
@@ -130,6 +137,7 @@ class _ProgramCard extends StatelessWidget {
                 style: IptvTypography.caption.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
+            ],
             ],
           ],
         ),

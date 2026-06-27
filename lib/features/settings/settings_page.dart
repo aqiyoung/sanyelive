@@ -329,7 +329,7 @@ class SettingsPage extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                '备选: cf-workers-proxy / 自建镜像 (NAS + nginx)',
+                '备选: 自建镜像 (NAS + nginx)',
                 style: TextStyle(fontSize: 12),
               ),
               const SizedBox(height: 16),

@@ -53,7 +53,6 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
 ///   gh-proxy.com 彻底弃用 (403 频率太高, chain 里放它只会浪费一次超时).
 const List<String> kDefaultEndpointUrls = [
   'https://api.github.com/repos/aqiyoung/iptv-app/releases/latest', // primary: 直连 (0.6s, 6/24 实测)
-  'https://cf-workers-proxy-9e9.pages.dev/api.github.com/repos/aqiyoung/iptv-app/releases/latest', // fallback: CF Worker (国内不能直连时)
 ];
 
 /// 兼容老代码 — 取 chain[0]. 单元测试可 overrideWithValue.

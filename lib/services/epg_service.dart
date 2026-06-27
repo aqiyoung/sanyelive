@@ -19,6 +19,7 @@ class EpgService {
 
   /// 注入 http client (test 用); 传给 XmltvEpgSource (默认 IPv4Client,
   /// 跟 v0.3.7+50 一致).
+  // ignore: unused_field — 恢复 suzukua fetch 时会用到
   final http.Client _client;
   final Database? _injectedDb;
   Database? _db;
@@ -235,10 +236,8 @@ class EpgService {
       debugPrint(
           'EpgService: suzukua fetch failed: $e, fallback to placeholder');
       return _placeholderSchedule(channelId);
-    } */
-
-    // 2) 从内存过滤本 channel (跟 fetch() 里 _filterForChannel 等价)
-    return _filterForChannel(channelId);
+    }
+    */
   }
 
   /// 时段占位 — 按当地时间今天生成 4 档.

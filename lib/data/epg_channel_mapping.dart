@@ -7,11 +7,8 @@
 ///
 /// v0.3.10.21 (6/27): 清空真实节目单映射, 所有频道 fallback 到占位节目单
 /// (上午档/下午档/黄金档/夜间档).  原有映射注释保留, 需要时取消注释即可恢复.
-// /
-
-/// v0.3.10 (6/23): 126 / 198 CN 频道 (63%).
+// ignore: dangling_library_doc_comments
 final Map<String, String> kChannelIdToEpg = {
-  // ──── 以下映射已禁用 (v0.3.10.21 / 6/27) ────
   // ── CCTV 主频道 ──
   // 'CCTV1.cn': 'CCTV1',
   // 'CCTV2.cn': 'CCTV2',

@@ -128,21 +128,59 @@ class _PlayerPageState extends ConsumerState<PlayerPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // v0.3.10.18: 退出到后台时自动进入 PiP (像 YouTube)
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
+    // v0.3.10.18: 退出到后台时自动进入 PiP
+    // 注意: 必须在 inactive 状态时进入 PiP, 不能等 paused (paused 时 Flutter 已暂停渲染)
+    if (state == AppLifecycleState.inactive) {
       _enterPipIfNeeded();
+    }
+  }
+
+  /// 尝试继续播放 (从 PiP 返回时)
+  void _tryResumeFromPip() {
+    if (!mounted) return;
+    final playerSvc = ref.read(playerServiceProvider);
+    // 如果不在播放，恢复播放
+    if (playerSvc.state.status == PlayerStatus.idle ||
+        playerSvc.state.status == PlayerStatus.error) {
+      _tryAutoPlay();
     }
   }
 
   /// 自动进入 PiP (如果正在播放且未在 PiP 中)
   void _enterPipIfNeeded() {
     final playerSvc = ref.read(playerServiceProvider);
-    if (playerSvc.state.status != PlayerStatus.playing) return;
+    if (playerSvc.state.status != PlayerStatus.playing) {
+      // 如果暂停了，先恢复播放
+      _tryAutoPlay();
+      // 等一下再进入 PiP
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) _enterPipNow();
+      });
+      return;
+    }
+    _enterPipNow();
+  }
+
+  void _enterPipNow() {
+    final playerSvc = ref.read(playerServiceProvider);
+    // 确保播放中
+    if (playerSvc.state.status != PlayerStatus.playing) {
+      _tryAutoPlay();
+    }
     const pipChannel = MethodChannel('com.threelive.iptv/pip');
     pipChannel.invokeMethod<bool>('isInPip').then((inPip) {
       if (inPip != true) {
-        pipChannel.invokeMethod('enterPip');
+        pipChannel.invokeMethod('enterPip').then((_) {
+          // PiP 进入后，确保播放器仍在播放
+          // 某些设备进入 PiP 后会暂停，需要恢复
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (!mounted) return;
+            final svc = ref.read(playerServiceProvider);
+            if (svc.state.status != PlayerStatus.playing) {
+              _tryAutoPlay();
+            }
+          });
+        });
       }
     }).catchError((_) {
       // PiP 不可用 (Android 8.0 以下) 则忽略

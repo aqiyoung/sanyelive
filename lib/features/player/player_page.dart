@@ -34,7 +34,8 @@ class PlayerPage extends ConsumerStatefulWidget {
   ConsumerState<PlayerPage> createState() => _PlayerPageState();
 }
 
-class _PlayerPageState extends ConsumerState<PlayerPage> {
+class _PlayerPageState extends ConsumerState<PlayerPage>
+    with WidgetsBindingObserver {
   // v0.3.8+114 (6/20 老板 20:37 反馈):
   //   - +113 删 _hideControlsTimer 是错的! 老板明确要 "点一下出来 +
   //     3s 自动隐" 逻辑.  之前 v0.3.5.5 设计 + +111 修切频道 bug 的
@@ -121,6 +122,32 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _tryAutoPlay());
     // v0.3.8+114:  恢复控件隐身计时器 — 点屏幕显示 + 3s 自动隐.
     WidgetsBinding.instance.addPostFrameCallback((_) => _resetHideTimer());
+    // v0.3.10.18: 监听 APP 生命周期, 退出到后台时自动进入 PiP
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // v0.3.10.18: 退出到后台时自动进入 PiP (像 YouTube)
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _enterPipIfNeeded();
+    }
+  }
+
+  /// 自动进入 PiP (如果正在播放且未在 PiP 中)
+  void _enterPipIfNeeded() {
+    final playerSvc = ref.read(playerServiceProvider);
+    if (playerSvc.state.status != PlayerStatus.playing) return;
+    // 检查是否已在 PiP 中
+    const pipChannel = MethodChannel('com.threelive.iptv/pip');
+    pipChannel.invokeMethod<bool>('isInPip').then((inPip) {
+      if (inPip != true) {
+        pipChannel.invokeMethod('enterPip');
+      }
+    }).catchError((_) {
+      // PiP 不可用 (Android 8.0 以下) 则忽略
+    });
   }
 
   /// v0.3.8+109 (6/20): 让 player state 进入 loading — 不等 addPostFrameCallback
@@ -197,6 +224,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     } catch (_) {
       // widget 树已拆 + provider 链可能已被释放,  静默忽略.
     }
+    // v0.3.10.18: 移除 APP 生命周期监听
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 

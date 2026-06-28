@@ -107,27 +107,46 @@ const Map<String, double> kCctvHealthScores = <String, double>{
   'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8':
       0.95,
 
-  // === 央视 4K (198.204.240.250:82 — iptv-org 历史源) ===
-  'http://198.204.240.250:82/live/cctv4k.m3u8': 0.7,
+  // === 央视 4K (198.204.240.250:82 — 实测 4K) ===
+  'http://198.204.240.250:82/live/cctv4k.m3u8': 0.85,
 
   // === CCTV-1/6/8 主源 (198.204.240.250 — 同服务器, 6/18 实测 OK) ===
-  'http://198.204.240.250:82/live/cctv1.m3u8': 0.7,
+  'http://198.204.240.250:82/live/cctv1.m3u8': 0.5,
   'http://198.204.240.250:82/live/cctv6.m3u8': 0.7,
   'http://198.204.240.250:82/live/cctv8.m3u8': 0.7,
 
   // === CCTV-4 (xykt-fix/a02a 跳转到 cctvnews.cctv.com — 官方 CCTVNews CDN) ===
   'https://xykt-fix.github.io/play/a02a/index.m3u8': 0.85,
 
-  // === CCTV-9 (xykt-fix/Y77 — kankanlive 直播) ===
-  'https://xykt-fix.github.io/Y77.m3u8': 0.8,
+  // === CCTV-9 (xykt-fix/Y77 — kankanlive 直播, 实测 1920×1080 4.7Mbps) ===
+  'https://xykt-fix.github.io/Y77.m3u8': 0.95,
 
   // === CCTV-10/14 (cdn4.skygo.mn — 蒙古 CDN, 稳定但延迟高) ===
-  'https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8': 0.7,
-  'https://cdn4.skygo.mn/live/disk1/CCTV-14/HLSv3-FTA/CCTV-14.m3u8': 0.7,
+  'https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8': 0.85,
+  'https://cdn4.skygo.mn/live/disk1/CCTV-14/HLSv3-FTA/CCTV-14.m3u8': 0.85,
 
-  // === CCTV-11/15 (xykt-fix/a02b/a02e — 跳转到 CMCC TV, 每次 GET 换 token) ===
-  'https://xykt-fix.github.io/play/a02b/index.m3u8': 0.65,
-  'https://xykt-fix.github.io/play/a02e/index.m3u8': 0.65,
+  // === CCTV-11 (xykt-fix/a02b — CMCC TV, 1.37Mbps, 无分辨率信息) ===
+  'https://xykt-fix.github.io/play/a02b/index.m3u8': 0.75,
+
+  // === CCTV-15 (xykt-fix/a02e — CMCC TV, 实测 1920×1080 4.7Mbps) ===
+  'https://xykt-fix.github.io/play/a02e/index.m3u8': 0.85,
+
+  // === ❌ 540p 标清源 (Tencent Cloud CDRM, 实测仅 960×540) ===
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv2_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv3_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv4_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv5_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv51_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv6_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv7_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv8_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv10_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv11_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv12_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv14_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv15_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv16_1/index.m3u8': 0.2,
+  'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv17_1/index.m3u8': 0.2,
 };
 
 /// CCTV 源选择器 (单例, 无状态, 纯函数)

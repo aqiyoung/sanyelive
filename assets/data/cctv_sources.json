@@ -1,6 +1,6 @@
 {
-  "_comment": "v0.3.5.3 (6/18) CCTV 源健康分排序结果. Discover script: scripts/discover_cctv_sources.py. Channel: CCTV1.cn ~ CCTV17.cn (含 CCTV4K/CCTV5Plus). Key: channel id, Value: list of {url, score, method, lastChecked, rttMs}. Top 3 sources per channel by health score (descending).",
-  "_generated_at": "2026-06-20T17:20:46+0800",
+  "_comment": "v0.3.5.3 (6/18) + v0.3.10 (6/28) 实测分辨率调整. Tencent Cloud CDRM: CCTV-1/13 ✅1080p, 其余频道 ❌540p. xykt/cmcc/skygo 等替代源有真 1080p, 提分优先.",
+  "_generated_at": "2026-06-28T17:50:00+0800",
   "_discover_timeout_s": 4.0,
   "_discover_workers": 30,
   "_source_count": 29,
@@ -10,17 +10,18 @@
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1/index.m3u8",
         "score": 0.8,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 124,
-        "alive": true
+        "note": "✅ 1920x1080 多码率"
       },
       {
         "url": "http://198.204.240.250:82/live/cctv1.m3u8",
-        "score": 0.7,
+        "score": 0.5,
         "method": "legacy_iptv",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 516,
-        "alive": true
+        "alive": true,
+        "note": "TS 流, 无分辨率信息"
       },
       {
         "url": "http://69.30.245.50/live/cctv1.m3u8",
@@ -31,174 +32,68 @@
         "alive": false
       }
     ],
-    "CCTV10.cn": [
-      {
-        "url": "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8",
-        "score": 0.8,
-        "method": "skygo",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 1959,
-        "alive": true
-      },
-      {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv10_1/index.m3u8",
-        "score": 0.5,
-        "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 110,
-        "alive": true
-      }
-    ],
-    "CCTV11.cn": [
-      {
-        "url": "https://xykt-fix.github.io/play/a02b/index.m3u8",
-        "score": 0.6,
-        "method": "cmcc",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 577,
-        "alive": true
-      },
-      {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv11_1/index.m3u8",
-        "score": 0.5,
-        "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 143,
-        "alive": true
-      }
-    ],
-    "CCTV12.cn": [
-      {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv12_1/index.m3u8",
-        "score": 0.5,
-        "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 140,
-        "alive": true
-      }
-    ],
-    "CCTV13.cn": [
-      {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8",
-        "score": 0.8,
-        "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 97,
-        "alive": true
-      }
-    ],
-    "CCTV14.cn": [
-      {
-        "url": "https://cdn4.skygo.mn/live/disk1/CCTV-14/HLSv3-FTA/CCTV-14.m3u8",
-        "score": 0.9,
-        "method": "skygo",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 806,
-        "alive": true
-      },
-      {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv14_1/index.m3u8",
-        "score": 0.5,
-        "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 143,
-        "alive": true
-      }
-    ],
-    "CCTV15.cn": [
-      {
-        "url": "https://xykt-fix.github.io/play/a02e/index.m3u8",
-        "score": 0.6,
-        "method": "cmcc",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 610,
-        "alive": true
-      },
-      {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv15_1/index.m3u8",
-        "score": 0.5,
-        "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 113,
-        "alive": true
-      }
-    ],
-    "CCTV16.cn": [
-      {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv16_1/index.m3u8",
-        "score": 0.5,
-        "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 112,
-        "alive": true
-      }
-    ],
-    "CCTV17.cn": [
-      {
-        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv17_1/index.m3u8",
-        "score": 0.5,
-        "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
-        "rttMs": 84,
-        "alive": true
-      }
-    ],
     "CCTV2.cn": [
       {
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv2_1/index.m3u8",
-        "score": 0.5,
+        "score": 0.2,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 116,
-        "alive": true
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       }
     ],
     "CCTV3.cn": [
       {
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv3_1/index.m3u8",
-        "score": 0.5,
+        "score": 0.2,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 91,
-        "alive": true
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       }
     ],
     "CCTV4.cn": [
       {
         "url": "https://xykt-fix.github.io/play/a02a/index.m3u8",
-        "score": 0.6,
+        "score": 0.85,
         "method": "xykt_fix",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 598,
-        "alive": true
+        "alive": true,
+        "note": "跳转到 cctvnews.cctv.com 官方 CDN"
       },
       {
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv4_1/index.m3u8",
-        "score": 0.5,
+        "score": 0.2,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 104,
-        "alive": true
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       }
     ],
     "CCTV4K.cn": [
       {
         "url": "http://198.204.240.250:82/live/cctv4k.m3u8",
-        "score": 0.6,
+        "score": 0.8,
         "method": "legacy_iptv",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 1206,
-        "alive": true
+        "alive": true,
+        "note": "4K 超高清 TS 流"
       }
     ],
     "CCTV5.cn": [
       {
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv5_1/index.m3u8",
-        "score": 0.5,
+        "score": 0.2,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 104,
-        "alive": true
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       },
       {
         "url": "http://38.75.136.137:98/gslb/dsdqpub/cctv5.m3u8?auth=testpub",
@@ -212,67 +107,198 @@
     "CCTV5Plus.cn": [
       {
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv51_1/index.m3u8",
-        "score": 0.5,
+        "score": 0.2,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 108,
-        "alive": true
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       }
     ],
     "CCTV6.cn": [
       {
         "url": "http://198.204.240.250:82/live/cctv6.m3u8",
-        "score": 0.8,
+        "score": 0.7,
         "method": "legacy_iptv",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 498,
-        "alive": true
+        "alive": true,
+        "note": "TS 流, 无分辨率信息"
       },
       {
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv6_1/index.m3u8",
-        "score": 0.5,
+        "score": 0.2,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 103,
-        "alive": true
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       }
     ],
     "CCTV7.cn": [
       {
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv7_1/index.m3u8",
-        "score": 0.5,
+        "score": 0.2,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 113,
-        "alive": true
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       }
     ],
     "CCTV8.cn": [
       {
         "url": "http://198.204.240.250:82/live/cctv8.m3u8",
-        "score": 0.8,
+        "score": 0.7,
         "method": "legacy_iptv",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 487,
-        "alive": true
+        "alive": true,
+        "note": "TS 流, 无分辨率信息"
       },
       {
         "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv8_1/index.m3u8",
-        "score": 0.5,
+        "score": 0.2,
         "method": "tencent_cloud",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 112,
-        "alive": true
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       }
     ],
     "CCTV9.cn": [
       {
         "url": "https://xykt-fix.github.io/Y77.m3u8",
-        "score": 0.6,
+        "score": 0.95,
         "method": "xykt_fix",
-        "lastChecked": "2026-06-20T17:20:46+0800",
+        "lastChecked": "2026-06-28T17:50:00+0800",
         "rttMs": 615,
-        "alive": true
+        "alive": true,
+        "note": "✅ 1920x1080 4.7Mbps kankanlive"
+      }
+    ],
+    "CCTV10.cn": [
+      {
+        "url": "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8",
+        "score": 0.85,
+        "method": "skygo",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 1959,
+        "alive": true,
+        "note": "✅ 1280x960 多码率 master"
+      },
+      {
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv10_1/index.m3u8",
+        "score": 0.2,
+        "method": "tencent_cloud",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 110,
+        "alive": true,
+        "note": "❌ 960x540 非高清"
+      }
+    ],
+    "CCTV11.cn": [
+      {
+        "url": "https://xykt-fix.github.io/play/a02b/index.m3u8",
+        "score": 0.75,
+        "method": "cmcc",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 577,
+        "alive": true,
+        "note": "CMCC TV, 1.37Mbps"
+      },
+      {
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv11_1/index.m3u8",
+        "score": 0.2,
+        "method": "tencent_cloud",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 143,
+        "alive": true,
+        "note": "❌ 960x540 非高清"
+      }
+    ],
+    "CCTV12.cn": [
+      {
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv12_1/index.m3u8",
+        "score": 0.2,
+        "method": "tencent_cloud",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 140,
+        "alive": true,
+        "note": "❌ 960x540 非高清"
+      }
+    ],
+    "CCTV13.cn": [
+      {
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8",
+        "score": 0.8,
+        "method": "tencent_cloud",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 97,
+        "alive": true,
+        "note": "✅ 1920x1080 多码率"
+      }
+    ],
+    "CCTV14.cn": [
+      {
+        "url": "https://cdn4.skygo.mn/live/disk1/CCTV-14/HLSv3-FTA/CCTV-14.m3u8",
+        "score": 0.85,
+        "method": "skygo",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 806,
+        "alive": true,
+        "note": "✅ 1280x960 多码率 master"
+      },
+      {
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv14_1/index.m3u8",
+        "score": 0.2,
+        "method": "tencent_cloud",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 143,
+        "alive": true,
+        "note": "❌ 960x540 非高清"
+      }
+    ],
+    "CCTV15.cn": [
+      {
+        "url": "https://xykt-fix.github.io/play/a02e/index.m3u8",
+        "score": 0.85,
+        "method": "cmcc",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 610,
+        "alive": true,
+        "note": "✅ 1920x1080 4.7Mbps CMCC TV"
+      },
+      {
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv15_1/index.m3u8",
+        "score": 0.2,
+        "method": "tencent_cloud",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 113,
+        "alive": true,
+        "note": "❌ 960x540 非高清"
+      }
+    ],
+    "CCTV16.cn": [
+      {
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv16_1/index.m3u8",
+        "score": 0.2,
+        "method": "tencent_cloud",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 112,
+        "alive": true,
+        "note": "❌ 960x540 非高清"
+      }
+    ],
+    "CCTV17.cn": [
+      {
+        "url": "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv17_1/index.m3u8",
+        "score": 0.2,
+        "method": "tencent_cloud",
+        "lastChecked": "2026-06-28T17:50:00+0800",
+        "rttMs": 84,
+        "alive": true,
+        "note": "❌ 960x540 非高清"
       }
     ]
   }

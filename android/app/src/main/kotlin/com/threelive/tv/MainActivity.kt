@@ -55,8 +55,8 @@ class MainActivity : FlutterActivity() {
     private var currentChannelId: String? = null
     private val REQUEST_PERMISSIONS = 1001
 
-    // v0.3.10.22: PiP 原生视频播放器
-    private val pipPlayer = PipPlayerManager(this)
+    // v0.3.10.22: PiP 原生视频播放器 (单例)
+    private val pipPlayer = PipPlayerManager.getInstance(this)
     private val pipPlayerChannelName = "com.threelive.iptv/pip_player"
 
     // v0.3.10.22: 在 Flutter 引擎启动前就请求存储权限 —

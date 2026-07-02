@@ -2,6 +2,8 @@
     <!-- 卡 6: HLS 拉流要联网; iptv-org 的 CN 源很多走 HTTP (cleartext),
          需要 cleartextTrafficPermitted=true -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- v0.3.10.22: PiP 悬浮窗需要系统级窗口权限 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- v0.3.7+20 (6/18): 后台强制更新 — 下载完 APK 调系统 installer 装包
          要这个权限 (Android 8+/API 26+).  之前不加会抛
          'Installation failed: neither user 10067 nor current process has android.permission.REQUEST_INSTALL_PACKAGES' -->

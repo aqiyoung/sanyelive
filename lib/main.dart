@@ -51,6 +51,9 @@ import 'utils/crash_logger.dart';
 // const currentVersion = '0.0.0+0';
 // const currentVersionCode = 0;
 
+// v0.3.10.22: Beta 分支标识 — 显示在设置页版本号后
+const kIsBeta = true;
+
 void main() async {
   // v0.3.10.21: TV box 白屏闪退 — 整个 init 包在顶层 try-catch,
   // 保证任何异常都不阻塞 runApp().  之前 SharedPreferences 重试

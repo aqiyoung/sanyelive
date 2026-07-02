@@ -13,6 +13,8 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../main.dart' show kIsBeta;
+
 // v0.3.7.2 (6/19): 不再 import main.dart (主 dart 写死 const 没用),  用 Provider 读运行时版本号.
 import '../../core/theme/colors.dart';
 import '../../services/version_checker.dart'
@@ -137,10 +139,11 @@ class SettingsPage extends ConsumerWidget {
                 builder: (context, ref, _) {
                   final version = ref.watch(currentVersionStringProvider);
                   final code = ref.watch(currentVersionCodeProvider);
+                  final displayVersion = kIsBeta ? '$version (Beta)' : '$version';
                   return ListTile(
                     leading: const Icon(Icons.tag_outlined),
                     title: const Text('版本号'),
-                    subtitle: Text('$version (build $code)'),
+                    subtitle: Text('$displayVersion (build $code)'),
                   );
                 },
               ),

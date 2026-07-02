@@ -59,18 +59,35 @@ class MainActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
     }
 
-    // v0.3.10.22: 在用户按 Home 键时立即进入 PiP (在 onPause 之前)
-    // 这样可以避免 Flutter 暂停导致视频也暂停
+    // v0.3.10.22: 用户按 Home 键 → 立即进入 PiP
     override fun onUserLeaveHint() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
-                val ret = enterPictureInPictureMode()
-                Log.d(TAG, "onUserLeaveHint: enterPictureInPictureMode = $ret")
+                enterPictureInPictureMode()
             } catch (e: Exception) {
-                Log.e(TAG, "onUserLeaveHint: failed: ${e.message}")
+                Log.e(TAG, "onUserLeaveHint: ${e.message}")
             }
         }
         super.onUserLeaveHint()
+    }
+
+    // v0.3.10.22: PiP 模式下不暂停 Flutter, 保持视频播放
+    override fun onPause() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode) {
+            Log.d(TAG, "onPause: in PiP mode, skip Flutter pause")
+            // 在 PiP 模式下, 不调用 super.onPause() 可防止 Flutter 暂停渲染
+            // 这样 texture/platform view 会继续刷新, 视频继续播放
+            return
+        }
+        super.onPause()
+    }
+
+    override fun onStop() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode) {
+            Log.d(TAG, "onStop: in PiP mode, skip Flutter stop")
+            return
+        }
+        super.onStop()
     }
 
     // v0.3.10.22: 监听 PiP 模式变化

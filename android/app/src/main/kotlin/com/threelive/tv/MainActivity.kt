@@ -132,6 +132,8 @@ class MainActivity : FlutterActivity() {
             mediaSession?.release()
             mediaSession = null
         }
+        // v0.3.10.22: 停止 PiP 原生播放器, 清理 SurfaceView
+        pipPlayer.stop()
         super.onDestroy()
     }
 

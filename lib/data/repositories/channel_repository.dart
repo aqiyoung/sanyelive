@@ -161,14 +161,15 @@ class ChannelRepository {
     final known = await knownFuture;
 
     final merged = <Channel>[...cn, ...i18n];
-    // v0.3.11: 高速源 (0701) 优先 — 已验证 10/10 频道可播, 响应 0.1s
-    // 0701 源是代理跳转地址 (302 → miguvideo HLS), media_kv 自动跟随重定向
-    final fastSources = await _loadFastSources();
-    if (fastSources != null && fastSources.isNotEmpty) {
-      _prependFastSources(merged, fastSources);
-    }
     if (known != null) {
       mergeKnownSources(merged, known);
+    }
+    // v0.3.11: 0701 高速源放最后 (兜底)
+    // ffmpeg 验证可播, 但 media_kv Android 端可能不跟随 302 重定向
+    // 放最后避免拖慢正常源播放
+    final fastSources = await _loadFastSources();
+    if (fastSources != null && fastSources.isNotEmpty) {
+      _appendFastSourcesAsFallback(merged, fastSources);
     }
     return merged;
   }
@@ -225,21 +226,22 @@ class ChannelRepository {
     }
   }
 
-  /// v0.3.11: 将高速源前置到频道 sources 列表最前面 (优先级最高)
-  void _prependFastSources(List<Channel> channels, Map<String, List<String>> fast) {
+  /// v0.3.11: 追加 0701 源作为兜底 (放最后, 不拖慢正常源)
+  void _appendFastSourcesAsFallback(
+      List<Channel> channels, Map<String, List<String>> fast) {
     for (var i = 0; i < channels.length; i++) {
       final c = channels[i];
       final List<String>? fastUrls = fast[c.id];
       if (fastUrls == null || fastUrls.isEmpty) continue;
       final merged = <String>[];
       final seen = <String>{};
-      // 高速源放前面
-      for (final url in fastUrls) {
-        if (seen.add(url)) merged.add(url);
-      }
-      // 原有源放后面
+      // 原有源先
       for (final s in c.sources) {
         if (seen.add(s)) merged.add(s);
+      }
+      // 0701 源放最后 (兜底)
+      for (final url in fastUrls) {
+        if (seen.add(url)) merged.add(url);
       }
       channels[i] = Channel(
         id: c.id,

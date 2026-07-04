@@ -33,8 +33,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Splash 展示总时长 (3s — 跟 v0.3.8+177 保持一致, 老板实测节奏).
-const Duration kSplashDuration = Duration(milliseconds: 3000);
+/// Splash 展示最短时长 (保证动画完整播放).
+const Duration kSplashMinDuration = Duration(milliseconds: 1500);
 
 /// Logo 边长 — 240px, 跟 motion.css #logo-root 一致.
 const double _kLogoSize = 160.0;
@@ -66,12 +66,12 @@ class _SanyeliveSplashState extends State<SanyeliveSplash>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: kSplashDuration,
+      duration: kSplashMinDuration,
     );
     _controller.forward();
     // 3s 后隐藏 splash.  controller 已经走完整个 0→1 timeline (含 90-100%
     // fade out).  这里只负责 setState 让 widget 切回 child, 不再画 splash.
-    _hideTimer = Timer(kSplashDuration, () {
+    _hideTimer = Timer(kSplashMinDuration, () {
       if (mounted) setState(() => _hidden = true);
     });
   }

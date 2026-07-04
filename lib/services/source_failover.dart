@@ -78,7 +78,7 @@ class SourceAttemptEvent {
 class SourceFailover {
   SourceFailover({
     required StreamOpener opener,
-    this.perSourceTimeout = const Duration(seconds: 3),
+    this.perSourceTimeout = const Duration(milliseconds: 1500),
   }) : _opener = opener;
 
   final StreamOpener _opener;

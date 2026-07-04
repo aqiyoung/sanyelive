@@ -179,3 +179,5 @@ flutter:
     - assets/data/channels_i18n.json
     # 卡 6: 公开 m3u8 兌底 (iptv-org 没过出的频道)
     - assets/data/known_sources.json
+    # v0.3.11: 高速源 (0701.tv1288.xyz), 响应 0.1s, 优先级最高
+    - assets/data/iptv0701_sources.json

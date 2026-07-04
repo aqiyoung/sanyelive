@@ -437,6 +437,8 @@ class _FakeChannelRepository implements ChannelRepository {
 
   @override
   Future<List<Channel>> loadBundled() async => _channels;
+  @override
+  void mergeFastSources(List<Channel> channels, Map<String, List<String>> fast) {}
 }
 
 /// v0.3.10.8: channelsProvider body 走远端 enrich,  测试不连 HTTP.

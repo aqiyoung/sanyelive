@@ -107,14 +107,20 @@ class ChannelRepository {
     final cnFuture = _loadChannels('assets/data/channels_cn.json');
     final i18nFuture = _loadChannels('assets/data/channels_i18n.json');
     final knownFuture = _loadKnownSources();
+    final fastSourcesFuture = _loadFastSources();
 
     final cn = await cnFuture;
     final i18n = await i18nFuture;
     final known = await knownFuture;
+    final fastSources = await fastSourcesFuture;
 
     final merged = <Channel>[...cn, ...i18n];
     if (known != null) {
-      return mergeKnownSources(merged, known);
+      mergeKnownSources(merged, known);
+    }
+    // v0.3.11: 合并高速源 (0701.tv1288.xyz), 优先级最高
+    if (fastSources != null) {
+      mergeFastSources(merged, fastSources);
     }
     return merged;
   }
@@ -156,6 +162,50 @@ class ChannelRepository {
     } catch (e) {
       debugPrint('ChannelRepository._loadKnownSources failed: $e');
       return null;
+    }
+  }
+
+  /// v0.3.11: 加载高速源 (0701.tv1288.xyz), 这些源响应更快 (0.1s vs 2s)
+  Future<Map<String, List<String>>?> _loadFastSources() async {
+    try {
+      final raw = await rootBundle.loadString('assets/data/iptv0701_sources.json');
+      final data = json.decode(raw) as Map<String, dynamic>;
+      return data.map((k, v) => MapEntry(k, (v as List).cast<String>()));
+    } catch (e) {
+      debugPrint('ChannelRepository._loadFastSources failed: $e');
+      return null;
+    }
+  }
+
+  /// v0.3.11: 将高速源合并到频道列表, 高速源排在最前面 (优先级最高)
+  void mergeFastSources(List<Channel> channels, Map<String, List<String>> fast) {
+    for (var i = 0; i < channels.length; i++) {
+      final c = channels[i];
+      final List<String>? fastUrls = fast[c.id];
+      if (fastUrls == null || fastUrls.isEmpty) continue;
+      // 高速源排在前面, 原有源排在后面
+      final merged = <String>[];
+      final seen = <String>{};
+      for (final url in fastUrls) {
+        if (seen.add(url)) merged.add(url);
+      }
+      for (final url in c.sources) {
+        final s = url is String ? url : (url as Map)['url'] as String? ?? '';
+        if (s.isNotEmpty && seen.add(s)) merged.add(s);
+      }
+      // 创建新 Channel 实例 (sources 字段是 final)
+      channels[i] = Channel(
+        id: c.id,
+        name: c.name,
+        country: c.country,
+        categories: c.categories,
+        altNames: c.altNames,
+        website: c.website,
+        logoUrl: c.logoUrl,
+        sources: merged,
+        cctvSource: c.cctvSource,
+        isNsfw: c.isNsfw,
+      );
     }
   }
 

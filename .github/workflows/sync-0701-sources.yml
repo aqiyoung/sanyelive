@@ -1,0 +1,136 @@
+name: Sync 0701 Sources
+
+# v0.3.11: 每日同步高速源 (0701.tv1288.xyz)
+# 这些源响应速度 0.1s, 比 iptv-org 源快 20 倍
+
+on:
+  schedule:
+    - cron: '0 4 * * *'  # 每天 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.IPTV_CI_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 拉取并解析 0701 源
+        run: |
+          python3 << 'PYEOF'
+          import urllib.request, json, re
+
+          # 下载源列表
+          req = urllib.request.Request('https://0701.tv1288.xyz/')
+          req.add_header('User-Agent', 'Mozilla/5.0')
+          with urllib.request.urlopen(req, timeout=60) as resp:
+              lines = resp.read().decode('utf-8').split('\n')
+
+          # 解析频道
+          channels = {}
+          for line in lines:
+              line = line.strip()
+              if not line or line.startswith('#'):
+                  continue
+              if ',' not in line:
+                  continue
+              name, url = line.split(',', 1)
+              name = name.strip()
+              url = url.strip()
+              if not url.startswith('http'):
+                  continue
+              channels.setdefault(name, []).append(url)
+
+          print(f"总频道数: {len(channels)}")
+
+          # 映射中文名到 iptv-org ID
+          def map_name_to_id(name):
+              m = re.match(r'CCTV(\d+)', name)
+              if m:
+                  return f'CCTV{m.group(1)}.cn'
+              if 'CGTN' in name or '外语' in name:
+                  if '纪录' in name: return 'CGTNDocumentary.cn'
+                  if '俄语' in name: return 'CGTNRussian.cn'
+                  if '西' in name or '西班牙' in name: return 'CGTNSpanish.cn'
+                  if '法' in name: return 'CGTNFrench.cn'
+                  if '阿' in name: return 'CGTNArabic.cn'
+                  return 'CGTN.cn'
+              prov_map = {
+                  '东方卫视': 'DragonTV.cn', '北京卫视': 'BeijingSatelliteTV.cn',
+                  '江苏卫视': 'JiangsuSatelliteTV.cn', '浙江卫视': 'ZhejiangSatelliteTV.cn',
+                  '湖南卫视': 'HunanTV.cn', '广东卫视': 'GuangdongSatelliteTV.cn',
+                  '深圳卫视': 'ShenzhenSatelliteTV.cn', '山东卫视': 'ShandongSatelliteTV.cn',
+                  '天津卫视': 'TianjinTV.cn', '安徽卫视': 'AnhuiSatelliteTV.cn',
+                  '东南卫视': 'FVFTV.cn', '海峡卫视': 'HbSateFujianTV.cn',
+                  '厦门卫视': 'XiamenSatelliteTV.cn', '江西卫视': 'JiangxiTV.cn',
+                  '河南卫视': 'HenanTVSatellite.cn', '湖北卫视': 'HubeiSatelliteTV.cn',
+                  '辽宁卫视': 'LiaoningTV.cn', '黑龙江卫视': 'HeilongjiangTV.cn',
+                  '吉林卫视': 'JilinSatelliteTV.cn', '重庆卫视': 'ChongqingTV.cn',
+                  '四川卫视': 'SichuanSatelliteTV.cn', '河北卫视': 'HebeiTV.cn',
+                  '山西卫视': 'ShanxiTV.cn', '海南卫视': 'HainanSatelliteTV.cn',
+                  '贵州卫视': 'GuizhouTV.cn', '云南卫视': 'YunnanSatelliteTV.cn',
+                  '陕西卫视': 'ShaanxiTV.cn', '兵团卫视': 'BingtuanSatelliteTV.cn',
+                  '广西卫视': 'GuangxiTV.cn',
+              }
+              for cn_name, org_id in prov_map.items():
+                  if cn_name in name:
+                      return org_id
+              return None
+
+          # 构建 JSON
+          result = {}
+          for ch_name, urls in channels.items():
+              org_id = map_name_to_id(ch_name)
+              if org_id is None:
+                  continue
+              # 排序: 最快服务器优先
+              def url_priority(url):
+                  if '42.193.195.163:3000' in url: return 1
+                  if '112.194.199.151:7788' in url: return 2
+                  if '180.119.6.123:3000' in url: return 3
+                  if '223.167.209.88:1234' in url: return 4
+                  if ':3000' in url: return 5
+                  if ':7788' in url: return 6
+                  if ':1234' in url: return 7
+                  return 9
+              sorted_urls = sorted(urls, key=url_priority)
+              result[org_id] = sorted_urls
+
+          # 保存 JSON
+          output_path = 'assets/data/iptv0701_sources.json'
+          with open(output_path, 'w') as f:
+              json.dump(result, f, ensure_ascii=False, indent=2)
+
+          print(f"成功映射: {len(result)} 个频道")
+          print(f"保存到: {output_path}")
+          PYEOF
+
+      - name: 检查是否有变更
+        id: check_changes
+        run: |
+          if git diff --quiet assets/data/iptv0701_sources.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "无变更, 跳过提交"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "检测到有变更"
+          fi
+
+      - name: 提交并推送
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.email "openclaw@threel.site"
+          git config user.name "小七 (OpenClaw)"
+          git add assets/data/iptv0701_sources.json
+          git commit -m "chore(sources): auto-sync 0701.tv1288.xyz $(date +%Y-%m-%d)"
+          git push origin HEAD
+          echo "done"

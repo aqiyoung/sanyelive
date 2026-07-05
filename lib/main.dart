@@ -109,7 +109,7 @@ void main() async {
     try {
       await CrashLogger.log('step5: before PackageInfo');
       final info = await PackageInfo.fromPlatform();
-      runtimeVersion = '${info.version}+${info.buildNumber}';
+      runtimeVersion = 'v${info.version}.${info.buildNumber}';
       runtimeVersionCode = int.tryParse(info.buildNumber) ?? 0;
       await CrashLogger.log('step5: PackageInfo OK: $runtimeVersion');
     } catch (e) {

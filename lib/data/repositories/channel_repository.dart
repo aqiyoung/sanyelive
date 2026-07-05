@@ -164,12 +164,10 @@ class ChannelRepository {
     if (known != null) {
       mergeKnownSources(merged, known);
     }
-    // v0.3.11: 0701 高速源放最后 (兜底)
-    // ffmpeg 验证可播, 但 media_kv Android 端可能不跟随 302 重定向
-    // 放最后避免拖慢正常源播放
-    final fastSources = await _loadFastSources();
-    if (fastSources != null && fastSources.isNotEmpty) {
-      _appendFastSourcesAsFallback(merged, fastSources);
+    // v0.3.11: 补车来源 (CCTV5/5+/16/4K 高速源) 放最前
+    final fast = await _loadFastSources();
+    if (fast != null && fast.isNotEmpty) {
+      _prependFastSources(merged, fast);
     }
     return merged;
   }
@@ -214,10 +212,10 @@ class ChannelRepository {
     }
   }
 
-  /// v0.3.11: 加载 0701 高速源 JSON
+  /// v0.3.11: 加载补车高速源 (CCTV5/5+/16/4K)
   Future<Map<String, List<String>>?> _loadFastSources() async {
     try {
-      final raw = await rootBundle.loadString('assets/data/iptv0701_sources.json');
+      final raw = await rootBundle.loadString('assets/data/iptv_fast_sources.json');
       final data = json.decode(raw) as Map<String, dynamic>;
       return data.map((k, v) => MapEntry(k, (v as List).cast<String>()));
     } catch (e) {
@@ -226,8 +224,8 @@ class ChannelRepository {
     }
   }
 
-  /// v0.3.11: 追加 0701 源作为兜底 (放最后, 不拖慢正常源)
-  void _appendFastSourcesAsFallback(
+  /// v0.3.11: 将高速源前置到频道 sources 最前面 (优先级最高)
+  void _prependFastSources(
       List<Channel> channels, Map<String, List<String>> fast) {
     for (var i = 0; i < channels.length; i++) {
       final c = channels[i];
@@ -235,13 +233,13 @@ class ChannelRepository {
       if (fastUrls == null || fastUrls.isEmpty) continue;
       final merged = <String>[];
       final seen = <String>{};
-      // 原有源先
-      for (final s in c.sources) {
-        if (seen.add(s)) merged.add(s);
-      }
-      // 0701 源放最后 (兜底)
+      // 高速源放前面 (优先级最高)
       for (final url in fastUrls) {
         if (seen.add(url)) merged.add(url);
+      }
+      // 原有源放后面
+      for (final s in c.sources) {
+        if (seen.add(s)) merged.add(s);
       }
       channels[i] = Channel(
         id: c.id,

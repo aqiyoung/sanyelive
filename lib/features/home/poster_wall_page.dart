@@ -317,6 +317,8 @@ class _HeroBannerState extends State<_HeroBanner> {
           ],
         ),
       ),
+    ],
+  ),
     );
   }
 }

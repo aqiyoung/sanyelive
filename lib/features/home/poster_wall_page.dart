@@ -2,22 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/responsive/breakpoints.dart';
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../data/models/channel.dart';
-import '../../../data/models/content.dart';
-import '../../../data/mock/mock_contents.dart';
 import '../../../data/repositories/channel_repository.dart';
-import 'widgets/hero_banner.dart';
-import 'widgets/poster_card.dart';
-import 'widgets/poster_section.dart';
 
-/// 三页影视 海报墙首页 — 三屏 PageView
-///
-/// - Page 0: 推荐 (HeroBanner + 分类推荐)
-/// - Page 1: 直播 (央视/卫视/地方台)
-/// - Page 2: 点播 (电影/电视剧/综艺)
+/// 三页影视 海报墙首页 — 三屏: 直播/点播/收藏
 class PosterWallPage extends ConsumerStatefulWidget {
   const PosterWallPage({super.key});
 
@@ -26,39 +16,10 @@ class PosterWallPage extends ConsumerStatefulWidget {
 }
 
 class _PosterWallPageState extends ConsumerState<PosterWallPage> {
-  late final PageController _pageController;
-  int _currentPage = 0;
-
-  static const _tabs = [
-    TabData('推荐', Icons.star_outline),
-    TabData('直播', Icons.live_tv),
-    TabData('点播', Icons.movie_outlined),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _goToPage(int page) {
-    _pageController.animateToPage(
-      page,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
+  int _currentTab = 0;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: IptvColors.bgParchment,
       body: SafeArea(
@@ -67,18 +28,14 @@ class _PosterWallPageState extends ConsumerState<PosterWallPage> {
             // 顶部栏
             _buildTopBar(context),
             // Tab 栏
-            _buildTabBar(context),
+            _buildTabs(),
             // 内容
             Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (i) => setState(() => _currentPage = i),
-                children: [
-                  _buildRecommendScreen(),
-                  _buildLiveScreen(),
-                  _buildVodScreen(),
-                ],
-              ),
+              child: _currentTab == 0
+                  ? _buildLiveScreen()
+                  : _currentTab == 1
+                      ? _buildVodScreen()
+                      : _buildFavScreen(),
             ),
           ],
         ),
@@ -88,127 +45,64 @@ class _PosterWallPageState extends ConsumerState<PosterWallPage> {
 
   Widget _buildTopBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
         children: [
-          const Text(
-            '三页影视',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text('三页影视',
+              style: IptvTypography.serifHeadline
+                  .copyWith(fontSize: 24, fontWeight: FontWeight.bold)),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () => context.push('/search'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite_outline),
-            onPressed: () => context.push('/favorites'),
+            onPressed: () => context.go('/search'),
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push('/settings'),
+            onPressed: () => context.go('/settings'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTabBar(BuildContext context) {
-    return Container(
-      height: 40,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  Widget _buildTabs() {
+    const tabs = ['直播', '点播', '收藏'];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        children: List.generate(_tabs.length, (i) {
-          final active = i == _currentPage;
-          final tab = _tabs[i];
+        children: List.generate(tabs.length, (i) {
+          final active = i == _currentTab;
           return GestureDetector(
-            onTap: () => _goToPage(i),
+            onTap: () => setState(() => _currentTab = i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              margin: EdgeInsets.only(right: i < _tabs.length - 1 ? 16 : 0),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: active
                     ? Theme.of(context).colorScheme.primary
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: active
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    tab.icon,
-                    size: 16,
-                    color: active
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    tab.label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: active ? FontWeight.bold : FontWeight.normal,
-                      color: active
-                          ? Colors.white
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+              child: Text(
+                tabs[i],
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: active ? FontWeight.bold : FontWeight.normal,
+                  color: active
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
           );
         }),
       ),
-    );
-  }
-
-  // ─── 推荐屏 ───
-
-  Widget _buildRecommendScreen() {
-    return CustomScrollView(
-      slivers: [
-        // Hero 轮播
-        SliverToBoxAdapter(
-          child: HeroBanner(
-            height: 180,
-            items: kMockRecommended
-                .map((c) => HeroBannerItem(
-                      title: c.title,
-                      subtitle: c.description,
-                      backdropUrl: c.backdropUrl,
-                      onTap: () => _playContent(c),
-                    ))
-                .toList(),
-            onItemTap: (i) => _playContent(kMockRecommended[i]),
-          ),
-        ),
-        // 热门推荐
-        SliverToBoxAdapter(
-          child: PosterSection(
-            title: '🔥 热门推荐',
-            itemWidth: _posterWidth,
-            items: kMockRecommended
-                .map((c) => PosterCard(
-                      title: c.title,
-                      rating: c.rating,
-                      imageUrl: c.posterUrl,
-                      width: _posterWidth,
-                      onTap: () => _playContent(c),
-                    ))
-                .toList(),
-          ),
-        ),
-        // 分类快捷入口
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverToBoxAdapter(
-            child: _buildCategoryShortcuts(),
-          ),
-        ),
-      ],
     );
   }
 
@@ -227,200 +121,218 @@ class _PosterWallPageState extends ConsumerState<PosterWallPage> {
         final channels = snapshot.data ?? [];
         final cctv = channels.where((c) => c.categories.contains('央视')).toList();
         final satellite = channels.where((c) => c.categories.contains('卫视')).toList();
-        final local = channels.where((c) => c.categories.contains('地方')).toList();
+        final local = channels.where((c) => c.categories.contains('地方'))..toList();
 
-        return CustomScrollView(
-          slivers: [
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
             if (cctv.isNotEmpty)
-              SliverToBoxAdapter(
-                child: PosterSection(
-                  title: '📺 央视频道',
-                  itemWidth: _livePosterWidth,
-                  onSeeAll: () => _openCategory('cctv'),
-                  items: cctv
-                      .take(12)
-                      .map((c) => LivePosterCard(
-                            title: c.displayName,
-                            logoUrl: c.logoUrl,
-                            width: _livePosterWidth,
-                            onTap: () => _playChannel(c),
-                          ))
-                      .toList(),
-                ),
-              ),
+              _buildSection('央视频道', cctv.take(12).toList(), _liveCardWidth,
+                  () => context.go('/category/cctv')),
             if (satellite.isNotEmpty)
-              SliverToBoxAdapter(
-                child: PosterSection(
-                  title: '📡 卫视频道',
-                  itemWidth: _livePosterWidth,
-                  onSeeAll: () => _openCategory('satellite'),
-                  items: satellite
-                      .take(12)
-                      .map((c) => LivePosterCard(
-                            title: c.displayName,
-                            logoUrl: c.logoUrl,
-                            width: _livePosterWidth,
-                            onTap: () => _playChannel(c),
-                          ))
-                      .toList(),
-                ),
-              ),
+              _buildSection('卫视频道', satellite.take(12).toList(), _liveCardWidth,
+                  () => context.go('/category/satellite')),
             if (local.isNotEmpty)
-              SliverToBoxAdapter(
-                child: PosterSection(
-                  title: '🏙️ 地方频道',
-                  itemWidth: _livePosterWidth,
-                  onSeeAll: () => _openCategory('local'),
-                  items: local
-                      .take(12)
-                      .map((c) => LivePosterCard(
-                            title: c.displayName,
-                            logoUrl: c.logoUrl,
-                            width: _livePosterWidth,
-                            onTap: () => _playChannel(c),
-                          ))
-                      .toList(),
-                ),
-              ),
+              _buildSection('地方频道', local.take(12).toList(), _liveCardWidth,
+                  () => context.go('/category/local')),
           ],
         );
       },
     );
   }
 
-  // ─── 点播屏 ───
-
   Widget _buildVodScreen() {
-    return CustomScrollView(
-      slivers: [
-        // 精选电影
-        SliverToBoxAdapter(
-          child: PosterSection(
-            title: '🎬 精选电影',
-            itemWidth: _posterWidth,
-            items: kMockMovies
-                .map((c) => PosterCard(
-                      title: c.title,
-                      subtitle: c.year,
-                      rating: c.rating,
-                      imageUrl: c.posterUrl,
-                      width: _posterWidth,
-                      onTap: () => _openDetail(c.id),
-                    ))
-                .toList(),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.movie_outlined, size: 64, color: IptvColors.textSecondary),
+          const SizedBox(height: 16),
+          Text('点播功能开发中…', style: IptvTypography.serifTitle),
+          const SizedBox(height: 8),
+          Text('即将上线电影/电视剧/综艺',
+              style: TextStyle(color: IptvColors.textSecondary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavScreen() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.favorite_outline, size: 64, color: IptvColors.textSecondary),
+          const SizedBox(height: 16),
+          Text('收藏功能开发中…', style: IptvTypography.serifTitle),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: () => context.go('/favorites'),
+            icon: const Icon(Icons.open_in_new),
+            label: const Text('查看旧版收藏'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection(
+      String title, List<Channel> channels, double cardWidth, VoidCallback onSeeAll) {
+    if (channels.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 标题行
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(title, style: IptvTypography.serifTitle),
+              const Spacer(),
+              GestureDetector(
+                onTap: onSeeAll,
+                child: Row(
+                  children: [
+                    Text('查看全部',
+                        style: TextStyle(
+                            fontSize: 13, color: IptvColors.textSecondary)),
+                    Icon(Icons.chevron_right,
+                        size: 18, color: IptvColors.textSecondary),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        // 热播剧集
-        SliverToBoxAdapter(
-          child: PosterSection(
-            title: '📺 热播剧集',
-            itemWidth: _posterWidth,
-            items: kMockSeries
-                .map((c) => PosterCard(
-                      title: c.title,
-                      subtitle: c.year,
-                      rating: c.rating,
-                      imageUrl: c.posterUrl,
-                      width: _posterWidth,
-                      onTap: () => _openDetail(c.id),
-                    ))
-                .toList(),
+        // 横滑列表
+        SizedBox(
+          height: cardWidth / (16 / 9) + 36,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: channels.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (_, i) {
+              final ch = channels[i];
+              return SizedBox(
+                width: cardWidth,
+                child: _buildLiveCard(ch, cardWidth),
+              );
+            },
           ),
-        ),
-        // 综艺节目
-        SliverToBoxAdapter(
-          child: PosterSection(
-            title: '🎪 综艺节目',
-            itemWidth: _posterWidth,
-            items: kMockVariety
-                .map((c) => PosterCard(
-                      title: c.title,
-                      subtitle: c.year,
-                      rating: c.rating,
-                      imageUrl: c.posterUrl,
-                      width: _posterWidth,
-                      onTap: () => _openDetail(c.id),
-                    ))
-                .toList(),
-          ),
-        ),
-        // 底部留白
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 32),
         ),
       ],
     );
   }
 
-  // ─── 辅助 ───
+  Widget _buildLiveCard(Channel ch, double width) {
+    final height = width / (16 / 9);
+    final scheme = Theme.of(context).colorScheme;
 
-  Widget _buildCategoryShortcuts() {
-    final categories = [
-      ('直播', Icons.tv, () => _goToPage(1)),
-      ('电影', Icons.movie, () => _goToPage(2)),
-      ('收藏', Icons.favorite, () => context.push('/favorites')),
-      ('历史', Icons.history, () {}),
-    ];
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: categories.map((cat) {
-        return GestureDetector(
-          onTap: cat.$3,
-          child: Column(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primaryContainer
-                      .withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(16),
+    return GestureDetector(
+      onTap: () => context.go('/player/${ch.id}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 海报
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: width,
+              height: height,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    scheme.primary.withOpacity(0.25),
+                    scheme.primary.withOpacity(0.08),
+                  ],
                 ),
-                child: Icon(cat.$2,
-                    color: Theme.of(context).colorScheme.primary),
               ),
-              const SizedBox(height: 6),
-              Text(cat.$1,
-                  style: const TextStyle(fontSize: 12)),
-            ],
+              child: Stack(
+                children: [
+                  // Logo 或台标
+                  Center(
+                    child: ch.logoUrl != null && ch.logoUrl!.isNotEmpty
+                        ? Image.network(
+                            ch.logoUrl!,
+                            width: width * 0.4,
+                            height: height * 0.4,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => _buildInitial(ch.displayName, width),
+                          )
+                        : _buildInitial(ch.displayName, width),
+                  ),
+                  // LIVE 标识
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: const Text('LIVE',
+                          style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        );
-      }).toList(),
+          const SizedBox(height: 6),
+          // 频道名
+          Text(
+            ch.displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 
-  double get _posterWidth =>
-      context.deviceTier == DeviceTier.tv ? 110.0 : 90.0;
-
-  double get _livePosterWidth =>
-      context.deviceTier == DeviceTier.tv ? 100.0 : 80.0;
-
-  void _playContent(Content c) {
-    if (c.sourceUrls.isNotEmpty) {
-      // TODO: 统一播放入口
-      debugPrint('Play: ${c.title}');
-    }
+  Widget _buildInitial(String name, double width) {
+    return Container(
+      width: width * 0.5,
+      height: width * 0.5,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name.substring(0, 1) : '?',
+          style: TextStyle(
+            fontSize: width * 0.2,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
+    );
   }
 
-  void _playChannel(channel) {
-    context.push('/player/${channel.id}');
+  double get _liveCardWidth {
+    final w = MediaQuery.of(context).size.width;
+    if (w > 1024) return 140; // TV
+    if (w > 600) return 120; // Tablet
+    return 100; // Phone
   }
-
-  void _openCategory(String catId) {
-    context.push('/category/$catId');
-  }
-
-  void _openDetail(String id) {
-    context.push('/detail/$id');
-    // TODO: 详情页实现
-  }
-}
-
-class TabData {
-  const TabData(this.label, this.icon);
-  final String label;
-  final IconData icon;
 }

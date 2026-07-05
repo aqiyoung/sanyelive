@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -28,7 +30,8 @@ class _PosterWallPageState extends State<PosterWallPage> {
       await Future.delayed(const Duration(milliseconds: 300)); // 让 splash 显示
       final raw = await DefaultAssetBundle.of(context)
           .loadString('assets/data/channels_cn.json');
-      final list = (raw as List?) ?? [];
+      final decoded = json.decode(raw);
+      final list = (decoded as List?) ?? [];
       if (mounted) {
         setState(() => _channels = list);
       }

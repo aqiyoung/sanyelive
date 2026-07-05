@@ -181,5 +181,3 @@ flutter:
     - assets/data/known_sources.json
     # v0.3.11: 补车来源 (CCTV5/5+/16/4K 极速源)
     - assets/data/iptv_fast_sources.json
-    # v0.3.11: 高速源 (0701.tv1288.xyz), 已验证 10/10 频道可播, 响应 0.1s
-    - assets/data/iptv0701_sources.json

@@ -68,7 +68,7 @@ class _PosterWallTabsState extends ConsumerState<_PosterWallTabs> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: List.generate(3, (i) {
-              const tabs = ['直播', '点播', '收藏'];
+              const tabs = ['首页', '点播', '收藏'];
               final active = i == _currentTab;
               return GestureDetector(
                 onTap: () => setState(() => _currentTab = i),
@@ -105,7 +105,7 @@ class _PosterWallTabsState extends ConsumerState<_PosterWallTabs> {
         ),
         Expanded(
           child: switch (_currentTab) {
-            0 => const _LiveScreenContent(),
+            0 => const _HomeScreenContent(),
             1 => const _VodScreenContent(),
             _ => _ComingSoonScreen(tab: _currentTab),
           },
@@ -115,10 +115,11 @@ class _PosterWallTabsState extends ConsumerState<_PosterWallTabs> {
   }
 }
 
-// ──────── 直播 ────────
+// ──────── 首页 — 混排海报墙 ────────
 
-class _LiveScreenContent extends ConsumerWidget {
-  const _LiveScreenContent();
+/// 首页 — 频道海报 + 点播推荐混排
+class _HomeScreenContent extends ConsumerWidget {
+  const _HomeScreenContent();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -165,7 +166,7 @@ class _LiveScreenContent extends ConsumerWidget {
         return ListView(
           children: [
             if (cctv.isNotEmpty)
-              _buildSection(context, '📺 央视频道', cctv,
+              _buildSection(context, '🔥 推荐直播', cctv,
                   () => context.go('/category/cctv')),
             if (satellite.isNotEmpty)
               _buildSection(context, '📡 卫视频道', satellite,
@@ -173,6 +174,12 @@ class _LiveScreenContent extends ConsumerWidget {
             if (local.isNotEmpty)
               _buildSection(context, '🏙️ 地方频道', local,
                   () => context.go('/category/local')),
+            const SizedBox(height: 8),
+            // ── 点播推荐 ──
+            _buildPosterSection(context, '🎬 热门电影', kMockMovies),
+            _buildPosterSection(context, '📺 电视剧', kMockSeries),
+            if (kMockVariety.isNotEmpty)
+              _buildPosterSection(context, '🎤 热门综艺', kMockVariety),
             const SizedBox(height: 24),
           ],
         );
@@ -232,6 +239,47 @@ class _LiveScreenContent extends ConsumerWidget {
         color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(2),
       ),
+    );
+  }
+
+  Widget _buildPosterSection(
+      BuildContext context, String title, List<Content> items) {
+    final cardWidth = 130.0;
+    final cardHeight = cardWidth / 0.7;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
+                decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(width: 8),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: cardHeight + 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (_, i) =>
+                _PosterCard(content: items[i], width: cardWidth, height: cardHeight),
+          ),
+        ),
+      ],
     );
   }
 }

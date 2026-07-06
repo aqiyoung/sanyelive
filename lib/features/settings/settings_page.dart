@@ -164,9 +164,7 @@ class SettingsPage extends ConsumerWidget {
               Consumer(
                 builder: (context, ref, _) {
                   final version = ref.watch(currentVersionStringProvider);
-                  final code = ref.watch(currentVersionCodeProvider);
-                  const kIsBeta = true; // Beta 分支
-                  final displayVersion = kIsBeta ? '$version (Beta)' : '$version';
+                  final displayVersion = '$version (Beta)';
                   return ListTile(
                     leading: const Icon(Icons.tag_outlined),
                     title: const Text('版本号'),

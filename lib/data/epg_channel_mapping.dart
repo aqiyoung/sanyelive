@@ -151,12 +151,7 @@ final Map<String, String> kChannelIdToEpg = {
   'SichuanTVWomenandChildrenChannel.cn': '四川卫视',
   'ZhejiangInternationalChannel.cn': '浙江卫视',
   // ── v0.3.10.17 补充映射 ──
-  'CCTV4K.cn@HD': 'CCTV4K',
-  'CCTV4K.cn@CNIPTV': 'CCTV4K',
-  'CCTV9.cn@CNIPTV': 'CCTV9',
-  'CCTV15.cn@CNIPTV': 'CCTV15',
   'CCTV164K.cn@CNIPTV': 'CCTV16',
-  'CGNT.cn@CNIPTV': 'CGTN英语',
   'CGNT.cn@CNIPTV_doc': 'CGTN纪录',
   '香港卫视.cn': '凤凰中文',
   '金鹰卡通.cn': '金鹰卡通',

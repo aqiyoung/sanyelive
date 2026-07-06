@@ -63,7 +63,7 @@ class _TVBoxConfigPageState extends ConsumerState<TVBoxConfigPage> {
     }
   }
 
-  Future<void> _previewConfig() async {
+  Future<void> _doPreview() async {
     final url = _urlController.text.trim();
     if (url.isEmpty) return;
     try {
@@ -138,7 +138,7 @@ class _TVBoxConfigPageState extends ConsumerState<TVBoxConfigPage> {
                 ),
                 const SizedBox(width: 10),
                 OutlinedButton(
-                  onPressed: _previewConfig,
+                  onPressed: _doPreview,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Color(0xFF9E9E9E),
                     side: BorderSide(color: Colors.white.withOpacity(0.1)),

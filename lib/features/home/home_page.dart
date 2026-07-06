@@ -159,7 +159,7 @@ class _MinePage extends ConsumerWidget {
                     children: [
                       const Text('三页影视', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
                       const SizedBox(height: 5),
-                      Text('极简 IPTV · Beta ${version.maybeWhen(data: (v) => v, orElse: () => '')}', style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)),
+                      Text('极简 IPTV · Beta $version', style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)),
                     ],
                   ),
                 ),

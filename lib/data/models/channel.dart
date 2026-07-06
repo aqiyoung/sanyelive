@@ -174,6 +174,19 @@ class Channel {
     return ['地方'];
   }
 
+  /// v0.3.11.62: VOD 点播临时频道 — 用任意播放 URL 构造一个 Channel,
+  /// 复用现有 play()/playSingleSource() 全链路 (错误/换源 UI 通用).
+  /// id 用 url 的 hash 保证唯一且可寻址; sources 只含这一个 VOD URL.
+  factory Channel.fromVod(String url, {required String title}) {
+    return Channel(
+      id: 'vod://${url.hashCode}',
+      name: title,
+      country: '',
+      categories: const ['影视'],
+      sources: [url],
+    );
+  }
+
   factory Channel.fromJson(Map<String, dynamic> j) {
     // v0.3.5.1 (6/18): 支持 string 和 {url, type} dict 两种 source 格式.
     // channels_cn.json 现有 145 string 源 (iptv-org 原始格式) + 83 dict 源

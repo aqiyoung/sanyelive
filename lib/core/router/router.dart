@@ -58,7 +58,9 @@ GoRouter buildRouter({NavigatorObserver? playerObserver}) {
             name: 'player',
             builder: (context, state) {
               final channelId = state.pathParameters['channelId']!;
-              return PlayerPage(channelId: channelId);
+              // v0.3.11.62: VOD 点播片名从 query 拿 (海报墙影视卡片点进来)
+              final vodTitle = state.uri.queryParameters['title'];
+              return PlayerPage(channelId: channelId, vodTitle: vodTitle);
             },
           ),
           GoRoute(

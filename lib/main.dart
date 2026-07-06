@@ -245,23 +245,14 @@ Future<void> _prewarmRemoteSources() async {
 }
 
 void _applySystemUiOverlay(SharedPreferences prefs) {
-  // 从 SharedPreferences 读已持久化的主题模式。
-  // 之前 v0.3.8+102 硬编码浅色，现在恢复运行时读取主题模式。
-  final rawMode = prefs.getString('theme_mode');
-  final isDark = rawMode == 'dark' ||
-      (rawMode != 'light' &&
-          WidgetsBinding.instance.window.platformBrightness == Brightness.dark);
+  // v0.3.11.54: app 已锁死深色，状态栏也固定深色
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness:
-          isDark ? Brightness.light : Brightness.dark,
-      statusBarBrightness:
-          isDark ? Brightness.dark : Brightness.light,
-      systemNavigationBarColor:
-          isDark ? IptvColors.darkBg : IptvColors.bgParchment,
-      systemNavigationBarIconBrightness:
-          isDark ? Brightness.light : Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: IptvColors.darkBg,
+      systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
 }

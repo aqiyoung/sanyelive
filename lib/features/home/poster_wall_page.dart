@@ -307,11 +307,11 @@ class _LiveTvModule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF0F0F0);
-    final borderColor = Colors.white.withOpacity(isDark ? 0.06 : 0.15);
-    final textColor = isDark ? Colors.white : const Color(0xFF222222);
-    final mutedColor = isDark ? const Color(0xFFB8B8B8) : const Color(0xFF888888);
+    // 首页整体是深色设计，直播模块也保持深色
+    final bgColor = const Color(0xFF1A1A1A);
+    final borderColor = Colors.white.withOpacity(0.06);
+    final textColor = Colors.white;
+    final mutedColor = const Color(0xFFB8B8B8);
 
     final primary = channels.isNotEmpty ? channels.first : null;
 
@@ -437,7 +437,7 @@ class _LiveListText extends StatelessWidget {
       children: [
         Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
         const SizedBox(height: 3),
-        Text(subtitle.isEmpty ? '精彩节目直播中' : subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFB8B8B8) : const Color(0xFF888888), fontSize: 11)),
+        Text(subtitle.isEmpty ? '精彩节目直播中' : subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFB8B8B8), fontSize: 11)),
       ],
     );
   }

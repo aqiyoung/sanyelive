@@ -52,7 +52,12 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
 ///   APP 运行环境 (用户手机/盒子) 未必能直连 GitHub,  所以保留 cf-worker 兜底.
 ///   gh-proxy.com 彻底弃用 (403 频率太高, chain 里放它只会浪费一次超时).
 const List<String> kDefaultEndpointUrls = [
-  'https://api.github.com/repos/aqiyoung/iptv-app/releases/latest', // primary: 直连 (0.6s, 6/24 实测)
+  // v0.3.11.59-fix (7/6): 改 /releases/latest -> /releases list, 包含 pre-release
+  // /releases/latest 只返回 latest stable, beta 用户装了之后永远看不到更新
+  // list API 按 created 排序, 拿第一个 (最新创建), 稳定版和 pre-release 都覆盖
+  // per_page=5 防止一次拉太多, 但保证拿到最新的
+  //
+  'https://api.github.com/repos/aqiyoung/iptv-app/releases', // primary: 直连 (0.6s, 6/24 实测)
 ];
 
 /// 兼容老代码 — 取 chain[0]. 单元测试可 overrideWithValue.
@@ -402,14 +407,31 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
             }
             try {
               final decoded = jsonDecode(s);
-              if (decoded is Map<String, dynamic>) {
-                if (url != custom) {
-                  // ignore: discarded_futures
-                  _prefs.setString(kEndpointPrefsKey, url);
+              // v0.3.11.59-fix (7/6): /releases 返回 List, /releases/latest 返回 Map.
+              // 两种都兼容,  list 取第一个 (最新创建).
+              Map<String, dynamic> release;
+              if (decoded is List<dynamic>) {
+                if (decoded.isEmpty) {
+                  lastError = 'empty releases list from $url';
+                  continue;
                 }
-                return decoded;
+                final first = decoded.first;
+                if (first is! Map<String, dynamic>) {
+                  lastError = 'first release not a Map from $url';
+                  continue;
+                }
+                release = first;
+              } else if (decoded is Map<String, dynamic>) {
+                release = decoded;
+              } else {
+                lastError = 'non-Map/List JSON from $url';
+                continue;
               }
-              lastError = 'non-Map JSON from $url';
+              if (url != custom) {
+                // ignore: discarded_futures
+                _prefs.setString(kEndpointPrefsKey, url);
+              }
+              return release;
             } catch (_) {
               lastError =
                   'invalid JSON from $url: ${s.substring(0, s.length.clamp(0, 80))}';

@@ -88,8 +88,6 @@ class SettingsPage extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           // ─── 品牌 header: 视界 logo ──────────────────────────────────
-          const _BrandHeader(),
-          const SizedBox(height: 20),
           // ─── 卡片 1: 外观 ──────────────────────────────────────────────
           const _SettingsGroupLabel(label: '外观'),
           const SizedBox(height: 6),

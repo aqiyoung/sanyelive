@@ -175,67 +175,79 @@ class _MinePage extends ConsumerWidget {
         child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
           children: [
-            Row(
+            Stack(
               children: [
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE53935),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.asset(
-                      'assets/icons/shijie_logo.png',
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
+                const Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('视界', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          'assets/icons/shijie_logo.png',
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '视界',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '全新品牌升级 • 直播 + 影视',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                // 更新按钮 + 红点角标
-                GestureDetector(
-                  onTap: () => context.go('/settings'),
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withOpacity(0.08)),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () => context.go('/settings'),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A1A1A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withOpacity(0.08)),
+                          ),
+                          child: const Icon(Icons.system_update_alt_rounded, color: Colors.white, size: 20),
                         ),
-                        child: const Icon(Icons.system_update_alt_rounded, color: Colors.white, size: 20),
-                      ),
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFE53935),
-                            shape: BoxShape.circle,
+                        Positioned(
+                          top: 6,
+                          right: 6,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE53935),
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             _MineTile(icon: Icons.search_rounded, title: '搜索节目', subtitle: '搜索频道、视频内容', onTap: () => context.go('/search')),
             _MineTile(icon: Icons.favorite_border_rounded, title: '我的收藏', subtitle: '收藏的直播频道和视频', onTap: () => context.go('/favorites')),
             _MineTile(icon: Icons.tv_rounded, title: '电视频道', subtitle: '央视 / 卫视 / 体育 / 娱乐直播', onTap: () => context.go('/category/live')),

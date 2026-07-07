@@ -296,11 +296,11 @@ class IptvApp extends ConsumerWidget {
       darkTheme: IptvTheme.dark(),
       themeMode: ThemeMode.dark, // 锁死深色，不跟系统主题
       routerConfig: buildRouter(playerObserver: playerObserver),
-      // v0.3.8+178 (6/23 B+C splash fix): 换 SanyeliveSplash (SVG logo +
+      // v0.3.8+178 (6/23 B+C splash fix): 换 SplashScreen (SVG logo +
       // 完整动画).  保留 +177 的 MaterialApp.builder 架构 — context 在
       // MaterialApp 之下,  ref.listen 弹 ForceUpdateDialog 能找到 Navigator.
       builder: (context, child) => _ErrorBoundary(
-        child: SanyeliveSplash(child: child ?? const SizedBox()),
+        child: SplashScreen(child: child ?? const SizedBox()),
       ),
     );
   }
@@ -311,7 +311,7 @@ class IptvApp extends ConsumerWidget {
 /// _SplashOverlay 里,  splash 结束时渐隐.  3s 后自动消失.
 ///
 /// v0.3.8+178 (6/23 B+C splash fix): 删.  改为 lib/features/splash/splash_logo.dart
-/// 的 SanyeliveSplash — SVG logo 像素一致 + motion.css v2 完整动画时间线
+/// 的 SplashScreen — SVG logo 像素一致 + motion.css v2 完整动画时间线
 /// + Material 包裹 + BoxShadow 修复 “黄线” 问题.  MaterialApp.builder 架构不变.
 /// (以下 _SplashOverlay 旧类已删除 — 逻辑迁到 lib/features/splash/splash_logo.dart)
 

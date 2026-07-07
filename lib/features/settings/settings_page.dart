@@ -4,7 +4,7 @@
 // 复用 theme_provider, 切换后立即持久化 (SharedPreferences),
 // main.dart 的 ConsumerWidget 监听 themeModeProvider 同步给 MaterialApp.themeMode.
 //
-// v0.3.7+80 (6/19): 加 2 个 tile — "检查更新" + "关于三页直播".
+// v0.3.7+80 (6/19): 加 2 个 tile — "检查更新" + "关于视界".
 //  关于: 描述项目 + 贴 GitHub 地址 + 一键复制按钮.  不用 url_launcher 包
 //  (省 1MB + Android query intent 配置),  复制 URL 让老板自己粘贴到浏览器看.
 
@@ -160,7 +160,7 @@ class SettingsPage extends ConsumerWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.info_outline),
-                title: const Text('关于三页直播'),
+                title: const Text('关于视界'),
                 subtitle: const Text('项目介绍 + GitHub 地址'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showAbout(context),
@@ -185,7 +185,7 @@ class SettingsPage extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: Text(
-              '三页直播 · 极简新中式 IPTV',
+              '视界 · 极简新中式 IPTV',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -206,14 +206,14 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('关于三页直播'),
+        title: const Text('关于视界'),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '三页直播是一款 IPTV 直播 APP, 面向家用电视 / 盒子 / 手机, 极简新中式设计。',
+                '视界是一款 IPTV 直播 APP, 面向家用电视 / 盒子 / 手机, 极简新中式设计。',
                 style: TextStyle(color: scheme.onSurface, height: 1.6),
               ),
               const SizedBox(height: 16),

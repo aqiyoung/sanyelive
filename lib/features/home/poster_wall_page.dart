@@ -359,7 +359,7 @@ class _LiveTvModule extends StatelessWidget {
                           Positioned(
                             right: 8,
                             top: 8,
-                            child: Text(primary?.displayName ?? '三页直播', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                            child: Text(primary?.displayName ?? '视界', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                           ),
                           Positioned(
                             left: 10,

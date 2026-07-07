@@ -234,8 +234,6 @@ class _MinePage extends ConsumerWidget {
             ),
             const SizedBox(height: 18),
             _MineTile(icon: Icons.search_rounded, title: '搜索节目', subtitle: '快速查找频道和内容', onTap: () => context.go('/search')),
-            _MineTile(icon: Icons.favorite_border_rounded, title: '我的收藏', subtitle: '查看已收藏的直播频道', onTap: () => context.go('/favorites')),
-            _MineTile(icon: Icons.tv_rounded, title: '电视频道', subtitle: '央视 / 卫视 / 体育 / 娱乐', onTap: () => context.go('/category/live')),
             _MineTile(icon: Icons.settings_rounded, title: '设置', subtitle: '主题、更新、版本信息', onTap: () => context.go('/settings')),
           ],
         ),

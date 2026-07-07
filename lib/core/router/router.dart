@@ -58,8 +58,8 @@ GoRouter buildRouter({NavigatorObserver? playerObserver}) {
             path: 'vod-category',
             name: 'vod-category',
             builder: (context, state) {
-              final tabParam = state.uri.queryParameters['tab'] ?? '0';
-              return VodCategoryBrowserPage(initialTab: int.tryParse(tabParam) ?? 0);
+              final cat = state.uri.queryParameters['cat'] ?? 'movie';
+              return VodCategoryBrowserPage(category: cat);
             },
           ),
           GoRoute(

@@ -50,8 +50,6 @@ class PosterWallPage extends ConsumerWidget {
                         badges: const ['HOT', 'VIP', '独播'],
                       ),
                       const SizedBox(height: 18),
-                      const _FilterPills(),
-                      const SizedBox(height: 14),
                       _VodSection(
                         title: '热播电影',
                         provider: vodMoviesProvider,
@@ -260,12 +258,12 @@ class _CategoryShortcutBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final shortcuts = [
       _Shortcut('电视直播', Icons.live_tv_rounded, const Color(0xFFE53935), '/category/live'),
-      _Shortcut('电影', Icons.movie_creation_rounded, const Color(0xFF8E44AD), '/vod-category?tab=0'),
-      _Shortcut('电视剧', Icons.tv_rounded, const Color(0xFF3D7CFF), '/vod-category?tab=1'),
-      _Shortcut('综艺', Icons.star_rounded, const Color(0xFF35B36B), '/vod-category?tab=2'),
-      _Shortcut('动漫', Icons.face_retouching_natural_rounded, const Color(0xFFF0B429), '/category/少儿'),
-      _Shortcut('纪录片', Icons.public_rounded, const Color(0xFF42A5F5), '/category/科教'),
-      _Shortcut('体育', Icons.sports_soccer_rounded, const Color(0xFF43A047), '/category/体育'),
+      _Shortcut('电影', Icons.movie_creation_rounded, const Color(0xFF8E44AD), '/vod-category?cat=movie'),
+      _Shortcut('电视剧', Icons.tv_rounded, const Color(0xFF3D7CFF), '/vod-category?cat=series'),
+      _Shortcut('综艺', Icons.star_rounded, const Color(0xFF35B36B), '/vod-category?cat=variety'),
+      _Shortcut('动漫', Icons.face_retouching_natural_rounded, const Color(0xFFF0B429), '/vod-category?cat=anime'),
+      _Shortcut('纪录片', Icons.public_rounded, const Color(0xFF42A5F5), '/vod-category?cat=documentary'),
+      _Shortcut('体育', Icons.sports_soccer_rounded, const Color(0xFF43A047), '/vod-category?cat=sports'),
     ];
 
     return SizedBox(
@@ -527,39 +525,6 @@ class _PosterCard extends StatelessWidget {
           Text(content.subtitle ?? '${content.year ?? '热播'} · ${content.genres.take(2).join(' ')}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF8E8E8E), fontSize: 11)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FilterPills extends StatelessWidget {
-  const _FilterPills();
-
-  @override
-  Widget build(BuildContext context) {
-    const filters = ['全部', '古装', '都市', '悬疑', '科幻', '喜剧'];
-    return SizedBox(
-      height: 34,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final active = index == 0;
-          return GestureDetector(
-            onTap: active ? null : () => context.go('/search'),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-              decoration: BoxDecoration(
-                color: active ? const Color(0x22E53935) : const Color(0xFF242424),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: active ? const Color(0xFFE53935) : Colors.white.withOpacity(0.04)),
-              ),
-              child: Text(filters[index], style: TextStyle(color: active ? Colors.white : const Color(0xFFD6D6D6), fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
-            ),
-          );
-        },
       ),
     );
   }

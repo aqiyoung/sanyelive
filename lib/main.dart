@@ -271,10 +271,9 @@ class IptvApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // v0.3.8+102 (6/20 15:02 老板反馈): 删主题切换.  themeMode 锁死 dark.
-    // 整个 app 是深色流媒体风格设计，锁死不跟系统主题走。
-    // 之前 ref.watch(themeModeProvider) — 不再 watch, 直接 hardcode dark.
-    // v0.3.11.54 恢复深色锁死（之前跟随系统导致分类页/直播模块浅色）.
+    // v0.3.12.91 (7/9 老板反馈): 恢复主题切换 — 取消深色锁死, 改 watch themeModeProvider.
+    // 之前锁死深色 (ThemeMode.dark) 导致 settings 页面切主题无效.
+    // 现在 settings → 外观 → 主题模式 的 system/浅色/深色选择真正生效.
     // 0.3.7+20 (6/18): 后台强制更新 — 监听 versionCheckerProvider,
     // 检测到 outdated 时弹 ForceUpdateDialog.  ref.listen 的 context
     // 是 ConsumerWidget.build 提供的,  MaterialApp 已建好,  Navigator
@@ -294,7 +293,7 @@ class IptvApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: IptvTheme.light(),
       darkTheme: IptvTheme.dark(),
-      themeMode: ThemeMode.dark, // 锁死深色，不跟系统主题
+      themeMode: ref.watch(themeModeProvider), // 跟随用户选择
       routerConfig: buildRouter(playerObserver: playerObserver),
       // v0.3.8+178 (6/23 B+C splash fix): 换 SplashScreen (SVG logo +
       // 完整动画).  保留 +177 的 MaterialApp.builder 架构 — context 在

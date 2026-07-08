@@ -5,11 +5,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' as sqflite_ffi;
 import 'package:sanyelive/data/models/epg.dart';
 import 'package:sanyelive/services/epg_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUpAll(() {
+    databaseFactory = sqflite_ffi.databaseFactoryFfi;
+  });
+
   group('EpgService', () {
     setUp(() {
       SharedPreferences.setMockInitialValues({});

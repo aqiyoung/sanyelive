@@ -29,6 +29,7 @@ import 'package:sanyelive/services/startup_service.dart';
 import 'package:media_kit/media_kit.dart' as mk;
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sanyelive/features/settings/theme_provider.dart' show sharedPreferencesProvider;
 
 void main() {
   setUpAll(() async {

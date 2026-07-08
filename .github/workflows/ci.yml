@@ -55,7 +55,7 @@ jobs:
             dart format .
             git config user.email "openclaw@threel.site"
             git config user.name "小七 (OpenClaw)"
-            git remote set-url origin https://x-access-token:${{ secrets.IPTV_CI_TOKEN }}@github.com/aqiyoung/iptv-app.git
+            git remote set-url origin https://x-access-token:${{ secrets.IPTV_CI_TOKEN }}@github.com/aqiyoung/sanyelive.git
             git add -A
             if ! git diff --staged --quiet; then
               git commit -m "style: auto-fix dart format"

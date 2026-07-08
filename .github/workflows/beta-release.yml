@@ -139,7 +139,7 @@ jobs:
       - name: Upload APK artifact (保留 7 天)
         uses: actions/upload-artifact@v4
         with:
-          name: iptv-app-beta
+          name: sanyelive-beta
           path: |
             build/app/outputs/flutter-apk/sanyelive-*.apk
             build/app/outputs/flutter-apk/sanyelive-*.apk.sha256
@@ -154,7 +154,7 @@ jobs:
           body: |
             ## 三页直播 Beta ${{ env.VERSION }}
 
-            ⚠️ **Beta 版本** — 仅供测试, 可能有 bug. 稳定版请用 [Latest Release](https://github.com/aqiyoung/iptv-app/releases/latest).
+            ⚠️ **Beta 版本** — 仅供测试, 可能有 bug. 稳定版请用 [Latest Release](https://github.com/aqiyoung/sanyelive/releases/latest).
 
             ### APK 信息
             - **版本**: ${{ env.VERSION }}

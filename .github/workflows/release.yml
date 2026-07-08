@@ -250,7 +250,7 @@ jobs:
             - Target: android-arm + android-arm64 + android-x64, release, split-per-abi
             - Workflow: `.github/workflows/release.yml`
 
-      - name: 推送新版本到 Telegram 频道
+      - name: 推送新版本到 Telegram（私人）
         if: startsWith(github.ref, 'refs/tags/')
         env:
           TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -261,7 +261,7 @@ jobs:
           
           下载 → https://github.com/aqiyoung/sanyelive/releases/tag/$VERSION" > /tmp/msg.txt
           curl -s -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
-            -d "chat_id=@sanyeinfo" \
+            -d "chat_id=460212872" \
             -d "text=$(cat /tmp/msg.txt)" \
             -d "disable_web_page_preview=true" \
             -d "parse_mode=Markdown"

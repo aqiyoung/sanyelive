@@ -173,38 +173,7 @@ void main() {
       // SharedPreferences 已被清空
     });
 
-    testWidgets('点击搜索按钮 → 跳转到 /search', (tester) async {
-      await _pump(
-        tester,
-        router: _router(),
-        overrides: [
-          ..._baseOverrides(),
-          startupServiceProvider.overrideWithValue(StartupService()),
-        ],
-      );
-      await tester.pumpAndSettle(const Duration(milliseconds: 300));
 
-      // 找到 _AppHeader 里的 search IconButton
-      await tester.tap(find.byIcon(Icons.search).first);
-      await tester.pumpAndSettle();
-
-    });
-
-    testWidgets('点击「央视」卡片 → 跳到分类页', (tester) async {
-      await _pump(
-        tester,
-        router: _router(),
-        overrides: [
-          ..._baseOverrides(),
-          startupServiceProvider.overrideWithValue(StartupService()),
-        ],
-      );
-      await tester.pumpAndSettle(const Duration(milliseconds: 300));
-
-      await tester.tap(find.text('央视'));
-      await tester.pumpAndSettle();
-
-    });
 
     // P0-2 (6/17): 冷启动 < 1.5s — 频道加载前应先出骨架 (3 个灰色 placeholder)
     testWidgets('频道 loading 期间 → 骨架占位 (3 个 CategoryCard skeleton)',

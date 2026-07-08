@@ -250,14 +250,6 @@ void main() {
 
   // ────────── 4. home_page: category icon bg + skeleton color = primary/outlineVariant ──────────
 
-  testWidgets('v0.3.5.6: home_page 浅色主题 — _AppHeader 直播图标 bg = primary',
-      (tester) async {
-    await _pump(
-      tester,
-      theme: IptvTheme.light(),
-
-  // ────────── 5. smoke tests (整页渲染 OK) ──────────
-
   testWidgets('v0.3.5.6: favorites_page 浅色主题 — smoke test 整页渲染 OK',
       (tester) async {
     await _pump(

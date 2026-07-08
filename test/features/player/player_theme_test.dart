@@ -130,7 +130,7 @@ Future<void> _pumpPlayer(
             .overrideWithValue(_FakeVideoController()),
         mediaKitPlayerProvider.overrideWithValue(_FakePlayer()),
         startupServiceProvider.overrideWithValue(StartupService()),
-        sharedPreferencesProvider.overrideWithValue(SharedPreferences()),
+        sharedPreferencesProvider.overrideWithValue(await SharedPreferences.getInstance()),
         favoritesServiceProvider.overrideWithValue(
           FavoritesService(store: InMemoryFavoritesStore()),
         ),

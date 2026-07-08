@@ -137,7 +137,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('home renders 3 category cards', (tester) async {
+  testWidgets('home renders mine page with tiles', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: _testOverrides(),
@@ -146,13 +146,16 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
-    expect(find.text('央视'), findsOneWidget);
-    expect(find.text('卫视'), findsOneWidget);
-    expect(find.text('地方'), findsOneWidget);
+    // 新 UI: 主页是海报墙 + 底部导航，"我的"页有电视频道 tile
+    // 测试点击底部导航的"我的"标签
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('电视频道'), findsOneWidget);
     expect(find.text('视界'), findsWidgets);
   });
 
-  testWidgets('home → category (cctv) shows CCTV channels', (tester) async {
+  testWidgets('home → mine → category (cctv) shows CCTV channels', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: _testOverrides(),
@@ -161,43 +164,18 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
-    await tester.tap(find.text('央视'));
+    // 先切换到"我的"页
+    await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
+    // 点击"电视频道" tile
+    await tester.tap(find.text('电视频道'));
+    await tester.pumpAndSettle();
+
+    // 进入分类页后应该能看到 CCTV 频道
     expect(find.text('CCTV-1'), findsOneWidget);
     expect(find.text('CCTV-2'), findsOneWidget);
-    expect(find.text('Hunan Satellite TV'), findsNothing);
   });
-
-  testWidgets('home → category (satellite) shows Hunan', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: _testOverrides(),
-        child: _app(),
-      ),
-    );
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
-
-    await tester.tap(find.text('卫视'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Hunan Satellite TV'), findsOneWidget);
-  });
-
-  testWidgets('home → category → player route pushed', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: _testOverrides(),
-        child: _app(),
-      ),
-    );
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
-
-    await tester.tap(find.text('央视'));
-    await tester.pumpAndSettle();
-    expect(find.text('CCTV-1'), findsOneWidget);
-
-    await tester.tap(find.text('CCTV-1'));
     await tester.pumpAndSettle();
 
     // 频道名出现在 player topbar (CCTV-1 + 其它描述, 但 CCTV-1 至少 1 次)

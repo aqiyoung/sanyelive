@@ -109,7 +109,7 @@ jobs:
           #    "cannot force update the branch 'main' used by worktree"
           #  - 正确修法: 不创建本地分支,  直接 git push origin HEAD:main
           #    (force push HEAD ref 到远端 main ref)
-          git remote set-url origin https://x-access-token:${{ secrets.IPTV_CI_TOKEN }}@github.com/aqiyoung/iptv-app.git
+          git remote set-url origin https://x-access-token:${{ secrets.IPTV_CI_TOKEN }}@github.com/aqiyoung/sanyelive.git
           git push -f origin HEAD:main
           echo "done"
       - name: telegram notify failure
@@ -123,7 +123,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           if [ -n "${TG_TOKEN}" ] && [ -n "${TG_CHAT}" ]; then
-            MSG="⚠️ *iptv-app Source Sync failed*%0ARun: \`${RUN_ID}\`%0ACommit: \`${SHA}\`%0A[看日志](${SERVER}/${REPO}/actions/runs/${RUN_ID})"
+            MSG="⚠️ *sanyelive Source Sync failed*%0ARun: \`${RUN_ID}\`%0ACommit: \`${SHA}\`%0A[看日志](${SERVER}/${REPO}/actions/runs/${RUN_ID})"
             curl -sS -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" --data-urlencode "chat_id=${TG_CHAT}" --data-urlencode "parse_mode=Markdown" --data-urlencode "text=${MSG}"
           else
             echo "Telegram secrets not set, skip"
@@ -141,6 +141,6 @@ jobs:
               DEAD=$(git diff HEAD~1 assets/data/known_sources.json | grep -E '^\-' | grep -c 'http' || true)
               curl -sS -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
                 -d chat_id="${TG_CHAT}" \
-                -d text="✅ iptv-app sources: new ${ADDED} dead ${DEAD} (iptv-org ${IPTV_ORG_SHA})"
+                -d text="✅ sanyelive sources: new ${ADDED} dead ${DEAD} (iptv-org ${IPTV_ORG_SHA})"
             fi
           fi

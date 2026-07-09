@@ -23,6 +23,7 @@ const Map<String, String> vodCategoryLabels = {
   'anime': '动漫',
   'documentary': '纪录片',
   'sports': '体育',
+  'overseas': '海外剧场',
 };
 
 /// bfzyapi 系 typeId (默认源 bfzyapi.com / ikunzyapi.com 等).
@@ -33,6 +34,19 @@ const Map<String, int> bfzyapiTypeIds = {
   'anime': 39,
   'documentary': 46,
   'sports': 33,
+  'overseas': 26, // IKun 系用 26 (欧美剧); bfzyapi 系用 32 — 参见 bfzyapiOverseasTypeIds.
+};
+
+/// bfzyapi.com 默认源的海外剧 typeId 跟其他 bfzyapi 采集器不同 (32 vs 26),
+/// 所以单独列一档.  bfzyapiDefaultSource() 用这个.
+const Map<String, int> bfzyapiDefaultTypeIds = {
+  'movie': 20,
+  'series': 30,
+  'variety': 45,
+  'anime': 39,
+  'documentary': 46,
+  'sports': 33,
+  'overseas': 32, // bfzyapi.com 欧美剧 = 32 (实测 6322 部, 317 页).
 };
 
 /// 标准 MacCMS typeId (1/2/3/4).
@@ -43,6 +57,7 @@ const Map<String, int> standardMaccmsTypeIds = {
   'anime': 4,
   'documentary': 5,
   'sports': 6,
+  'overseas': 26,
 };
 
 /// typeId 方案名 — UI 单选用.

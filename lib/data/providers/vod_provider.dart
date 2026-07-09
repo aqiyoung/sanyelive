@@ -74,3 +74,17 @@ final vodVarietyProvider = FutureProvider<List<Content>>((ref) async {
   final details = await api.getDetail(ids);
   return details.map((d) => api.toContent(d)).toList();
 });
+
+/// v0.3.13.0: 海外剧场 (欧美剧).  typeId 从活跃源动态读取.
+/// 默认源 bfzyapi.com = 32 (欧美剧 6322 部).  IKun/标准系 = 26.
+final vodOverseasProvider = FutureProvider<List<Content>>((ref) async {
+  final api = ref.read(vodApiServiceProvider);
+  final registry = ref.read(vodSourceRegistryProvider);
+  final typeId = registry.activeSource.typeIds['overseas'];
+  // 该源没有 overseas typeId → 返空 (UI 显示 "当前源无此分类").
+  if (typeId == null) return [];
+  final items = await api.getList(typeId: typeId, page: 1, pageSize: 10);
+  final ids = items.map((e) => e['vod_id'] as int).toList();
+  final details = await api.getDetail(ids);
+  return details.map((d) => api.toContent(d)).toList();
+});

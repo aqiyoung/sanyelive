@@ -364,6 +364,8 @@ class _CategoryShortcutBar extends StatelessWidget {
       _Shortcut('动漫', Icons.face_retouching_natural_rounded, const Color(0xFFF0B429), '/vod-category?cat=anime'),
       _Shortcut('纪录片', Icons.public_rounded, const Color(0xFF42A5F5), '/vod-category?cat=documentary'),
       _Shortcut('体育', Icons.sports_soccer_rounded, const Color(0xFF43A047), '/vod-category?cat=sports'),
+      // v0.3.13.0: 海外剧场 — 欧美剧/英剧/韩剧/日剧.
+      _Shortcut('海外剧场', Icons.language_rounded, const Color(0xFF00BCD4), '/vod-category?cat=overseas'),
     ];
 
     return SizedBox(

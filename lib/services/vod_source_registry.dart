@@ -25,11 +25,12 @@ const String kSourcesJsonKey = 'vod_sources_json';
 const String kActiveSourceIdKey = 'vod_active_source_id';
 
 /// 默认内置源 — bfzyapi.com (老板 7/9 前唯一在用的 VOD 源,  永不可删).
+/// 用 bfzyapiDefaultTypeIds (海外剧=32, 跟其他 bfzyapi 采集器的 26 不同).
 VodSource bfzyapiDefaultSource() => const VodSource(
       id: kBfzyapiSourceId,
       name: '暴风资源',
       baseUrl: 'https://bfzyapi.com/api.php/provide/vod',
-      typeIds: bfzyapiTypeIds,
+      typeIds: bfzyapiDefaultTypeIds,
       builtIn: true,
     );
 

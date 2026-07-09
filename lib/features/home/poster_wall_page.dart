@@ -20,7 +20,11 @@ class PosterWallPage extends ConsumerWidget {
         bottom: false,
         top: false,
         child: FutureBuilder<List<Channel>>(
-          future: ref.read(channelRepositoryProvider).loadBundled(),
+          // v0.3.13.0: 改用 channelsProvider (includes _enrichWithRemoteLogos) —
+          // 本地 logo 为 null 时拿远程 logo fill, 台标出现.
+          // channelsProvider 同步返本地 (loadBundled 有缓存, 零 IO), 远程拉取
+          // fire-and-forget, FutureBuilder 首帧不白屏.
+          future: ref.read(channelsProvider.future),
           builder: (context, snapshot) {
             final channels = snapshot.data ?? const <Channel>[];
             final liveChannels = channels

@@ -329,10 +329,12 @@ final channelsProvider = FutureProvider<List<Channel>>((ref) async {
   // FutureProvider body 重跑时 (invalidate channelRepositoryProvider 后)
   // 仍然有效 — cache key 检查 in helper.
   try {
-    return await _enrichWithRemoteSources(
+    // v0.3.13.0: 先 enrich sources, 再把远程 logo 填进本地 null 的 logoUrl.
+    final enriched = await _enrichWithRemoteSources(
       ref: ref,
       channels: local,
     );
+    return await _enrichWithRemoteLogos(ref: ref, channels: enriched);
   } catch (_) {
     return local;
   }
@@ -494,6 +496,11 @@ void stopSourcesAutoRefresh() {
 String? _mergedCacheKey;
 List<Channel>? _mergedCacheResult;
 
+/// v0.3.13.0: logo 合并 cache — 远程 iptv-channels-organized logoUrl 拉到本地
+/// channels (本地 logoUrl 为 null 时 fill). 进程级 static.
+String? _logoCacheKey;
+List<Channel>? _logoCacheResult;
+
 /// v0.3.10.8 (6/23 老板拍): 合并远端 sources 到本地/远端 channels 的 helper.
 /// 老板拍 "APP 有缓存, 有变化了才更新" = cache 命中 = generatedAt 不变 → 0 IO.
 /// 调用者:  channelsProvider / channelsStreamProvider / mergedChannelsProvider.
@@ -539,6 +546,79 @@ Future<List<Channel>> _enrichWithRemoteSources({
   _mergedCacheResult = merged;
   debugPrint(
       'SourcesRefresh: merged ${merged.length} ch with remote (${bundle.knownCount} known URLs, key=$key)');
+  return merged;
+}
+
+/// v0.3.13.0 (7/9 老板反馈 "电视直播台标没有了"): 远程 logo 填进本地.
+///
+/// 现状:  本地 channels_cn.json 165 个可播频道只有 57 个 logoUrl 非 null,
+/// 108 个 logo 是 null → poster_wall _LiveTvModule 上 Image.network 不渲染,
+/// fallback 到灰色 live_tv icon → 看起来 "台标没有了".
+/// 远程 aqiyoung/iptv-channels-organized repo 大多数字段带 logo (iptv-org
+/// JSON 原档就有),  所以用远程 logoUrl fill 本地 null.
+///
+/// cache: 进程级 _logoCacheKey/_logoCacheResult, 命中 0 IO.  远端失败/超时
+/// fallback 到原 channels (跟没 enrichment 一样).
+Future<List<Channel>> _enrichWithRemoteLogos({
+  required Ref ref,
+  required List<Channel> channels,
+}) async {
+  // cache 命中.
+  if (_logoCacheKey != null &&
+      _logoCacheResult != null &&
+      _logoCacheResult!.length == channels.length) {
+    return _logoCacheResult!;
+  }
+
+  RemoteChannelsBundle? bundle;
+  try {
+    bundle = await ref
+        .watch(remoteChannelsProvider.future)
+        .timeout(const Duration(seconds: 10));
+  } catch (e) {
+    debugPrint('LogosRefresh: remote channels fetch failed (logos skipped): $e');
+    return channels;
+  }
+
+  // 远程 id → logoUrl (只取有 logo 的).
+  final logoById = <String, String>{};
+  for (final c in bundle.all) {
+    if (c.logoUrl != null && c.logoUrl!.isNotEmpty) {
+      logoById[c.id] = c.logoUrl!;
+    }
+  }
+  if (logoById.isEmpty) {
+    debugPrint('LogosRefresh: remote has no logos, skip');
+    return channels;
+  }
+
+  // channels 里本地 logo 为 null → 远程 fill; 有本地 logo 保留本地.
+  var filled = 0;
+  final merged = channels.map((c) {
+    if (c.logoUrl != null && c.logoUrl!.isNotEmpty) return c;
+    final remoteLogo = logoById[c.id];
+    if (remoteLogo == null) return c;
+    filled++;
+    return Channel(
+      id: c.id,
+      name: c.name,
+      country: c.country,
+      categories: c.categories,
+      altNames: c.altNames,
+      website: c.website,
+      logoUrl: remoteLogo,
+      sources: c.sources,
+      cctvSource: c.ctvSource,
+      isNsfw: c.isNsfw,
+    );
+  }).toList(growable: false);
+
+  // cache — 用 bundle.meta.generatedAt 当 key (跟 sources 一样语义).
+  final key = bundle.iptvAppStamp;
+  _logoCacheKey = key.isEmpty ? 'logos' : key;
+  _logoCacheResult = merged;
+  debugPrint(
+      'LogosRefresh: filled $filled logos from remote (${logoById.length} remote logos available)');
   return merged;
 }
 

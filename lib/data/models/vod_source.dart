@@ -60,6 +60,19 @@ const Map<String, int> standardMaccmsTypeIds = {
   'overseas': 26,
 };
 
+/// ikunzyapi.com 实测 typeId.
+/// ikunzy 的顶层分类: 电影=1, 连续剧=2, 综艺=3, 动漫=4, 体育=40.
+/// 海外剧=29, 纪录片=20.
+const Map<String, int> ikunzyTypeIds = {
+  'movie': 1,
+  'series': 2,
+  'variety': 3,
+  'anime': 4,
+  'documentary': 20,
+  'sports': 40,
+  'overseas': 29,
+};
+
 /// typeId 方案名 — UI 单选用.
 enum VodTypeIdScheme {
   bfzyapi('bfzyapi', '暴风系 (20/30/45)'),

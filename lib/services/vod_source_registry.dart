@@ -28,12 +28,11 @@ const String kSourcesJsonKey = 'vod_sources_json';
 const String kActiveSourceIdKey = 'vod_active_source_id';
 
 /// 默认源 — ikunzyapi.com (数据量大: 电影 2529 部, 剧集 956 部, 综艺 1507 部).
-/// 用 bfzyapiTypeIds (20/30/45) — ikunzy 兼容此方案.
 VodSource defaultSource() => const VodSource(
       id: kDefaultSourceId,
       name: 'IKun 资源',
       baseUrl: 'https://ikunzyapi.com/api.php/provide/vod/from/ikm3u8',
-      typeIds: bfzyapiTypeIds,
+      typeIds: ikunzyTypeIds,
       builtIn: true,
     );
 

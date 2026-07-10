@@ -96,7 +96,10 @@ class SettingsPage extends ConsumerWidget {
           // ─── 品牌 header: 视界 logo ──────────────────────────────────
           const _SettingsGroupLabel(label: '功能'),
           const SizedBox(height: 6),
-          _FeatureCardGrid(onCheckUpdate: () => _checkUpdate(context, ref)),
+          _FeatureCardGrid(
+                              onCheckUpdate: () => _checkUpdate(context, ref),
+                              onShowAbout: () => _showAbout(context),
+                            ),
           const SizedBox(height: 16),
 
           // ─── 卡片 1: 外观 ──────────────────────────────────────────────
@@ -453,8 +456,13 @@ class SettingsPage extends ConsumerWidget {
 
 /// 顶部功能导航网格：收藏 / 播放历史 / 检查更新 / 关于.
 class _FeatureCardGrid extends StatelessWidget {
-  const _FeatureCardGrid({required this.onCheckUpdate, super.key});
+  const _FeatureCardGrid({
+    required this.onCheckUpdate,
+    required this.onShowAbout,
+    super.key,
+  });
   final VoidCallback onCheckUpdate;
+  final VoidCallback onShowAbout;
 
   void _navigate(String location, BuildContext context) {
     if (context.mounted) {
@@ -487,7 +495,7 @@ class _FeatureCardGrid extends StatelessWidget {
         label: '关于视界',
         icon: Icons.info_outline,
         color: Colors.purple,
-        onTap: () => _showAbout(context),
+        onTap: onShowAbout,
       ),
     ];
 

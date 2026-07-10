@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../data/models/channel.dart';
+import '../../data/models/content.dart';
+import '../../data/providers/vod_provider.dart';
 import '../../data/repositories/channel_repository.dart';
 import '../../features/favorites/favorite_button.dart';
 
@@ -24,10 +26,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   final _focusNode = FocusNode();
   final _keyboardFocusNode = FocusNode();
   String _query = '';
-  List<Channel> _results = [];
   int _selectedIndex = 0;
   bool _hasSearched = false;
+  int _currentTabIndex = 0;
   Timer? _debounceTimer;
+
+  // 直播搜索结果
+  List<Channel> _channelResults = [];
+  // VOD 搜索结果
+  List<Content> _vodResults = [];
 
   @override
   void initState() {
@@ -56,24 +63,38 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   Future<void> _search(String q) async {
     if (q.isEmpty) {
       setState(() {
-        _results = [];
+        _channelResults = [];
+        _vodResults = [];
         _hasSearched = false;
       });
       return;
     }
 
-    // 6/17 fix: await channelsProvider.future — Riverpod 的 FutureProvider
-    // 是 lazy 的, SearchPage 没有 watch 它, 用 ref.read 拿到的可能还是
-    // AsyncLoading, whenData 是 no-op, setState 永远不触发.
-    // 改成 await future, 确保数据到了再 setState.
-    final channels = await ref.read(channelsProvider.future);
-    if (!mounted) return;
-    final results = _fuzzySearch(channels, q);
     setState(() {
-      _results = results;
       _hasSearched = true;
       _selectedIndex = 0;
+      _channelResults = [];
+      _vodResults = [];
     });
+
+    // 并行搜索：直播频道 + VOD 影视
+    final channelFuture = ref.read(channelsProvider.future);
+    final vodFuture = _searchVod(q);
+
+    final results = await Future.wait([channelFuture, vodFuture]);
+    if (!mounted) return;
+    setState(() {
+      _channelResults = _fuzzySearch(results[0] as List<Channel>, q);
+      _vodResults = results[1] as List<Content>;
+      _selectedIndex = 0;
+    });
+  }
+
+  /// 搜索 VOD 内容 — 使用 MacCMS search 接口（返回完整详情）
+  Future<List<Content>> _searchVod(String q) async {
+    final api = ref.read(vodApiServiceProvider);
+    final items = await api.search(q);
+    return items.map((d) => api.toContent(d)).toList();
   }
 
   /// 模糊匹配: 频道名 或 channel id 包含 query (不区分大小写)
@@ -133,20 +154,36 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     setState(() {
       if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        if (_selectedIndex < _results.length - 1) _selectedIndex++;
+        if (_selectedIndex < _currentTabResults.length - 1) _selectedIndex++;
       } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
         if (_selectedIndex > 0) _selectedIndex--;
       } else if (event.logicalKey == LogicalKeyboardKey.enter ||
           event.logicalKey == LogicalKeyboardKey.select) {
-        if (_results.isNotEmpty && _selectedIndex < _results.length) {
-          _goToPlayer(_results[_selectedIndex]);
+        if (_currentTabResults.isNotEmpty && _selectedIndex < _currentTabResults.length) {
+          if (_currentTabIndex == 0) {
+            _goToPlayer(_channelResults[_selectedIndex]);
+          } else {
+            _goToVod(_vodResults[_selectedIndex]);
+          }
         }
       }
     });
   }
 
+  List<dynamic> get _currentTabResults =>
+      _currentTabIndex == 0 ? _channelResults : _vodResults;
+
   void _goToPlayer(Channel ch) {
     context.push('/player/${ch.id}');
+  }
+
+  void _goToVod(Content c) {
+    if (c.sourceUrls.isNotEmpty) {
+      context.push(
+        '/player/vod?url=${Uri.encodeComponent(c.sourceUrls.first)}'
+        '&title=${Uri.encodeComponent(c.title)}',
+      );
+    }
   }
 
   @override
@@ -176,7 +213,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           focusNode: _focusNode,
                           autofocus: true,
                           decoration: InputDecoration(
-                            hintText: '搜索频道名或频道号…',
+                            hintText: '搜索频道、视频内容…',
                             hintStyle: IptvTypography.body.copyWith(
                               // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                               color: Theme.of(context)
@@ -203,6 +240,29 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               // v0.3.8+99 (6/20 14:03 老板反馈): 删 divider, 用 SizedBox 16 代替.
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
+              // Tab 切换栏：电视直播 | 影视
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TabBar(
+                    labelColor: Theme.of(context).colorScheme.primary,
+                    unselectedLabelColor: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant,
+                    indicatorColor: Theme.of(context).colorScheme.primary,
+                    indicatorWeight: 3,
+                    onTap: (idx) => setState(() {
+                      _currentTabIndex = idx;
+                      _selectedIndex = 0;
+                    }),
+                    tabs: const [
+                      Tab(text: '电视直播'),
+                      Tab(text: '影视'),
+                    ],
+                  ),
+                ),
+              ),
+
               // 结果列表
               if (!_hasSearched)
                 SliverToBoxAdapter(
@@ -210,7 +270,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     padding: const EdgeInsets.all(32),
                     child: Center(
                       child: Text(
-                        '输入关键词搜索频道',
+                        '输入关键词搜索频道、视频内容',
                         style: IptvTypography.body.copyWith(
                           // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -219,7 +279,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     ),
                   ),
                 )
-              else if (_results.isEmpty)
+              else if (_currentTabResults.isEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
@@ -235,7 +295,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            '未找到匹配 "$_query" 的频道',
+                            '未找到匹配 "$_query" 的'
+                            '${_currentTabIndex == 0 ? '频道' : '影视'}',
                             style: IptvTypography.body.copyWith(
                               // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                               color: Theme.of(context)
@@ -252,28 +313,86 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 // v0.3.8+101 (6/20 15:02 老板反馈): _SearchResultTile 跟
                 // ChannelTile 风格统一 (独立容器 + 间隔).  list 加 padding
                 // + item 间插 SizedBox(10).  跟 category/favorites 一致.
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                  sliver: SliverList.builder(
-                    itemCount: _results.length,
-                    itemBuilder: (context, i) {
-                      final ch = _results[i];
-                      final isSelected = i == _selectedIndex;
-                      final tile = _SearchResultTile(
-                        channel: ch,
-                        isSelected: isSelected,
-                        channelNumber: (i + 1).toString().padLeft(2, '0'),
-                        onTap: () => _goToPlayer(ch),
-                      );
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          bottom: i == _results.length - 1 ? 0 : 10,
-                        ),
-                        child: tile,
-                      );
-                    },
+                if (_currentTabIndex == 0)
+                  // 电视直播搜索结果
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    sliver: SliverList.builder(
+                      itemCount: _channelResults.length,
+                      itemBuilder: (context, i) {
+                        final ch = _channelResults[i];
+                        final isSelected = i == _selectedIndex;
+                        final tile = _SearchResultTile(
+                          channel: ch,
+                          isSelected: isSelected,
+                          channelNumber: (i + 1).toString().padLeft(2, '0'),
+                          onTap: () => _goToPlayer(ch),
+                        );
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: i == _channelResults.length - 1 ? 0 : 10,
+                          ),
+                          child: tile,
+                        );
+                      },
+                    ),
+                  )
+                else
+                  // VOD 影视搜索结果 — 海报网格
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    sliver: SliverGrid.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.65,
+                      ),
+                      itemCount: _vodResults.length,
+                      itemBuilder: (_, i) {
+                        final item = _vodResults[i];
+                        return GestureDetector(
+                          onTap: () => _goToVod(item),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.06),
+                                    borderRadius: BorderRadius.circular(8),
+                                    image: item.hasPoster
+                                        ? DecorationImage(
+                                            image: NetworkImage(item.posterUrl!),
+                                            fit: BoxFit.cover,
+                                            onError: (_, __) {},
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                item.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
             ],
           ),
         ),
@@ -282,6 +401,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 }
 
+/// 直播频道搜索结果 Tile
 class _SearchResultTile extends StatelessWidget {
   const _SearchResultTile({
     required this.channel,

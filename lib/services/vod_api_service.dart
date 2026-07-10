@@ -59,6 +59,18 @@ class VodApiService {
     return (data['list'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
   }
 
+  /// 搜索内容 — MacCMS search 接口 (含海报/播放URL)
+  Future<List<Map<String, dynamic>>> search(String keyword) async {
+    final uri = Uri.parse(baseUrl).replace(queryParameters: {
+      'ac': 'detail',
+      'wd': keyword,
+    });
+    final res = await _client.get(uri).timeout(const Duration(seconds: 15));
+    final data = _safeJsonDecode(res.body);
+    if (data == null) return [];
+    return (data['list'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+  }
+
   /// 批量获取详情 (含海报、播放URL)
   Future<List<Map<String, dynamic>>> getDetail(List<int> ids) async {
     if (ids.isEmpty) return [];

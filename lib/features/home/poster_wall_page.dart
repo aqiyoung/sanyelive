@@ -59,14 +59,14 @@ class PosterWallPage extends ConsumerWidget {
                         title: '热播电影',
                         provider: vodMoviesProvider,
                         badges: const ['热播', 'VIP', '独播', '热播', 'VIP'],
-                        tabs: const ['全部', '动作', '科幻', '喜剧', '动画', '悬疑'],
+                        tabs: const ['全部', '动作', '科幻', '喜剧'],
                       ),
                       const SizedBox(height: 20),
                       _VodSectionWithTabs(
                         title: '热播剧集',
                         provider: vodSeriesProvider,
                         badges: const ['热播', 'VIP', '热播', 'VIP', 'VIP'],
-                        tabs: const ['全部', '古装', '都市', '悬疑', '爱情'],
+                        tabs: const ['全部', '古装', '都市', '悬疑'],
                       ),
                       const SizedBox(height: 20),
                     ],
@@ -435,14 +435,15 @@ class _LiveTvModule extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 一栏：预览缩略图
             Expanded(
-              flex: 5,
+              flex: 3,
               child: GestureDetector(
                 onTap: primary == null ? null : () => context.go('/player/${primary.id}'),
                 child: AspectRatio(
-                  aspectRatio: 1.18,
+                  aspectRatio: 0.7,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     child: Container(
                       color: Colors.black,
                       child: Stack(
@@ -451,64 +452,23 @@ class _LiveTvModule extends StatelessWidget {
                             child: primary?.logoUrl != null && primary!.logoUrl!.isNotEmpty
                                 ? Image.network(
                                     primary.logoUrl!,
-                                    width: 78,
+                                    width: 48,
                                     fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 44),
+                                    errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 32),
                                   )
-                                : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 44),
+                                : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 32),
                           ),
-                          const Positioned(left: 8, top: 8, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
+                          const Positioned(left: 6, top: 6, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
                           Positioned(
-                            right: 8,
-                            top: 8,
+                            right: 6,
+                            bottom: 6,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                               decoration: BoxDecoration(
                                 color: Colors.black54,
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(3),
                               ),
-                              child: Text(primary?.displayName ?? '视界', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
-                            ),
-                          ),
-                          Positioned(
-                            left: 10,
-                            right: 10,
-                            bottom: 10,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('正在直播 · 新闻30分', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Text('12:00', style: TextStyle(color: Colors.white70, fontSize: 9)),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(99),
-                                        child: LinearProgressIndicator(
-                                          value: 0.62,
-                                          minHeight: 2.5,
-                                          color: const Color(0xFFE53935),
-                                          backgroundColor: Colors.white24,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text('12:30', style: TextStyle(color: Colors.white70, fontSize: 9)),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Icon(Icons.arrow_forward_rounded, color: Colors.white60, size: 10),
-                                    const SizedBox(width: 4),
-                                    Text('午间剧场 · 辉煌岁月', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w500)),
-                                    Text('  12:30-13:30', style: TextStyle(color: Colors.white38, fontSize: 9)),
-                                  ],
-                                ),
-                              ],
+                              child: Text(primary?.displayName ?? '', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
                             ),
                           ),
                         ],
@@ -518,31 +478,86 @@ class _LiveTvModule extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
+            // 二栏：正在直播详情
             Expanded(
               flex: 4,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('正在直播', style: TextStyle(color: textColor, fontSize: 17, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 10),
+                  Text('正在直播', style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  Text('新闻30分', style: TextStyle(color: context.fgAccent, fontSize: 17, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text('12:00', style: TextStyle(color: context.fgSub, fontSize: 10)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: LinearProgressIndicator(
+                            value: 0.62,
+                            minHeight: 2.5,
+                            color: const Color(0xFFE53935),
+                            backgroundColor: context.fgBorder,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text('12:30', style: TextStyle(color: context.fgSub, fontSize: 10)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.arrow_forward_rounded, color: context.fgSub, size: 10),
+                      const SizedBox(width: 4),
+                      Text('午间剧场 · 辉煌岁月', style: TextStyle(color: context.fgSub, fontSize: 11, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            // 三栏：其他频道列表
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('其他频道', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
                   if (isLoading)
-                    const _LiveListText(title: '加载频道中', subtitle: '正在读取本地频道库')
+                    const Text('加载中...', style: TextStyle(color: context.fgSub, fontSize: 12))
                   else if (channels.isEmpty)
-                    const _LiveListText(title: '暂无频道', subtitle: '请检查频道数据')
+                    const Text('暂无频道', style: TextStyle(color: context.fgSub, fontSize: 12))
                   else
-                    ...channels.skip(1).take(3).map((ch) => GestureDetector(
+                    ...channels.skip(1).take(4).map((ch) => GestureDetector(
                           onTap: () => context.go('/player/${ch.id}'),
                           child: Padding(
-                            padding: const EdgeInsets.only(bottom: 11),
-                            child: _LiveListText(title: ch.displayName, subtitle: '正在直播'),
+                            padding: const EdgeInsets.only(bottom: 7),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 4, height: 4,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFE53935),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(ch.displayName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
                           ),
                         )),
                 ],
               ),
             ),
           ],
-        ),
+        ),        ),
       ),
     );
   }
@@ -741,8 +756,7 @@ class _VodSection extends ConsumerWidget {
 }
 
 /// 热播剧集 / 热播电影 — 带分类筛选标签的 VOD 横滚区.
-/// 参考图: 标题行下方是「全部 / 古装 / 都市 / 悬疑 / 爱情」筛选标签,
-/// 选中态红色描边 + 浅红底, 未选中灰字灰边.
+/// v0.3.12+95: tabs 放标题同一行, 标题字号 16, 选中态红色描边 + 浅红底.
 class _VodSectionWithTabs extends ConsumerStatefulWidget {
   const _VodSectionWithTabs({
     required this.title,
@@ -772,68 +786,65 @@ class _VodSectionWithTabsState extends ConsumerState<_VodSectionWithTabs> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(widget.title,
-                      style: TextStyle(
-                          color: context.fgMain,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900)),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => context.go('/search'),
-                    child: Row(
-                      children: [
-                        Text('更多', style: TextStyle(color: context.fgSub, fontSize: 13)),
-                        Icon(Icons.chevron_right_rounded,
-                            color: context.fgSub, size: 18),
-                      ],
-                    ),
+          child: SizedBox(
+            height: 28,
+            child: Row(
+              children: [
+                Text(widget.title,
+                    style: TextStyle(
+                        color: context.fgMain,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.zero,
+                    itemCount: widget.tabs.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                    itemBuilder: (context, index) {
+                      final isSelected = _selectedTab == index;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedTab = index),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? context.fgAccent.withValues(alpha: 0.12)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isSelected ? context.fgAccent : context.fgBorder,
+                              width: isSelected ? 1.2 : 1,
+                            ),
+                          ),
+                          child: Text(
+                            widget.tabs[index],
+                            style: TextStyle(
+                              color: isSelected ? context.fgAccent : context.fgSub,
+                              fontSize: 11,
+                              fontWeight:
+                                  isSelected ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 28,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.zero,
-                  itemCount: widget.tabs.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final isSelected = _selectedTab == index;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedTab = index),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? context.fgAccent.withValues(alpha: 0.12)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isSelected ? context.fgAccent : context.fgBorder,
-                            width: isSelected ? 1.2 : 1,
-                          ),
-                        ),
-                        child: Text(
-                          widget.tabs[index],
-                          style: TextStyle(
-                            color: isSelected ? context.fgAccent : context.fgSub,
-                            fontSize: 12,
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () => context.go('/search'),
+                  child: Row(
+                    children: [
+                      Text('更多', style: TextStyle(color: context.fgSub, fontSize: 12)),
+                      Icon(Icons.chevron_right_rounded,
+                          color: context.fgSub, size: 16),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),

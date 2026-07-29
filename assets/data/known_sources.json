@@ -92,8 +92,8 @@
     "http://117.161.133.51:81/gitv_live/G_CETV-2/G_CETV-2.m3u8?p=GITV"
   ],
   "CGTN.cn": [
-    "https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8",
     "https://english-livebkali.cgtn.com/live/encgtn.m3u8",
+    "https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8",
     "https://0472.org/hls/cgtn.m3u8"
   ],
   "CGTNDocumentary.cn": [
@@ -200,8 +200,8 @@
     "http://61.173.144.157:9901/tsfile/live/1000_1.m3u8?authid=0&key=txiptv&playlive=1"
   ],
   "TonghuaTV.cn": [
-    "https://lsfb.avap.jilintv.cn/zqvk7vpj/channel/43ea5771aa44421591f9dfd2b71f1b9b/index.m3u8",
-    "http://lsfb.avap.jilintv.cn/zqvk7vpj/channel/43ea5771aa44421591f9dfd2b71f1b9b/index.m3u8"
+    "http://lsfb.avap.jilintv.cn/zqvk7vpj/channel/43ea5771aa44421591f9dfd2b71f1b9b/index.m3u8",
+    "https://lsfb.avap.jilintv.cn/zqvk7vpj/channel/43ea5771aa44421591f9dfd2b71f1b9b/index.m3u8"
   ],
   "VoATVChina.cn": [
     "https://voa-ingest.akamaized.net/hls/live/2033878/tvmc08/playlist.m3u8"
@@ -216,9 +216,9 @@
     "http://222.80.13.33:4022/udp/238.125.3.175:5140"
   ],
   "XinjiangTV3.cn": [
+    "http://110.153.180.106:55555/out_2/index.m3u8",
     "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
-    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
-    "http://110.153.180.106:55555/out_2/index.m3u8"
+    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1"
   ],
   "XinjiangTV8.cn": [
     "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1"

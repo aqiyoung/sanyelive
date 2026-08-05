@@ -108,7 +108,42 @@ class VideoArea extends StatelessWidget {
               ),
             PlayerStatus.error => ErrorOverlay(message: state.error ?? '播放失败'),
             PlayerStatus.playing => const SizedBox.shrink(),
+            // 播放态右下角品牌水印 (提升纯黑视频区质感)
+            if (state.status == PlayerStatus.playing)
+              const Positioned(
+                right: 12,
+                bottom: 12,
+                child: _BrandWatermark(),
+              ),
           },
+        ],
+      ),
+    );
+  }
+}
+
+/// 播放态右下角品牌水印 — 半透明白, 让纯黑视频区不空洞.
+class _BrandWatermark extends StatelessWidget {
+  const _BrandWatermark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: 0.55,
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.play_circle_outline, color: Colors.white, size: 14),
+          SizedBox(width: 4),
+          Text(
+            '视界',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
         ],
       ),
     );
@@ -122,9 +157,8 @@ class LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return ColoredBox(
-      color: scheme.shadow,
+      color: Colors.black.withValues(alpha: 0.6),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -140,7 +174,7 @@ class LoadingOverlay extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Text(text, style: TextStyle(color: scheme.onSurfaceVariant)),
+            Text(text, style: const TextStyle(color: Colors.white70)),
           ],
         ),
       ),
@@ -164,7 +198,7 @@ class ErrorOverlay extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return ColoredBox(
-      color: scheme.shadow,
+      color: Colors.black.withValues(alpha: 0.6),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -179,8 +213,8 @@ class ErrorOverlay extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 '播放失败',
-                style: TextStyle(
-                  color: scheme.onSurface,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -189,7 +223,7 @@ class ErrorOverlay extends ConsumerWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
               const SizedBox(height: 16),
               // 重试 + 换源 两个按钮.  重试: 重调 play(当前 channel), 走
@@ -207,8 +241,8 @@ class ErrorOverlay extends ConsumerWidget {
                     icon: const Icon(Icons.refresh, size: 18),
                     label: const Text('重试'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: scheme.onPrimary,
-                      side: BorderSide(color: scheme.outline),
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white70),
                     ),
                   ),
                   if (hasMultipleSources) ...[

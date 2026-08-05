@@ -5,7 +5,6 @@ import '../../../core/theme/typography.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/epg.dart';
 import '../../../data/repositories/epg_repository.dart';
-import '../../../widgets/glass_container.dart';
 
 ///
 /// 数据来源: [epgForChannelProvider]
@@ -76,12 +75,25 @@ class _ProgramCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPlaceholder = current?.title == '敬请期待';
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: GlassContainer(
-        borderRadius: 12,
-        padding: const EdgeInsets.all(14),
-        child: Column(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _SectionLabel(
@@ -217,12 +229,25 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: GlassContainer(
-        borderRadius: 12,
-        padding: const EdgeInsets.all(14),
-        child: Row(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
           children: [
             Icon(Icons.live_tv,
                 size: 18, color: Theme.of(context).colorScheme.primary),

@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../models/content.dart';
-import '../models/vod_source.dart';
 import '../../services/vod_api_service.dart';
 import '../../services/vod_source_registry.dart';
 

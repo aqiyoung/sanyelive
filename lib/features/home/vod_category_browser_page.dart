@@ -69,7 +69,6 @@ class _VodCategoryBrowserPageState extends ConsumerState<VodCategoryBrowserPage>
   Widget build(BuildContext context) {
     final config = _config;
     final label = config['label'] as String;
-    final typeId = config['typeId'] as int;
     final subList = _subs;
 
     // anime/documentary/sports/overseas 无独立 provider 时 fallback 到 movies.

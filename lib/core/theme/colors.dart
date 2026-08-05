@@ -73,11 +73,10 @@ extension BuildThemeColors on BuildContext {
   Color get bgBase => _cs.surface;
 
   /// 卡片 / 容器 背景 (比 surface 浅/深一档).
-  Color get bgCard => _cs.surfaceContainer ?? _cs.surface;
+  Color get bgCard => _cs.surfaceContainer;
 
   /// 卡片内更深一档 (按钮底 / 内嵌块).
-  Color get bgCardHigh =>
-      _cs.surfaceContainerHigh ?? _cs.surfaceContainer ?? _cs.surface;
+  Color get bgCardHigh => _cs.surfaceContainerHigh;
 
   /// 主文字.
   Color get fgMain => _cs.onSurface;

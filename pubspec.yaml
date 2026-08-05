@@ -147,6 +147,8 @@ dependencies:
   package_info_plus: ^8.0.0
   # v0.3.10.20: 更新改为跳转 GitHub releases 页下载, 不再 Dio 下载 APK
   url_launcher: ^6.3.1
+  # v0.3.12.97: 新 logo (朱砂红印章 SVG) 矢量渲染, 浅色/深色自适应, 放大不糊
+  flutter_svg: ^2.0.10
 
 dependency_overrides:
   # 卡 6 修复: package_info_plus 9.x 跟 Flutter 3.24 Gradle plugin 不兼容

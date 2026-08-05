@@ -3,12 +3,14 @@
 //   - 旧 v1: 红底 + Icons.play_arrow_rounded (Flutter primitive)
 //   - 新 v2: GPT 设计原图 (红→深紫渐变 + 白三角 + 3D 光泽)
 //   - 动画: 2s total (0.5s scale-in 0.5→1.0 overshoot + 1s hold + 0.5s fade-out)
-//   - Asset: assets/icons/shijie_logo.png (GPT 原图缩放)
+//   - Asset: assets/icons/shijie_logo.svg (v0.3.12.97 重做 — 朱砂红印章风,
+//     扁平圆角方印 + 白色极简播放三角, 透明背景, 浅色/深色自适应)
 
 import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/colors.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 const Duration kSplashMinDuration = Duration(milliseconds: 2000);
 
@@ -110,12 +112,12 @@ class _SplashLogo extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(40),
-          child: Image.asset(
-            'assets/icons/shijie_logo.png',
-            width: 180,
-            height: 180,
-            fit: BoxFit.cover,
-          ),
+                  child: SvgPicture.asset(
+                    'assets/icons/shijie_logo.svg',
+                    width: 180,
+                    height: 180,
+                    fit: BoxFit.cover,
+                  ),
         ),
       ),
     );

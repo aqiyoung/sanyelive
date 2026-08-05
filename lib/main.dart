@@ -75,6 +75,7 @@ void main() async {
       // 兜底: 用内存版空 SharedPreferences, 不让 app 崩到顶层 fatal 崩溃页.
       // 关键修复: 不要再调 SharedPreferences.getInstance() — 它仍会抛,
       try {
+        // ignore: invalid_use_of_visible_for_testing_member
         SharedPreferences.setMockInitialValues({});
         prefs = await SharedPreferences.getInstance();
         await CrashLogger.log('step3: in-memory fallback OK');

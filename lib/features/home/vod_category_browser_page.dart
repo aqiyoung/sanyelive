@@ -39,7 +39,6 @@ const _categoryMap = {
     'typeId': 33,
     'subs': ['全部', '足球', '篮球', '网球', '赛车', '搏击', '极限', '电竞'],
   },
-  // v0.3.13.0: 海外剧场 — 欧美剧/英剧/海外剧.  typeId 仅作参考 (实际由活跃源
   // typeIds 决定),  所以这里的 typeId 值不重要,  只要 label/subs 即可.
   'overseas': {
     'label': '海外剧场',
@@ -73,7 +72,6 @@ class _VodCategoryBrowserPageState extends ConsumerState<VodCategoryBrowserPage>
     final typeId = config['typeId'] as int;
     final subList = _subs;
 
-    // v0.3.13.0: 按 category key 直接路由到对应 provider (不再硬编码 typeId 匹配).
     // anime/documentary/sports/overseas 无独立 provider 时 fallback 到 movies.
     final provider = switch (widget.category) {
       'series' => vodSeriesProvider,
@@ -97,7 +95,6 @@ class _VodCategoryBrowserPageState extends ConsumerState<VodCategoryBrowserPage>
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─── v0.3.13.0: VOD 源选择芯片栏 ──────────────────────
           _VodSourceChipBar(),
           // ─── 二级分类标签 ────────────────────────────────────
           Padding(
@@ -205,7 +202,6 @@ class _VodCategoryBrowserPageState extends ConsumerState<VodCategoryBrowserPage>
   }
 }
 
-/// v0.3.13.0: VOD 源选择芯片栏 — 横向滚动 + 当前活跃源高亮 + + 添加.
 class _VodSourceChipBar extends ConsumerWidget {
   const _VodSourceChipBar();
 

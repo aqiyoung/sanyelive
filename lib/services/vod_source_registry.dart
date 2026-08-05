@@ -1,7 +1,5 @@
-// v0.3.13.0 (7/9 老板要求): VOD 源注册器 — 多源持久化 + 单活跃源切换.
 //
 // 设计:
-//   - 内置默认源 = bfzyapi.com (老板 7/9 之前唯一在用的 VOD 源).
 //   - 用户可添加自定义源 (name + baseUrl + typeId 方案) 或从 TVBox 4 URL 导入.
 //   - 单活跃源:  用户一次选一个源浏览,  VOD providers 全部基于活跃源构造.
 //   - SharedPreferences 持久化 (跟 theme_provider.dart 同一模式).

@@ -85,6 +85,13 @@ class SmartSourceRouter {
   static const String _prefsKey = 'smart_router.scores';
   static const Duration _probeTimeout = Duration(seconds: 3);
 
+  // 优化 (8/5): 评分落盘节流 — recordResult/getScores 调用频繁 (切台时
+  // 每个源一次), 原本每次都全量序列化写 SharedPreferences.  改为 debounce
+  // 合并写, 降低 IO 压力; 命中缓存则不写盘.
+  static const Duration _saveDebounce = Duration(milliseconds: 1500);
+  Map<String, SourceScore>? _pendingSave;
+  Timer? _saveTimer;
+
   /// 获取评分 (从缓存或探测)
   ///
   /// [probeIfStale] 为 false 时, 缓存过期也**不实时探测**, 直接返回过期/默认评分.
@@ -96,6 +103,7 @@ class SmartSourceRouter {
     final cached = await _loadCachedScores();
     final now = DateTime.now();
     final result = <String, SourceScore>{};
+    var changed = false;
 
     for (final url in urls) {
       final cachedScore = cached[url];
@@ -106,6 +114,7 @@ class SmartSourceRouter {
         // 无缓存且允许探测: 探测一次
         final score = await _probeSource(url);
         result[url] = score;
+        changed = true;
       } else {
         // 无缓存且不探测: 用中性默认分, 保持原始顺序
         result[url] = SourceScore(
@@ -116,10 +125,12 @@ class SmartSourceRouter {
           failCount: 0,
           lastTestedAt: now,
         );
+        changed = true;
       }
     }
 
-    await _saveCachedScores(result);
+    // 命中缓存 (无新增) 时不写盘; 有新增则 debounce 合并写.
+    if (changed) _scheduleSave(result);
     return result;
   }
 
@@ -213,11 +224,14 @@ class SmartSourceRouter {
       cached[url] = updated;
     }
 
-    await _saveCachedScores(cached);
+    _scheduleSave(cached);
   }
 
   /// 清除所有评分缓存
   Future<void> clearCache() async {
+    _saveTimer?.cancel();
+    _saveTimer = null;
+    _pendingSave = null;
     await _prefs?.remove(_prefsKey);
   }
 
@@ -234,10 +248,30 @@ class SmartSourceRouter {
     }
   }
 
-  Future<void> _saveCachedScores(Map<String, SourceScore> scores) async {
-    if (_prefs == null) return;
-    final map = scores.map((k, v) => MapEntry(k, v.toJson()));
+  /// 调度一次评分写盘 (debounce).  多次调用在 [_saveDebounce] 窗口内合并,
+  /// 只落盘一次, 降低切台频繁时的 SharedPreferences 写压力.
+  void _scheduleSave(Map<String, SourceScore> scores) {
+    _pendingSave ??= <String, SourceScore>{};
+    _pendingSave!.addAll(scores); // 后续更新覆盖较早的, 保留窗口内最新值
+    _saveTimer ??= Timer(_saveDebounce, _flushSave);
+  }
+
+  /// 实际写盘: 合并 prefs 中其它 url, 避免覆盖窗口外已持久化的数据.
+  Future<void> _flushSave() async {
+    _saveTimer?.cancel();
+    _saveTimer = null;
+    final pending = _pendingSave;
+    _pendingSave = null;
+    if (pending == null || _prefs == null) return;
+    final existing = await _loadCachedScores();
+    existing.addAll(pending); // pending (窗口内最新) 覆盖
+    final map = existing.map((k, v) => MapEntry(k, v.toJson()));
     await _prefs.setString(_prefsKey, json.encode(map));
+  }
+
+  /// 强制立即写盘 (app 退出 / 生命周期结束时调用, 避免丢失窗口内评分).
+  Future<void> flush() async {
+    if (_saveTimer != null) await _flushSave();
   }
 }
 

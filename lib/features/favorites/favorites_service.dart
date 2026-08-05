@@ -17,7 +17,6 @@ class SqfliteFavoritesStore implements FavoritesStore {
 
   final Database? _injectedDb;
   Database? _db;
-  // v0.3.7+86 (6/20 老板测试反馈): 多 widget 并发调 getAll()/add() 时,
   // _database getter 在 await 之前判断 _db 仍 null, 都进入 _initDb().
   // 加 _initLock 防止 race condition 打开多次 Database 实例 (资源泄漏 + 偶发
   // ConcurrentModificationError).
@@ -30,7 +29,6 @@ class SqfliteFavoritesStore implements FavoritesStore {
       return _injectedDb!; // ignore: unnecessary_non_null_assertion
     }
     if (_db != null) return _db!;
-    // v0.3.7+86: 用 _initLock 保证 _initDb() 只跑一次.  后续 caller await
     // 同一个 Future, 不会重新打开 Database.
     _initLock ??= _initDb();
     _db = await _initLock!;

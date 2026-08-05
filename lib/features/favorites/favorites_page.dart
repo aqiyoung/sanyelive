@@ -10,7 +10,6 @@ import '../../data/repositories/channel_repository.dart';
 import '../../features/favorites/favorites_service.dart';
 import '../../widgets/channel_tile.dart';
 
-/// 6/17 v0.2.3 P1-2: 收藏页 — 列出所有已收藏的频道.
 /// - 读 favoritesProvider (List<String> ids)
 /// - 反查 channelsProvider → Channel
 /// - 长按 ChannelTile → 弹底部 sheet 确认删除
@@ -23,7 +22,6 @@ class FavoritesPage extends ConsumerWidget {
     final asyncChannels = ref.watch(channelsStreamProvider);
 
     return Scaffold(
-      // 6/18 v0.3.6.1 hotfix: 删 scaffold 硬编码 bgParchment,
       // 让 colorScheme.surface (light=bgParchment / dark=darkBg) 生效.
       body: SafeArea(
         child: Column(
@@ -71,8 +69,6 @@ class FavoritesPage extends ConsumerWidget {
         if (ordered.isEmpty) {
           return const _EmptyState();
         }
-        // 6/17 v0.2.3 P1-5: TV 端 TvFocus 拿焦点环.  手机端不变.
-        // v0.3.8+101 (6/20 15:02 老板反馈): ChannelTile 现在是独立容器
         // (浅一档米色 + 圆角 12),  list 加 padding + item 间插 SizedBox(10).
         final isTv = context.deviceTier == DeviceTier.tv;
         return ListView.builder(
@@ -117,7 +113,6 @@ class FavoritesPage extends ConsumerWidget {
     final svc = ref.read(favoritesServiceProvider);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      // 6/18 v0.3.6.1 hotfix: bgElevated → colorScheme.surfaceContainer,
       // 暗色下用 darkSurface (暖深灰) 而不是浅米色.
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
@@ -137,7 +132,6 @@ class FavoritesPage extends ConsumerWidget {
                     style: IptvTypography.serifTitle,
                   ),
                 ),
-                // v0.3.8+99 (6/20 14:03 老板反馈): 删 divider, 用 SizedBox 12 代替.
                 const SizedBox(height: 12),
                 ListTile(
                   leading: Icon(
@@ -182,7 +176,6 @@ class _FavoritesAppBar extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back),
-            // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface,
             // 暗色下用 darkTextPrimary (米色) 而不是浅色 token.
             color: Theme.of(context).colorScheme.onSurface,
             onPressed: () => context.pop(),
@@ -265,7 +258,6 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.favorite_border,
               size: 56,
-              // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant,
               // 暗色下用 darkTextSecondary (暖灰) 而不是浅色 token.
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),

@@ -41,7 +41,6 @@ class CategoryGrid extends StatelessWidget {
           itemCount: items.length,
           itemBuilder: (context, i) {
             final item = items[i];
-            // 6/17 v0.2.3 P1-5: TV 端套 TvFocus 拿焦点环,  手机端原
             // InkWell 不受影响 (TvFocus 内部是 Focus + GestureDetector,  不
             // 拦截 touch 事件).
             final isTv = context.deviceTier == DeviceTier.tv;
@@ -145,7 +144,6 @@ class ContinueWatchingCard extends StatelessWidget {
     // 显得太抢眼.  厊到 1/8 屏高: logo 40, padding 14,
     // 删掉 subtitle 文字, 'continue watching' label 和 channelName 合并到
     // 一行 (用 ' · ' 分隔).
-    // 6/17 v0.2.3 P1-5: TV 端套 TvFocus 拿焦点环,  手机端原 InkWell 不变.
     final isTv = context.deviceTier == DeviceTier.tv;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -176,7 +174,6 @@ class ContinueWatchingCard extends StatelessWidget {
                 child: channelLogo != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        // v0.3.8+93 (6/20 P1-2): 频道 logo 磁盘缓存 —
                         // cached_network_image.  之前 Image.network 每次首页
                         // rebuild 都重新拉, 480 频道 * 反复访问 = 闪烁 + 流量.
                         // memCacheWidth/Height: 只解 40px 实际大小, 省内存.

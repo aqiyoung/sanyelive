@@ -4,10 +4,8 @@ import '../../../core/theme/typography.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/source_dispatcher.dart';
 
-/// 6/17 v0.2.3 P0-4: 错误时给用户「换源」入口 — 弹底部 sheet,
 /// 列出 channel 的所有 source URL,  选完返回该 URL (null = 取消).
 ///
-/// v0.3.5.3 (6/18) 改: 用 [SourceDispatcher.dispatch] 拿排序后的 sources,
 /// 跟播放器用的顺序一致 (CCTV 频道 cctvSource 排前).  另外 UI 上把
 /// cctvSource 用 🇨🇳 标签突出, iptv-org/known_sources 用普通标签.
 Future<String?> pickSourceUrl(BuildContext context, Channel channel) async {
@@ -28,7 +26,6 @@ class _SourcePickerContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // v0.3.5.3: 用 dispatcher 拿排序后的 sources (CCTV 频道 cctvSource 优先)
     final sources = SourceDispatcher.dispatch(channel);
     final isCctv = CctvSourcePicker.isCctvMainChannel(channel);
     return SafeArea(
@@ -64,7 +61,6 @@ class _SourcePickerContent extends StatelessWidget {
                 ],
               ),
             ),
-            // v0.3.8+99 (6/20 14:03 老板反馈): 删 divider, 用 SizedBox 16 代替.
             const SizedBox(height: 16),
             Flexible(
               child: sources.isEmpty
@@ -77,7 +73,6 @@ class _SourcePickerContent extends StatelessWidget {
                       itemCount: sources.length,
                       itemBuilder: (context, i) {
                         final url = sources[i];
-                        // v0.3.5.3: cctvSource 加标签
                         final isCctvSrc = channel.cctvSource.contains(url);
                         return ListTile(
                           leading: CircleAvatar(

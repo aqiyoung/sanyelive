@@ -288,7 +288,6 @@ const Map<String, String> kChannelNameZh = {
   'TaiwanSTARChineseChannel.cn': '卫视中文',
   'TaiwanSTARMoviesChannel.cn': '卫视电影',
   'TaiwanSTARVarietyChannel.cn': '卫视综艺',
-  // ── v0.3.10.21 (6/27): 国际频道 133 条翻译 ──
   // ── DE / 德国 (16) ──
   '123tv.de@SD': '1-2-3 TV (德国)',
   'AlexBerlin.de@SD': 'Alex Berlin (德国柏林)',

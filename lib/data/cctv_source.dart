@@ -1,11 +1,7 @@
-/// cctv_source.dart — CCTV 频道源选择器 (v0.3.5.3 6/18 新增)
 ///
-/// 背景 (老板 14:02 拍板 "去找央视的源"):
-///   v0.3.5 标 CCTV 16 频道"全活", 实际主源 38.75.136.137 + 备源 74.91.26.218
 ///   多频道死了, iptv-org 6/18 已删 CCTV-5 (版权), 公开 m3u 渠道失效.
 ///   6 方向调研 (央视频 / 央视网 / GitHub CCTV 仓库 / 各地电信 IPTV / CSS /
 ///   自建 nginx+ffmpeg) 后, 拿到 12/16 频道公共源. 剩 4 频道 (CCTV-2/3/5/5+/
-///   7/12/16/17) 留给老板自建 (终极 fallback).
 ///
 /// 职责:
 ///   1. 选源: 给定 channel, 合并 cctvSource + sources + known_sources, 优先级
@@ -44,7 +40,6 @@ const String kCctvIdPrefix = 'CCTV';
 ///   - CCTVPlus1/2 (CCTV+ 海外频道, 不在 16 频道范围)
 ///   - CCTVBilliards, CCTVEntertainment, CCTVGolfTennis, CCTVOpera,
 ///     CCTVStorm*, CCTVTheFirstTheater, CCTVWeaponTechnology, CCTVWorldGeography
-///     (这些是 CCTV 数字频道, 卡 6.18 不在 16 频道内)
 ///   - CCTV4America/Asia/Europe (海外版本, 卡里不算)
 ///   - CCTV4K (超高清, 不在 16 频道范围但有专用源)
 const Set<String> kCctvSubChannelIds = <String>{
@@ -66,7 +61,6 @@ const Set<String> kCctvSubChannelIds = <String>{
   'CCTVWorldGeography.cn',
 };
 
-/// CCTV 数字主频道 (1-17, 含 CCTV-5+) — 这 16 频道是 v0.3.5.3 修的目标
 const Set<String> kCctvMainChannelIds = <String>{
   'CCTV1.cn',
   'CCTV2.cn',
@@ -89,7 +83,6 @@ const Set<String> kCctvMainChannelIds = <String>{
   'CCTV4K.cn',
 };
 
-/// v0.3.5.3 调研得到的 CCTV 源健康分 (静态, 跟 assets/data/cctv_sources.json 同步).
 ///
 /// 分数:
 ///   1.0 = 完美 (HTTPS / 国内 CDN / 1080p / sub-stream 验证有内容)
@@ -148,14 +141,12 @@ class CctvSourcePicker {
   }
 
   /// channel 是不是 CCTV 数字频道 (Billiards/Storm 等).
-  /// v0.3.5.3 不管, 留老逻辑 (sources 字段).
   static bool isCctvSubChannel(Channel c) {
     return kCctvSubChannelIds.contains(c.id);
   }
 
   /// 给定 channel, 返回按健康分排序的播放源 URL 列表.
   ///
-  /// 合并规则 (v0.3.5.3 铁律):
   ///   1. CCTV 主频道 (CCTV-1~17) 且 cctvSource 非空:
   ///      [cctvSource 按健康分降序] + [sources 去重后追加] + [known_sources 兜底]
   ///   2. 其他 channel: 保持原 [sources] + known_sources (老逻辑不变)
@@ -464,7 +455,6 @@ class CctvSource {
       'CctvSource(url: $url, score: ${(score * 100).round()}%, method: $method, rtt: ${rttMs}ms)';
 }
 
-/// v0.3.7+50 (6/19): 按 health_score 降序排序, score=0 (死源) 排最后.
 /// stable sort — 同分保持输入顺序.  给 SourceFailover 选 top-1 用.
 List<CctvSource> sortByHealthScore(List<CctvSource> sources) {
   final sorted = List<CctvSource>.from(sources);

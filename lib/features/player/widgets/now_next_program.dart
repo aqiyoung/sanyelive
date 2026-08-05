@@ -7,11 +7,9 @@ import '../../../data/models/epg.dart';
 import '../../../data/repositories/epg_repository.dart';
 import '../../../widgets/glass_container.dart';
 
-/// "现在播什么 + 接下来" 节目卡 — P1-1 轻玻璃 (blur 12 + 白边)
 ///
 /// 数据来源: [epgForChannelProvider]
 /// - 有 EPG 数据: 显示当前节目 (title + 进度条 + 剩余时间) + 下一档
-/// - 无 EPG 数据: 退化为 "LIVE · 节目时间" 占位 (卡 6 完整 EPG)
 class NowNextProgram extends ConsumerWidget {
   const NowNextProgram({super.key, required this.channel});
 
@@ -28,7 +26,6 @@ class NowNextProgram extends ConsumerWidget {
         if (entries.isEmpty) {
           return _EmptyState(channel: channel, isLoading: false);
         }
-        // v0.3.8+164 (6/22 老板 08:09 反馈 "节目卡只显示 直播中, 没节目名"):
         // +163 之前 _findCurrent 跟 _findNext 用 DateTime.now().toUtc(),
         // EpgService._placeholderSchedule 返的 EpgEntry.start/end 是 local time
         // (DateTime(now.year, now.month, now.day) 是 local).  toUtc() 转 UTC 后跟
@@ -234,7 +231,6 @@ class _EmptyState extends StatelessWidget {
               child: Text(
                 isLoading
                     ? '节目单加载中…'
-                    // v0.3.8+93 (6/20 P0-2): 去掉 "节目单待接入"
                     // ——  EpgService 现在返时段占位 (上午/下午/黄金/夜间).
                     // 频道上直播中 + 当前档名,  看着就象样.
                     : '${channel.displayName} · 直播中',

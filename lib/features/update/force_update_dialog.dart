@@ -1,5 +1,3 @@
-// 0.3.7+20 后台强制更新弹窗 (P1 feature, 6/18 老板拍板).
-// 0.3.10+20: 改为跳转 GitHub releases 页下载, 不再 Dio 下载 APK + 调系统安装器.
 //
 // 设计要点:
 //   - barrierDismissible: false  → 用户无法通过点击外部 / 返回键关闭.
@@ -7,7 +5,6 @@
 //     变更日志 (release body) + 2 按钮 "去下载"(主) + "稍后"(次, 24h 内不弹).
 //   - P0/critical: release body 含 "**P0**" / "**critical**" 标记时,  dialog
 //     不显示"稍后"按钮,  必须更新.  维持安全门.
-//   - 视觉: 沿用 v0.3.6+19 暗色主题 token,  弹窗在 light / dark 都好看.
 //   - 下载流程: 点"去下载" → url_launcher 打开 GitHub releases 页, 用户手动下载 APK.
 //
 // 调用方式:
@@ -96,7 +93,6 @@ class _ForceUpdateDialogContentState
         ? theme.colorScheme.onSurfaceVariant
         : theme.colorScheme.onSurfaceVariant;
 
-    // v0.3.8+169: PopScope(canPop: false) 阻止 Android 返回键关闭弹窗.
     // barrierDismissible: false 只阻止点击外部,  不阻止返回键.
     return PopScope(
       canPop: false,
@@ -199,7 +195,6 @@ class _ForceUpdateDialogContentState
       actions.add(
         TextButton(
           onPressed: () async {
-            // v0.3.10.22: 先 capture navigator, 避免 async gap 后
             // 使用 context 触发 use_build_context_synchronously lint.
             final navigator = Navigator.of(context);
             await ref.read(versionCheckerProvider.notifier).markDismissed();

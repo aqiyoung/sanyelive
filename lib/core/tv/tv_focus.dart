@@ -5,10 +5,8 @@ import '../theme/colors.dart';
 
 /// TV 端焦点环颜色 — 朱砂 (Cinnabar) — 用于 [kTvFocusColor] 常量与
 /// 单元测试断言. TvFocus widget 实际渲染用的是 [IptvColors.accentTerracotta]
-/// (P2-1: 老板 6/18 拍板 1.05 scale + 2px 暖色边,  看起来更明显但不刺眼).
 const Color kTvFocusColor = Color(0xFFE24A1A);
 
-/// TV 焦点包裹器 — 1.05 scale + 2px 赤陶焦点边 (P2-1 6/18 老板拍板).
 ///
 /// 高亮态: scale 1.0 → 1.05, 2px IptvColors.accentTerracotta 0.6 alpha 边.
 /// 非高亮态: 无变换无边. 动画 150ms ease.
@@ -83,7 +81,6 @@ class _TvFocusState extends State<TvFocus> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedScale(
-          // P2-1 (6/18 老板拍): 高亮态 scale 1.03 → 1.05, 远距离更明显.
           // ChatGPT 6/17 21:18 建议, 1.05 是"明显但不夸张"的上限.
           scale: _focused ? 1.05 : 1.0,
           duration: const Duration(milliseconds: 150),
@@ -91,7 +88,6 @@ class _TvFocusState extends State<TvFocus> {
             duration: const Duration(milliseconds: 150),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(widget.borderRadius),
-              // P2-1: 焦点边 4dp 朱砂 → 2px 赤陶 0.6 alpha.
               //  4dp 太厚遮卡片内容,  2px + scale 1.05 远距离也清晰.
               border: _focused
                   ? Border.all(
@@ -126,7 +122,6 @@ class TvFocusGroup extends StatelessWidget {
   }
 }
 
-/// P2-1: 一屏焦点上限 — ChatGPT 6/17 建议
 ///
 /// TV 遥控器场景下, 一屏可聚焦项应限制在 7-9 个 (不能自由漂移).
 /// 超出时 Row 自动折行, Column 自动截断.
@@ -155,7 +150,6 @@ class TvFocusCap extends StatelessWidget {
       children.length <= maxFocusable,
       'TV 一屏焦点项 ${children.length} 超出上限 $maxFocusable, '
       '请分页或用 Wrap 折行. '
-      '(P2-1: ChatGPT 6/17 建议, 老板拍板)',
     );
     // 截断超出上限的项
     final visible = children.length <= maxFocusable
@@ -202,7 +196,6 @@ class TvFocusCapWrap extends StatelessWidget {
   }
 }
 
-/// P2-1: 一屏焦点项上限守卫 (用于复杂布局, 仅断言不改布局).
 ///
 /// 不同于 [TvFocusCap] / [TvFocusCapWrap] 只能用于 flat children list,
 /// 本 widget 只做断言, 不改变布局. 适合 CustomScrollView / GridView 这种
@@ -231,7 +224,6 @@ class TvFocusScope extends StatelessWidget {
       actualFocusableCount <= maxFocusable,
       'TV 一屏焦点项 $actualFocusableCount 超出上限 $maxFocusable, '
       '请分页或减少焦点项. '
-      '(P2-1: ChatGPT 6/17 建议, 老板拍板)',
     );
     return child;
   }

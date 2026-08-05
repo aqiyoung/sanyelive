@@ -1,6 +1,5 @@
 import '../models/content.dart';
 
-/// v0.3.11.62: 真实可播内容 — 直播频道源来自 channels_cn.json, VOD 来自 VOD-Org.
 /// 海报墙卡片点击 → /player/vod://<url>?title=<片名> → 直接播放
 
 const List<Content> kMockMovies = [

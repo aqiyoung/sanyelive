@@ -10,12 +10,10 @@ import '../models/epg.dart';
 
 /// 51zmt XMLTV 数据源 (http://epg.51zmt.top:8000/e.xml.gz).
 ///
-/// v0.3.10 (6/23): 真实 EPG 数据, ~1MB, 102 频道, 当天 00:00 → 后天 02:00
 /// (北京时间, 时区后缀 `+0800`).
 ///
 /// 历史上有人用 gzip 拉, 但 51zmt 的 CDN (s.102031.xyz) 现在直接返
 /// plain XML. 本实现兼容两种: 首字节 `1f 8b` (gzip magic) 才 gunzip,
-/// 否则当纯文本. 老板 6/23 反馈 "不应该拉真实的实时数据吗" 之前 +
 /// 93 占位 EPG 永远不准, 现在换成 51zmt 真实数据.
 ///
 /// Channel.id 映射:
@@ -104,7 +102,6 @@ class XmltvEpgSource {
   /// XMLTV 时间格式 `YYYYMMDDHHMMSS +0800` → DateTime (LOCAL).
   ///
   /// 算法: 构造 UTC 时间, 减时区偏移得到真实 UTC, 再 `.toLocal()` 转本地.
-  /// 这跟 v0.3.9+3 修过的占位 EPG (`DateTime.now()` local) 一致, 也跟
   /// `now_next_program.dart` 的 `DateTime.now().toUtc()` 比较逻辑一致
   /// (entries 是 local, 比较前 .toUtc() 等价).
   DateTime _parseXmltvTime(String ts, String tz) {
@@ -135,7 +132,6 @@ class XmltvEpgSource {
 
   /// 把 iptv-org channel.id 映射到 suzukua/epg 的 channel.id (中文名).
   ///
-  /// v0.3.10.13 (6.24): 从 51zmt 数字 ID 改为 suzukua 中文名 ID.
   /// 映射表在 lib/data/epg_channel_mapping.dart, 覆盖 126/198 CN 频道.
   /// 失败返 null → EpgService fallback 到占位节目单.
   static String? mapChannelIdToEpg(String iptvOrgId) {

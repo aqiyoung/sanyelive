@@ -84,7 +84,6 @@ class SourceFailover {
   final StreamOpener _opener;
   final Duration perSourceTimeout;
 
-  /// v0.3.10.17: 暴露 opener 给子类 (SmartSourceFailover)
   StreamOpener get opener => _opener;
 
   /// 尝试打开 [sources] 中的源, 按顺序, 每个最多 [perSourceTimeout]
@@ -115,7 +114,7 @@ class SourceFailover {
               index: i + 1, url: url, error: 'opener returned false'),
         );
       } on TimeoutException {
-        await _opener.cancel(url); // v0.3.8+169: 超时后清理资源
+        await _opener.cancel(url);
         attempts.add(
           _SourceAttempt(
             index: i + 1,
@@ -124,7 +123,7 @@ class SourceFailover {
           ),
         );
       } catch (e) {
-        await _opener.cancel(url); // v0.3.8+169: 失败后清理资源
+        await _opener.cancel(url);
         attempts.add(
           _SourceAttempt(
             index: i + 1,
@@ -140,7 +139,6 @@ class SourceFailover {
     );
   }
 
-  /// 6/17 v0.2.3 P0-4: 手动指定单源播放,  不走自动切换
   ///
   /// 返回是否成功.  成功条件跟 [play] 一致: opener 返回 true.
   Future<bool> playSingle(String url) async {

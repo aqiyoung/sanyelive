@@ -5,7 +5,6 @@ import '../models/vod_source.dart';
 import '../../services/vod_api_service.dart';
 import '../../services/vod_source_registry.dart';
 
-/// v0.3.13.0: VOD API 服务 — 从 registry 取活跃源构造 (baseUrl 动态).
 /// 源切换 → activeSource 变 → 此 provider rebuild → 所有 VOD providers 重建.
 final vodApiServiceProvider = Provider<VodApiService>((ref) {
   final registry = ref.watch(vodSourceRegistryProvider);
@@ -75,7 +74,6 @@ final vodVarietyProvider = FutureProvider<List<Content>>((ref) async {
   return details.map((d) => api.toContent(d)).toList();
 });
 
-/// v0.3.13.0: 海外剧场 (欧美剧).  typeId 从活跃源动态读取.
 /// 默认源 bfzyapi.com = 32 (欧美剧 6322 部).  IKun/标准系 = 26.
 final vodOverseasProvider = FutureProvider<List<Content>>((ref) async {
   final api = ref.read(vodApiServiceProvider);

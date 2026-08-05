@@ -13,15 +13,11 @@ import 'package:http/io_client.dart';
 /// 通过给 [HttpClient.connectionFactory] 装一个 IPv4-only 的 [ConnectionTask]
 /// (先把域名解析成 IPv4 地址, 再用 Socket.connect), 强制走 IPv4.
 ///
-/// ## v0.3.7+50 (6/19) — 默认开
 ///
 /// 之前 IPv4Client 是 opt-in (各 source 自己 new IPv4Client()), 容易漏改.
 /// 现在 [defaultEnabled] 恒为 true, [Ipv4HttpOverrides] 可装到
-/// `HttpOverrides.global` 一键全 APP 生效.  理由 (老板 6/19 "加载有点慢"
-/// 反馈 + 6/18 卡 6 实测):
 ///   - 国内 wifi / 4G IPv6 路由策略不统一,  DNS AAAA 经常返回 IPv6 但
 ///     实际连不上 (TCP RST / timeout),  happy-eyeballs 要等 1-5s 才
-///     降级到 IPv4, 用户体感是"切频道卡 1-2 秒".
 ///   - 强制 IPv4 → 切频道到首帧的"硬延迟"砍半 (1-2s → 0.3-0.8s).
 class IPv4Client extends http.BaseClient {
   IPv4Client({Duration? timeout})
@@ -30,7 +26,6 @@ class IPv4Client extends http.BaseClient {
     _ioClient = IOClient(_httpClient);
   }
 
-  /// v0.3.7+50 (6/19): 是否默认用 IPv4 — 恒为 true, 保留 const 字段是
   /// 给 main.dart / tests 留个"明确意图"接口, 方便 grep + 日志.
   static const bool defaultEnabled = true;
 
@@ -42,7 +37,6 @@ class IPv4Client extends http.BaseClient {
   ///
   /// 共享给 [Ipv4HttpOverrides.createHttpClient], 避免重复实现.
   ///
-  /// v0.3.8+178 (6/23): 加 try/finally 包 HttpOverrides, 避免 Ipv4HttpOverrides
   /// 内部递归 → 启动栈溢出 (Stack Overflow at HttpOverrides.current, 25 层+).
   /// 根因: Ipv4HttpOverrides.createHttpClient 调本方法, 本方法内部 `HttpClient()`
   /// 又被刚装的 HttpOverrides 拦截 → 无限递归.  构造前临时清掉 global,
@@ -104,7 +98,6 @@ class IPv4Client extends http.BaseClient {
   }
 }
 
-/// v0.3.7+50 (6/19) — 全局 IPv4 强制 (HttpOverrides).
 ///
 /// 装到 `HttpOverrides.global = Ipv4HttpOverrides()` 后, **任何用 dart:io
 /// HttpClient 的代码** (包括 http.Client(), dart:io 直连, package:http 默认

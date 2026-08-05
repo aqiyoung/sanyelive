@@ -1,21 +1,16 @@
-// 0.3.6+19 设置页.
 //
 // 一个 ListTile "主题" → 弹出 RadioListTile 选 系统 / 浅色 / 深色.
 // 复用 theme_provider, 切换后立即持久化 (SharedPreferences),
 // main.dart 的 ConsumerWidget 监听 themeModeProvider 同步给 MaterialApp.themeMode.
 //
-// v0.3.7+80 (6/19): 加 2 个 tile — "检查更新" + "关于视界".
 //  关于: 描述项目 + 贴 GitHub 地址 + 一键复制按钮.  不用 url_launcher 包
-//  (省 1MB + Android query intent 配置),  复制 URL 让老板自己粘贴到浏览器看.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// v0.3.11 Beta 分支
 
-// v0.3.7.2 (6/19): 不再 import main.dart (主 dart 写死 const 没用),  用 Provider 读运行时版本号.
 import '../../services/version_checker.dart'
     show
         currentVersionStringProvider,
@@ -33,15 +28,12 @@ import '../../../data/models/vod_source.dart';
 import '../../../services/tvbox_config_parser.dart';
 import '../../../services/vod_source_registry.dart';
 import 'theme_provider.dart';
-// v0.3.8+102 (6/20 15:02 老板反馈): 删主题切换, 锁死浅色.  theme_provider
 // 保留文件 (兼容老 prefs), 但 settings_page 不再 import, 也不暴露 UI.
 
-// v0.3.8+93 (6/20 P1-1): settings_page 所有 IptvColors 颜色 (textPrimary
 //   / textSecondary) 都改走 colorScheme.onSurface / onSurfaceVariant,  跟
 //   暗色主题联动.  之前 hardcode 浅米色文字在暗背景下看不清.  不再 import
 //   IptvColors — 全部跟主题走.
 
-// v0.3.7+80 (6/19): GitHub 项目地址常量.  复制到剪贴板用.
 const String kGitHubRepoUrl = 'https://github.com/aqiyoung/iptv-app';
 
 class SettingsPage extends ConsumerWidget {
@@ -49,7 +41,6 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // v0.3.8+102 (6/20 15:02 老板反馈): 删主题切换, 锁死浅色. 不再 watch themeModeProvider.
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -82,7 +73,6 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
       body: ListView(
-        // v0.3.8+97 (6/20 13:11 老板反馈): _ThinDivider 太原始,  老板要高端.
         // 改成 iOS-style 卡片分组:
         //   - 3 张卡片 (外观 / 系统 / 关于)
         //   - 卡片间靠间距 + group label 区分,  不画线
@@ -124,7 +114,6 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 6),
           _SettingsCard(
             children: [
-              // v0.3.7+80: 手动触发 versionCheckerProvider.notifier.checkOnStartup().
               ListTile(
                 leading: const Icon(Icons.system_update_alt_outlined),
                 title: const Text('检查更新'),
@@ -132,11 +121,8 @@ class SettingsPage extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context, ref),
               ),
-              // v0.3.8+98 (6/20 13:39): 用透明间隔条代替 divider — 老板说
               // "所有容器分割不要线".  视觉上是空白,  不是线.
               const _SettingsGap(),
-              // v0.3.7+92 (6/20 08:42 老板反馈): 默认 endpoint 改为 gh-proxy.com
-              // v0.3.8+95: 启动时 pattern match 自动迁移老 api.github.com URL.
               Consumer(
                 builder: (context, ref, _) {
                   final endpoint = ref.watch(endpointProvider);
@@ -186,7 +172,6 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // ─── v0.3.13.0: 影视源管理卡片 ──────────────────────────────
           const _SettingsGroupLabel(label: '影视源'),
           const SizedBox(height: 6),
           _VodSourceManagementCard(),
@@ -210,7 +195,6 @@ class SettingsPage extends ConsumerWidget {
   }
 
   // ─── 关于对话框 ───────────────────────────────────────────────────────────
-  // v0.3.7+80: 弹一个 dialog,  描述项目 (基于 Flutter + media_kit 视频播放,
   // 极简新中式设计,  直播 + 影视).  底部贴 GitHub 地址 + 复制按钮.
   void _showAbout(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -293,7 +277,6 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  // v0.3.7+80: 复制 GitHub 地址到剪贴板 + SnackBar 提示.
   void _copyRepoUrl(BuildContext context) {
     Clipboard.setData(const ClipboardData(text: kGitHubRepoUrl));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -305,7 +288,6 @@ class SettingsPage extends ConsumerWidget {
   }
 
   // ─── 检查更新 ─────────────────────────────────────────────────────────────
-  // v0.3.7+80: 调 versionCheckerProvider.notifier.checkOnStartup() —
   // 走跟启动时一样的逻辑 (cache 命中跳过, fetch GitHub API).
   // state 变化时用 listenManual 监听弹 SnackBar / Dialog.
   void _checkUpdate(BuildContext context, WidgetRef ref) {
@@ -326,7 +308,6 @@ class SettingsPage extends ConsumerWidget {
           _showUpdateSnack(context, '已是最新版本 ${next.latestVersion}');
         } else if (next is VersionCheckOutdated) {
           // outdated 走 ForceUpdateDialog.show() (跟启动时一致, barrierDismissible=false
-          // P0/critical 时强制更新,  老板点不过去).
           ForceUpdateDialog.show(context);
         } else if (next is VersionCheckFailed) {
           _showUpdateSnack(context, '检查更新失败: ${next.reason}');
@@ -350,10 +331,6 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  // ─── 更新源 URL 编辑 (v0.3.7+85, v0.3.10.13) ──────────────────────────────────────────
-  // v0.3.7+85: 老板手机国内访问 api.github.com 经常超时, 弹 dialog 让老板填国内中转 URL.
-  // v0.3.10.13 (6/24): 默认改为直连 api.github.com,  老 gh-proxy.com URL 自动迁移.
-  // 老板还是能在 dialog 里改 (填 CF Worker / 自建镜像 / 重置回默认).
   // 填完调 endpointProvider.notifier.setEndpoint() 持久化.
   Future<void> _editEndpoint(BuildContext context, WidgetRef ref) async {
     final current = ref.read(endpointProvider);
@@ -381,7 +358,6 @@ class SettingsPage extends ConsumerWidget {
                 controller: controller,
                 decoration: InputDecoration(
                   labelText: '更新源 URL',
-                  // v0.3.8+99 (6/20 14:03 老板反馈): 删 OutlineInputBorder 四
                   // 周边框线,  改 UnderlineInputBorder (只保留 focus 时的下
                   // 划线).  iOS-style 极简风格.
                   border: UnderlineInputBorder(
@@ -439,10 +415,7 @@ class SettingsPage extends ConsumerWidget {
 
 // ─── 内部组件 ──────────────────────────────────────────────────────────────
 
-/// v0.3.7+80: 细分割线,  跟设置页 ListTile 之间分隔用,  复用 0.5px outlineVariant.
-/// v0.3.8+98 (6/20 13:39 老板反馈): _SettingsGap = 卡片内部两个 ListTile
 /// 之间的"透明间隔条" (背景色 = bgParchment, 高度 8).
-/// 老板原话: "所有容器分割不要线. 用其他方式来把它隔开".
 /// 跟 _SettingsDivider (线条) 不同,  这个是"留白"分隔:
 ///   - 从 bgElevated 卡片背景 → bgParchment scaffold 背景的色块
 ///   - 高度 8px,  让两个 ListTile 不粘在一起
@@ -460,7 +433,6 @@ class _SettingsGap extends StatelessWidget {
   }
 }
 
-/// v0.3.8+97 (6/20 13:11 老板反馈): _SettingsCard = iOS-style 卡片.
 /// 圆角 12 + bgElevated (#FFFCF6) 背景 + 内部 ListTile 自动适配.
 /// 卡片间不画线, 靠 group label + spacing 区分.
 class _SettingsCard extends StatelessWidget {
@@ -473,7 +445,6 @@ class _SettingsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.bgCard,
         borderRadius: BorderRadius.circular(12),
-        // v0.3.8+97: 不画边框, 靠背景色差 + 圆角 + 阴影让卡片"浮"起来
         // boxShadow: [
         //   BoxShadow(
         //     color: Colors.black.withValues(alpha: 0.04),
@@ -483,7 +454,6 @@ class _SettingsCard extends StatelessWidget {
         // ],
       ),
       clipBehavior: Clip.antiAlias, // 让内部 ListTile ripple 不溢出圆角
-      // v0.3.13.0: 标题字体跟 _MineTile 一致 (15sp / w900 Roboto — 老板要求
       // 设置页和我的页 UI 字体保持一致). DefaultTextStyle 让内部所有 ListTile
       // title 自动继承, 不再用 ListTile 默认的 16sp/w500 Material 样式.
       child: DefaultTextStyle(
@@ -500,7 +470,6 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
-/// v0.3.8+97: _SettingsGroupLabel = 卡片上方的小标题 (12px, onSurfaceVariant).
 /// iOS Settings.app 风格: "外观" / "系统" / "关于".
 class _SettingsGroupLabel extends StatelessWidget {
   const _SettingsGroupLabel({required this.label});
@@ -523,7 +492,6 @@ class _SettingsGroupLabel extends StatelessWidget {
   }
 }
 
-/// v0.3.7+80: 关于对话框里的小节 (label + content),  label 加粗.
 class _AboutSection extends StatelessWidget {
   const _AboutSection({required this.label, required this.child});
   final String label;
@@ -607,7 +575,6 @@ Future<void> _setAutoDark(BuildContext context, WidgetRef ref, bool value) async
   // TODO: 实现自动深色 (日落检测)
 }
 
-/// v0.3.13.0: VOD 源管理卡片 (设置页).
 /// 当前源 / 管理源 toggle / 导入 TVBox 源.
 class _VodSourceManagementCard extends ConsumerWidget {
   const _VodSourceManagementCard();

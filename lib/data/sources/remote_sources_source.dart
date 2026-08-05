@@ -1,4 +1,3 @@
-/// v0.3.10.8 (6/23 老板拍): 远程视频源数据源.
 ///
 /// 数据源: aqiyoung/iptv-channels-organized repo (每天 cron 自动生成).
 /// JSON schema:
@@ -19,11 +18,9 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-/// v0.3.10.8: 远端 repo raw base. 跟 RemoteChannelsSource 同根.
 const String _repoBase =
     'https://raw.githubusercontent.com/aqiyoung/iptv-channels-organized/main';
 
-/// v0.3.10.8: 视频源 bundle — known 频道 URL 表 + meta + (预留) dead URLs.
 /// known: Map<channelId, urls[]> — 跟本地 known_sources.json 结构兼容.
 /// dead:  Map<channelId, urls[]> — 备用, 未来可用来过滤掉死链.
 class RemoteSourcesBundle {
@@ -70,7 +67,6 @@ class RemoteSourcesException implements Exception {
   String toString() => 'RemoteSourcesException: $message';
 }
 
-/// v0.3.10.8: 视频源远端 fetcher — 启动时拉一次 known.json (+ 可选 dead.json).
 class RemoteSourcesSource {
   RemoteSourcesSource({http.Client? client})
       : _client = client ?? http.Client();
@@ -158,7 +154,6 @@ class RemoteSourcesSource {
   void close() => _client.close();
 }
 
-/// v0.3.10.8: Riverpod provider — 单例 RemoteSourcesSource.
 /// ProviderScope dispose 时自动关 client — 避免 http leak.
 final remoteSourcesSourceProvider = Provider<RemoteSourcesSource>((ref) {
   final source = RemoteSourcesSource();
@@ -166,7 +161,6 @@ final remoteSourcesSourceProvider = Provider<RemoteSourcesSource>((ref) {
   return source;
 });
 
-/// v0.3.10.8: AsyncNotifier — 启动时拉一次, 失败 throw 让 caller fallback.
 /// 显式 refresh() 触发重拉 (后台 03:00 调度走 invalidate).
 class RemoteSourcesNotifier extends AsyncNotifier<RemoteSourcesBundle> {
   @override
@@ -185,7 +179,6 @@ class RemoteSourcesNotifier extends AsyncNotifier<RemoteSourcesBundle> {
   }
 }
 
-/// v0.3.10.8: 远端 video sources provider.  失败 throw → channelRepository fallback 本地.
 final remoteSourcesProvider =
     AsyncNotifierProvider<RemoteSourcesNotifier, RemoteSourcesBundle>(
   RemoteSourcesNotifier.new,

@@ -1,4 +1,3 @@
-// v0.3.12+66 (2026-07-07): 视界品牌升级 v2 — 改用 GPT 设计 icon 做 splash.
 //
 // 设计变更:
 //   - 旧 v1: 红底 + Icons.play_arrow_rounded (Flutter primitive)
@@ -103,7 +102,6 @@ class _SplashLogo extends StatelessWidget {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              // v0.3.13.0: 阴影跟随 theme primary (赤陶), 跟 splash 背景 scheme.surface 联动.
               color: context.fgAccent.withValues(alpha: 0.35),
               blurRadius: 30,
               offset: const Offset(0, 10),

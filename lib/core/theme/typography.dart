@@ -8,10 +8,8 @@ class IptvTypography {
   static const String serifFamily = 'Georgia';
   static const String sansFamily = 'Roboto'; // Android 默认无衬线
 
-  /// v0.3.7+60 (6/19): 删 color 字段 — 让 Flutter Text widget 走 defaultTextStyle
   /// / Theme.of(context).textTheme 自动适配浅色 + 暗色.  之前 const TextStyle
   /// 写死 color: IptvColors.textPrimary (深棕),  暗色主题下也是深棕 → 暗背景上看不清.
-  /// 之前 6/19 v0.3.7+50 修时漏了 typography.dart (const 不能用 Theme.of),  修法
   /// 是不要在这里指定 color,  让 MaterialApp 的 textTheme.apply(bodyColor:)
   /// 接管.  浅色主题 textTheme.bodyMedium.color 默认 = textPrimary (深棕),  暗色
   /// 主题 = darkTextPrimary (米白).  都对.

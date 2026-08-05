@@ -1,4 +1,3 @@
-// 0.3.7+20 后台强制更新 (P1 feature, 6/18 老板拍板).
 //
 // 职责:
 //   - 启动时异步拉 GitHub releases/latest,  解析 tag_name + APK asset
@@ -14,8 +13,6 @@
 //     → 2. fetch GitHub API (dio + 5s timeout)
 //     → 3. parse tag_name + assets[].name 里的 versionCode
 //     → 4. 对比 currentVersion (pubspec 编译期 const,  传进来)
-//          用 semver + build 比较 (v0.3.10.4 修): 之前只比 build int,
-//          0.3.10+2 < 0.3.9+3 (2<3) → 永远判 upToDate.  现在比
 //          major.minor.patch 优先, 一样再比 build.
 //     → 5. 写 last_check_time,  标记 outdated → 弹 ForceUpdateDialog
 //     → 6. upToDate / failed → 静默 return
@@ -41,10 +38,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanyelive/features/settings/theme_provider.dart'
     show sharedPreferencesProvider;
 
-/// GitHub releases API endpoint fallback chain (v0.3.10.13).
-/// v0.3.10.7~v0.3.10.12 历史:
 ///   gh-proxy.com 403 (rate limit) → cf-workers-proxy 被 CF 保护返 HTML → 链式 fallback.
-/// v0.3.10.13 (6/24) 重排: 直连优先 + cf-worker 兜底.
 ///   curl 实测 (6/24 本机不走代理):
 ///     - api.github.com 直连 → 200 OK 0.6s ✅ (国内能直连, 最快最稳)
 ///     - cf-workers-proxy-9e9.pages.dev → 200 OK 1.3~2.8s ✅ (直连不通时兜底)
@@ -52,7 +46,6 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
 ///   APP 运行环境 (用户手机/盒子) 未必能直连 GitHub,  所以保留 cf-worker 兜底.
 ///   gh-proxy.com 彻底弃用 (403 频率太高, chain 里放它只会浪费一次超时).
 const List<String> kDefaultEndpointUrls = [
-  // v0.3.11.59-fix (7/6): 改 /releases/latest -> /releases list, 包含 pre-release
   // /releases/latest 只返回 latest stable, beta 用户装了之后永远看不到更新
   // list API 按 created 排序, 拿第一个 (最新创建), 稳定版和 pre-release 都覆盖
   // per_page=5 防止一次拉太多, 但保证拿到最新的
@@ -63,14 +56,9 @@ const List<String> kDefaultEndpointUrls = [
 /// 兼容老代码 — 取 chain[0]. 单元测试可 overrideWithValue.
 String get kDefaultEndpointUrl => kDefaultEndpointUrls.first;
 
-/// v0.3.7+85: 用户在设置页可改的 endpoint URL.
-/// v0.3.7+92: 默认 endpoint 改为 gh-proxy.com (代理 api.github.com,
-///   国内 600ms).  老板手机国内直连 api.github.com 超时.
-///   老板还是能改成 gh-proxy.net / 自建镜像 (NAS + nginx 反代 api.github.com).
 /// SharedPreferences 持久化.
 const String kEndpointPrefsKey = 'version_checker.endpoint_url';
 
-/// v0.3.10.13 (6/24): 默认改为直连 api.github.com.
 /// 老版本可能存了 gh-proxy.com,  build() 自动迁移到直连.
 /// 当前 endpoint URL — 默认 api.github.com 直连.
 /// 单元测试可 overrideWithValue.
@@ -81,7 +69,6 @@ class EndpointNotifier extends Notifier<String> {
   @override
   String build() {
     _prefs = ref.read(sharedPreferencesProvider);
-    // v0.3.10.13 (6/24): 默认改为直连 api.github.com.
     // 老版本 (+85~+92) 可能在 prefs 里存了 gh-proxy.com URL.
     // 如果 prefs 里是 gh-proxy.com, 迁移到直连 api.github.com.
     // 其他自定义 URL (cf-worker / 自建镜像 / NAS) 不动.
@@ -104,7 +91,6 @@ class EndpointNotifier extends Notifier<String> {
   }
 
   /// 用户改 endpoint — 持久化 + state 更新.
-  /// v0.3.7+86 (6/20 老板测试反馈): 加 URL validate, 防止老板填错 URL
   /// (e.g. 拼写错, 缺 https://, 多余空格)  → fetch 失败 → 1h 内不重试.
   /// validate 规则: 非空 + 是合法 http/https URL.
   /// 返回 String? error message, null = 成功.
@@ -150,7 +136,6 @@ final currentVersionCodeProvider = Provider<int>((ref) {
   );
 });
 
-/// 当前 APP version string (e.g. "0.3.7") — 同上,  ProviderContainer override.
 final currentVersionStringProvider = Provider<String>((ref) {
   throw UnimplementedError(
     'currentVersionStringProvider 必须在 ProviderContainer 里 override',
@@ -222,7 +207,7 @@ class VersionCheckFailed extends VersionCheckState {
 class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   late final Dio _dio;
   late final SharedPreferences _prefs;
-  bool _checking = false; // v0.3.8+169: 防并发 checkOnStartup.
+  bool _checking = false;
 
   @override
   VersionCheckState build() {
@@ -231,7 +216,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     return const VersionCheckIdle();
   }
 
-  /// v0.3.10.9 (6/23 老板反馈): settings 手动点 "检查更新" 调 force check,
   /// 跳过 1h cache. 1h cache 是为启动自动 check 设计, 不应该阻塞用户手动 retry.
   Future<void> checkForce() async {
     if (_checking) return;
@@ -253,7 +237,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   /// 启动时调 — 走 cache 策略 + 异步 fetch.
   /// 立即返回 (microtask 里跑),  弹 dialog 由 main.dart listen state.
   Future<void> checkOnStartup() async {
-    if (_checking) return; // v0.3.8+169: 防并发 checkOnStartup
+    if (_checking) return;
     _checking = true;
     try {
       // 1. cache 命中 (< 1h) → 直接跳过 fetch,  state 保持 idle
@@ -280,12 +264,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       // 写 last_seen_version (无论 outdated / upToDate 都写,  方便诊断).
       await _prefs.setString(_Keys.lastSeenVersion, parsed.tagName);
 
-      // v0.3.10.4 (6/23 老板反馈): 之前只比 parsed.versionCode (build int)
-      // vs currentCode,  semver 不比.  e.g.  老板装 0.3.9+3 (build=3),
-      // 发 v0.3.10+2 (build=2) → 2 > 3 = false → 永远判 upToDate.
       // 修法: 先用 semver (major.minor.patch) 比,  一样再比 build.
-      //   parsed.tagName = 'v0.3.10.2' 或 'v0.3.10.4' (GitHub tag 格式)
-      //   currentStr     = '0.3.9'  或 '0.3.10+5' (pubspec current)
       //  _compareVersions 接受 'v' 前缀 + 可选 '+N',  容错.
       final cmp = _compareVersions(parsed.tagName, currentStr);
       final isOutdated =
@@ -365,8 +344,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   // -------- private: 网络 --------
 
   Future<Map<String, dynamic>> _fetchLatestRelease() async {
-    // v0.3.10.7: endpoint fallback chain — 主 endpoint 失败自动试下一个.
-    // 老板 6/23 反馈: gh-proxy.com 突然 403 rate limit, 之前一直没换.
     // 用户在设置页可能自定义 URL (prefs.endpoint), 优先用用户的; 用户没设置
     // 或 fallback 全失败时才走 chain 默认值.
     final custom = ref.read(endpointProvider);
@@ -384,7 +361,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     String? lastError;
     for (final url in ordered) {
       try {
-        // v0.3.10.9: responseType=plain,  让 dio 不自动 parse JSON.  我们自己
         // 检测 body 是不是 JSON (cf-workers-proxy 6/23 11:50 返 HTML 会让
         // 默认 json parser 抛 FormatException → 整个 chain 都 fail).
         final resp = await _dio.get<dynamic>(
@@ -396,7 +372,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
         );
         if (resp.statusCode == 200) {
           final data = resp.data;
-          // v0.3.10.9 (6/23): responseType=plain → resp.data 永远是 String.
           // 手动 decode JSON,  先检测 HTML / 非 JSON 再 parse.
           if (data is String) {
             final s = data.replaceFirst(RegExp(r'^\s+'), '');
@@ -407,7 +382,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
             }
             try {
               final decoded = jsonDecode(s);
-              // v0.3.11.59-fix (7/6): /releases 返回 List, /releases/latest 返回 Map.
               // 两种都兼容,  list 取第一个 (最新创建).
               Map<String, dynamic> release;
               if (decoded is List<dynamic>) {
@@ -457,7 +431,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     final tagName = json['tag_name'] as String?;
     if (tagName == null || tagName.isEmpty) return null;
 
-    // 找 sanyelive-v0.3.7+20-arm64-v8a.apk 这样的 asset.
     // 优先 arm64-v8a (国内 TV/盒子主架构),  没有就拿第一个 .apk.
     final assets = json['assets'] as List<dynamic>?;
     if (assets == null) return null;
@@ -477,7 +450,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     }
     if (apkName == null || apkUrl == null) return null;
 
-    // 从 asset name 提 versionCode: sanyelive-v0.3.7+20-arm64-v8a.apk → 20
     // 用 +N 模式.
     final versionCode = _extractVersionCode(apkName);
     if (versionCode == null) return null;
@@ -495,10 +467,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     );
   }
 
-  // -------- private: version compare (v0.3.10.4 新增) --------
 
   /// Semver + build 比较. 返 1 = a > b, 0 = a == b, -1 = a < b.
-  /// 接受 '0.3.10+2' / '0.3.10' / 'v0.3.10+2' (带不带 v 前缀都行).
   /// 规则:
   ///   1. 先比 major.minor.patch (semver 主版本)
   ///   2. 一样再比 build number (Flutter pubspec 的 +N)
@@ -524,15 +494,12 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   }
 
   /// 解析版本字符串 → ((major, minor, patch), build).
-  /// 接受 '0.3.10+2' / '0.3.10' / 'v0.3.10+2' / 'v0.3.10.5'.
-  /// tag 历史两种格式都有:  老版 v0.3.8+N,  新版 v0.3.10.5 (4 段, 第 4 段当 build).
   /// 返回 null = 解析失败.
   (List<int>, int)? _parseVersion(String v) {
     var cleaned = v.trim();
     if (cleaned.startsWith('v') || cleaned.startsWith('V')) {
       cleaned = cleaned.substring(1);
     }
-    // 接受两种 4 段格式: '0.3.10+N' 或 '0.3.10.N'.  两者第 4 段都是 build.
     final m =
         RegExp(r'^(\d+)\.(\d+)\.(\d+)(?:[.+](\d+))?$').firstMatch(cleaned);
     if (m == null) return null;
@@ -547,7 +514,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   }
 
   static int? _extractVersionCode(String apkName) {
-    // 找 "+数字" —  e.g.  "v0.3.7+20-arm64-v8a.apk" → 20.
     final match = RegExp(r'\+(\d+)').firstMatch(apkName);
     if (match == null) return null;
     return int.tryParse(match.group(1)!);

@@ -21,7 +21,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // v0.3.13.0: 状态栏跟随 theme brightness (浅色 → 黑图标, 深色 → 白图标).
     final overlay = _resolveOverlay(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlay,
@@ -66,7 +65,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   SystemUiOverlayStyle _resolveOverlay(BuildContext context) {
-    // v0.3.13.0: 跟随 theme brightness — 浅色黑图标 / 深色白图标.
     final isDark = context.appBrightness == Brightness.dark;
     return SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

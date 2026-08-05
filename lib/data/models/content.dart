@@ -1,6 +1,5 @@
 /// 通用内容模型 — 点播/直播统一
 ///
-/// v0.3.11 (视界): 从 Channel 模型扩展, 支持电影/电视剧/综艺等点播类型.
 /// 直播频道通过 [ChannelPlayable] 扩展实现统一接口.
 class Content {
   const Content({

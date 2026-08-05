@@ -204,7 +204,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       IconButton(
                         icon: const Icon(Icons.arrow_back),
                         onPressed: () => context.pop(),
-                        // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                       Expanded(
@@ -215,7 +214,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           decoration: InputDecoration(
                             hintText: '搜索频道、视频内容…',
                             hintStyle: IptvTypography.body.copyWith(
-                              // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurfaceVariant,
@@ -237,7 +235,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   ),
                 ),
               ),
-              // v0.3.8+99 (6/20 14:03 老板反馈): 删 divider, 用 SizedBox 16 代替.
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
               // Tab 切换栏：电视直播 | 影视
@@ -272,7 +269,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       child: Text(
                         '输入关键词搜索频道、视频内容',
                         style: IptvTypography.body.copyWith(
-                          // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
@@ -289,7 +285,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           Icon(
                             Icons.search_off,
                             size: 48,
-                            // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
@@ -298,7 +293,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                             '未找到匹配 "$_query" 的'
                             '${_currentTabIndex == 0 ? '频道' : '影视'}',
                             style: IptvTypography.body.copyWith(
-                              // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurfaceVariant,
@@ -310,7 +304,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   ),
                 )
               else
-                // v0.3.8+101 (6/20 15:02 老板反馈): _SearchResultTile 跟
                 // ChannelTile 风格统一 (独立容器 + 间隔).  list 加 padding
                 // + item 间插 SizedBox(10).  跟 category/favorites 一致.
                 if (_currentTabIndex == 0)
@@ -418,7 +411,6 @@ class _SearchResultTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
-    // v0.3.8+101 (6/20 15:02 老板反馈): 每个 _SearchResultTile 升级为
     // 独立容器 (浅一档米色 + 圆角 12).  选中态: accent 0.08 alpha bg
     // (区分).  非选中: bgElevated (#FFFCF6).  跟 ChannelTile 一致.
     return Material(
@@ -457,7 +449,6 @@ class _SearchResultTile extends StatelessWidget {
                     Text(
                       channel.displayName,
                       style: IptvTypography.sansTitle.copyWith(
-                        // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface (x2)
                         color: isSelected
                             ? Theme.of(context).colorScheme.onSurface
                             : Theme.of(context).colorScheme.onSurface,

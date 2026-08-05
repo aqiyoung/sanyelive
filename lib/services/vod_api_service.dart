@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../data/models/content.dart';
 
-/// v0.3.11.64: 暴风TVBox JSON API 封装 — 真实影视点播源
 ///
 /// 列表 API (ac=list): 标题/分类/备注, 无海报/播放URL (第 N+1)
 /// 详情 API (ac=detail&ids=xxx): 含海报/播放URL, 支持批量
@@ -12,7 +11,6 @@ class VodApiService {
     http.Client? client,
   }) : _client = client ?? http.Client();
 
-  /// v0.3.13.0: base URL 改成实例字段 — 支持多 MacCMS 源.
   /// 例: "https://bfzyapi.com/api.php/provide/vod".
   final String baseUrl;
 

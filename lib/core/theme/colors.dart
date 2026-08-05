@@ -26,7 +26,6 @@ class IptvColors {
   /// 分隔线 — 暖灰
   static const Color dividerWarm = Color(0xFFE8E0D4);
 
-  // -------- 0.3.6+19 暗色主题 tokens --------
   // 设计原则: 暗色页面也保持"宣纸/赤陶"调性, 不走纯黑灰.
   // 主背景用深棕黑(仿"古纸焚"), 卡片用暖调深灰,
   // 主色 accentTerracotta 在暗色下也保留 — 暖橙在深底上对比度好.
@@ -52,7 +51,6 @@ class IptvColors {
 }
 
 // ---------------------------------------------------------------------------
-// v0.3.13.0 全局浅色模式 (7/9 老板反馈): 语义色访问器.
 //
 // 子页面原来全部硬编码深色 (Color(0xFF101010) / Colors.white / 0xFFE53935),
 // 导致切到浅色模式后不跟 theme 走. 现在统一走 Theme.of(context).colorScheme,

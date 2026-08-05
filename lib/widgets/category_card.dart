@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/colors.dart';
 import '../core/theme/typography.dart';
-// v0.3.8+103 (6/20 15:46 老板反馈): 不用 GlassCardBorder (只画背景色,
 // 没有装饰).  改用 bgElevated 浅一档米色 + 圆角 16 显出容器.
 
-/// 主页大分类卡片 — 大圆角 + Terracotta 渐变背景 + 轻玻璃白边 (P1-1)
 class CategoryCard extends StatelessWidget {
   const CategoryCard({
     super.key,
@@ -23,9 +21,7 @@ class CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      // v0.3.8+103 (6/20 15:46 老板反馈): CategoryCard bg 改 bgElevated.
       // 之前 +99/+100 删了 border, 但 CategoryCard bg 跟 Scaffold 同色
-      // (surface = bgParchment),  老板装 +101 看到 "平面显示看不出来".
       // 现在跟 ChannelTile 同样模式: 浅一档米色 + 圆角 16 让"一眼能看出
       // 是独立容器".
       color: IptvColors.bgElevated,

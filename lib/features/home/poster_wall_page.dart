@@ -20,7 +20,6 @@ class PosterWallPage extends ConsumerWidget {
         bottom: false,
         top: false,
         child: FutureBuilder<List<Channel>>(
-          // v0.3.13.0: 改用 channelsProvider (includes _enrichWithRemoteLogos) —
           // 本地 logo 为 null 时拿远程 logo fill, 台标出现.
           // channelsProvider 同步返本地 (loadBundled 有缓存, 零 IO), 远程拉取
           // fire-and-forget, FutureBuilder 首帧不白屏.
@@ -359,7 +358,6 @@ class _CategoryShortcutBar extends StatelessWidget {
       _Shortcut('动漫', Icons.face_retouching_natural_rounded, const Color(0xFFF0B429), '/vod-category?cat=anime'),
       _Shortcut('纪录片', Icons.public_rounded, const Color(0xFF42A5F5), '/vod-category?cat=documentary'),
       _Shortcut('体育', Icons.sports_soccer_rounded, const Color(0xFF43A047), '/vod-category?cat=sports'),
-      // v0.3.13.0: 海外剧场 — 欧美剧/英剧/韩剧/日剧.
       _Shortcut('海外剧场', Icons.language_rounded, const Color(0xFF00BCD4), '/vod-category?cat=overseas'),
     ];
 
@@ -409,7 +407,6 @@ class _LiveTvModule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // v0.3.13.0: 直播模块跟随 theme — 浅色米白底深棕字, 深色深棕黑底米色字.
     final bgColor = context.bgCard;
     final borderColor = context.fgBorder;
     final textColor = context.fgMain;
@@ -576,7 +573,6 @@ class _PosterCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // v0.3.11.62: 有真实可播源 → 直接点播; 否则跳搜索
         if (content.sourceUrls.isNotEmpty &&
             !content.sourceUrls.first.contains('example.com')) {
           context.go('/player/vod?url=${Uri.encodeComponent(content.sourceUrls.first)}&title=${Uri.encodeComponent(content.title)}');
@@ -671,7 +667,6 @@ class _Shortcut {
   final String? route;
 }
 
-/// v0.3.11.64: VOD 动态内容区 — 用 Riverpod provider 替换 mock 数据
 class _VodSection extends ConsumerWidget {
   const _VodSection({required this.title, required this.provider, required this.badges});
 

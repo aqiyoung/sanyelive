@@ -3,11 +3,8 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+  <!-- 白色播放三角（实心，无描边，避免小尺寸下描边接头缺口） -->
   <path
       android:fillColor="#FFFFFFFF"
-      android:strokeColor="#FFFFFFFF"
-      android:strokeWidth="6"
-      android:strokeLineJoin="round"
-      android:strokeLineCap="round"
       android:pathData="M46,41 L46,67 L70,54 Z"/>
 </vector>

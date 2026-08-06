@@ -426,7 +426,7 @@ class _LiveTvModule extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 左: 直播预览 (景观比例占位, 不偏重)
+              // 左: 直播预览 (景观比例占位, 放大 logo + 底部节目条填满黑框, 不空旷)
               Expanded(
                 flex: 5,
                 child: GestureDetector(
@@ -441,11 +441,11 @@ class _LiveTvModule extends StatelessWidget {
                             child: primary?.logoUrl != null && primary!.logoUrl!.isNotEmpty
                                 ? Image.network(
                                     primary.logoUrl!,
-                                    width: 60,
+                                    width: 88,
                                     fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 32),
+                                    errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 44),
                                   )
-                                : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 32),
+                                : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 44),
                           ),
                           const Positioned(left: 8, top: 8, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
                           Positioned(
@@ -458,6 +458,28 @@ class _LiveTvModule extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(primary?.displayName ?? '视界', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                          // 底部节目条: 填满黑框下方空白
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              decoration: const BoxDecoration(
+                                color: Color(0x73000000),
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(16),
+                                  bottomRight: Radius.circular(16),
+                                ),
+                              ),
+                              child: Text(
+                                '正在直播 · ${primary?.displayName ?? "精彩节目"}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ),
                         ],

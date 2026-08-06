@@ -120,6 +120,20 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Fetch TV channel logos (bundle offline)
+        # v0.3.12+127: TV 模式台标离线化. 从 fanmingming/live (GitHub, 全量含卫视/地方)
+        # + channels_cn.json 自带 Gitee 直链 + Gitee mytv-android/myTVlogo 下载台标,
+        # 打包进 assets/logos, 显示层优先 AssetImage 离线渲染, 不再依赖设备端网络.
+        # 单个台标下载失败自动 skip (不阻断出包), 缺失台标回退文字台标.
+        continue-on-error: true
+        run: |
+          set -e
+          python3 scripts/fetch_tv_logos.py
+          echo "✅ fetch_tv_logos 完成, 命中清单:"
+          cat assets/logos/manifest.json | head -c 400
+          echo
+          echo "assets/logos 文件数: $(ls assets/logos | wc -l)"
+
       - name: Analyze (fail fast on compile errors)
         # 门禁: tag 推送只触发 release.yml, 不触发 ci.yml 的 analyze,
         # 所以这里补一道. 让 Dart 类型/导入错误在 flutter build (Gradle, 几分钟)

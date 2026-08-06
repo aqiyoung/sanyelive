@@ -21,6 +21,8 @@ import 'data/sources/remote_sources_source.dart';
 //  跟 +124 media_kit 预热是同样思路:  runApp 之前 fire-and-forget 让
 //  static _cached 缓存就绪,  后续 loadBundled 零 IO.
 import 'data/repositories/channel_repository.dart';
+// 离线台标清单 (TV 模式优先 AssetImage 渲染, 不再依赖运行时网络拉 logo).
+import 'data/tv_logo_manifest.dart';
 // theme_provider.dart 保留文件 (老 prefs key 兼容), 但 main.dart 不再 watch
 // themeModeProvider / ThemeModeNotifier.  sharedPreferencesProvider 仍需 import —
 // sharedPreferencesProvider 仍需 import — main.dart override + version_checker.dart 也用它.
@@ -53,6 +55,16 @@ void main() async {
   await CrashLogger.log('=== main() START ===');
   try {
     WidgetsFlutterBinding.ensureInitialized();
+    // 预加载离线台标清单 (assets/logos/manifest.json).  CI 构建前由
+    // scripts/fetch_tv_logos.py 下载打包, 本地若未跑脚本则清单为空, 显示层
+    // 自动回退 logoUrl / 文字台标, 不阻塞启动.
+    try {
+      await CrashLogger.log('step1.5: before loadTvLogoManifest');
+      await loadTvLogoManifest();
+      await CrashLogger.log('step1.5: loadTvLogoManifest OK');
+    } catch (e) {
+      await CrashLogger.log('step1.5: loadTvLogoManifest FAILED: $e');
+    }
     try {
       await CrashLogger.init();
       await CrashLogger.log('step1: CrashLogger OK');

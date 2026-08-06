@@ -16,6 +16,7 @@ import '../../../data/models/content.dart';
 import '../../../data/channel_filter.dart';
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
+import '../../../data/tv_logo_manifest.dart';
 import '../../../services/player_service.dart';
 
 /// 视界 海报墙首页
@@ -650,6 +651,17 @@ class _ChannelLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 优先离线台标 (assets/logos, CI 构建前打包): 命中即本地渲染,
+    // 不依赖设备端网络, 根治 70% 频道 logo 为 null 显示字母的问题.
+    final local = tvLogoManifest[channel?.id];
+    if (local != null && local.isNotEmpty) {
+      return Image.asset(
+        'assets/logos/$local',
+        fit: BoxFit.contain,
+        height: size,
+        errorBuilder: (_, __, ___) => _fallback(context),
+      );
+    }
     final logo = channel?.logoUrl;
     if (logo != null && logo.isNotEmpty) {
       return CachedNetworkImage(

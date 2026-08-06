@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../core/theme/colors.dart';
 import '../settings/app_mode_provider.dart';
@@ -8,6 +12,8 @@ import '../../../data/providers/vod_provider.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/content.dart';
 import '../../../data/repositories/channel_repository.dart';
+import '../../../data/source_dispatcher.dart';
+import '../../../services/player_service.dart';
 
 /// 视界 海报墙首页
 class PosterWallPage extends ConsumerWidget {
@@ -251,16 +257,105 @@ class _TvLeanbackHome extends StatelessWidget {
   }
 }
 
-/// 精选 Hero — 主推一个直播频道, 大播放键 + LIVE 徽标 + 节目信息条.
-class _TvHero extends StatelessWidget {
+/// 精选 Hero — 主推一个直播频道, 内嵌真实播放预览 (复用全局 media_kit 共享
+/// Player + VideoController, 不新建第二个 native player). 叠加 LIVE 徽标 +
+/// 节目信息条. 点击进入全屏播放页.
+///
+/// libmpv 不可用 (TV box 上 dlopen 失败) 或取流失败时, 自动降级到静态
+/// 台标 + 播放键兜底 (_HeroBackdrop), 不会崩.
+class _TvHero extends ConsumerStatefulWidget {
   const _TvHero({required this.channel, required this.isLoading});
 
   final Channel? channel;
   final bool isLoading;
 
   @override
+  ConsumerState<_TvHero> createState() => _TvHeroState();
+}
+
+class _TvHeroState extends ConsumerState<_TvHero> {
+  bool _previewReady = false;
+  bool _previewFailed = false;
+  String? _openedChannelId;
+  Player? _player;
+  VideoController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // 首帧后再开流 — 避免 build 期间触发 Riverpod "modify during build".
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startPreview());
+  }
+
+  @override
+  void didUpdateWidget(covariant _TvHero old) {
+    super.didUpdateWidget(old);
+    if (old.channel?.id != widget.channel?.id) _startPreview();
+  }
+
+  void _startPreview() {
+    final ch = widget.channel;
+    if (ch == null) return;
+    // 同一频道已尝试过 (成功或失败) 不再重复开流.
+    if (_openedChannelId == ch.id && (_previewReady || _previewFailed)) return;
+
+    final player = ref.read(mediaKitPlayerProvider);
+    final controller = ref.read(mediaKitVideoControllerProvider);
+    if (player == null || controller == null) {
+      // libmpv 不可用 → 静态兜底.
+      if (mounted) setState(() => _previewFailed = true);
+      return;
+    }
+    final sources = SourceDispatcher.dispatch(ch);
+    if (sources.isEmpty) {
+      if (mounted) setState(() => _previewFailed = true);
+      return;
+    }
+    _player = player;
+    _controller = controller;
+    _openedChannelId = ch.id;
+    if (mounted) setState(() => _previewReady = false);
+    // 直接对共享 Player 开流做预览, 不碰 PlayerService (避开其 _playing 守卫).
+    unawaited(
+      player
+          .open(Media(sources.first))
+          .then((_) {
+            if (mounted && _openedChannelId == ch.id) {
+              setState(() => _previewReady = true);
+            }
+          })
+          .catchError((_) {
+            if (mounted && _openedChannelId == ch.id) {
+              setState(() => _previewFailed = true);
+            }
+          }),
+    );
+  }
+
+  @override
+  void dispose() {
+    // 离开首页: 暂停共享 Player, 避免预览声音在其他页面或后台继续播放.
+    // 不 dispose 共享 Player — 其生命周期由 PlayerService 管理.
+    try {
+      _player?.pause();
+    } catch (_) {
+      // 共享 player 可能已被释放, 静默忽略.
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final onTap = channel == null ? null : () => context.go('/player/${channel!.id}');
+    // watch 保持共享 Player / controller 在首页期间存活.
+    final player = ref.watch(mediaKitPlayerProvider);
+    final controller = ref.watch(mediaKitVideoControllerProvider);
+    _player ??= player;
+    _controller ??= controller;
+
+    final channel = widget.channel;
+    final onTap = channel == null ? null : () => context.go('/player/${channel.id}');
+    final showVideo = _controller != null && !_previewFailed;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
@@ -269,120 +364,168 @@ class _TvHero extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           child: AspectRatio(
             aspectRatio: 16 / 9,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF1A0E12), Color(0xFF101418), Color(0xFF1A1015)],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -40,
-                    top: -30,
-                    bottom: -30,
-                    child: Container(
-                      width: 220,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            const Color(0xFFE53935).withValues(alpha: 0.32),
-                            Colors.transparent,
-                          ],
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (showVideo)
+                  SizedBox.expand(
+                    child: Video(
+                      key: ValueKey(channel?.id ?? 'hero'),
+                      controller: _controller!,
+                      fit: BoxFit.cover,
+                      aspectRatio: 16 / 9,
+                    ),
+                  )
+                else
+                  _HeroBackdrop(
+                    channel: channel,
+                    isLoading: widget.isLoading,
+                    failed: _previewFailed,
+                  ),
+                // 开流完成前显示加载圈 (盖在黑色视频面上).
+                if (showVideo && !_previewReady)
+                  const ColoredBox(
+                    color: Color(0x66000000),
+                    child: Center(
+                      child: SizedBox(
+                        width: 30,
+                        height: 30,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-                  Center(
+                const Positioned(left: 16, top: 16, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
+                Positioned(
+                  right: 16,
+                  top: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      channel?.displayName ?? '视界直播',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: const BoxDecoration(
+                      color: Color(0x80000000),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                    ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        channel?.logoUrl != null && channel!.logoUrl!.isNotEmpty
-                            ? Image.network(
-                                channel!.logoUrl!,
-                                width: 76,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) =>
-                                    Icon(Icons.live_tv_rounded, color: Colors.white70, size: 46),
-                              )
-                            : Icon(
-                                isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
-                                color: Colors.white70,
-                                size: 46,
-                              ),
-                        const SizedBox(height: 14),
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.16),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                        Text(
+                          '正在直播',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
-                          child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          channel?.displayName ?? '精彩节目直播中',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
                         ),
                       ],
                     ),
                   ),
-                  const Positioned(left: 16, top: 16, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
-                  Positioned(
-                    right: 16,
-                    top: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        channel?.displayName ?? '视界直播',
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: const BoxDecoration(
-                        color: Color(0x80000000),
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(24),
-                          bottomRight: Radius.circular(24),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '正在直播',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            channel?.displayName ?? '精彩节目直播中',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Hero 静态兜底背景 — libmpv 不可用 / 取流失败 / 加载中时显示 (台标 + 播放键).
+class _HeroBackdrop extends StatelessWidget {
+  const _HeroBackdrop({required this.channel, required this.isLoading, required this.failed});
+
+  final Channel? channel;
+  final bool isLoading;
+  final bool failed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A0E12), Color(0xFF101418), Color(0xFF1A1015)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -40,
+            top: -30,
+            bottom: -30,
+            child: Container(
+              width: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFE53935).withValues(alpha: 0.32),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                channel?.logoUrl != null && channel!.logoUrl!.isNotEmpty
+                    ? Image.network(
+                        channel!.logoUrl!,
+                        width: 76,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) =>
+                            Icon(Icons.live_tv_rounded, color: Colors.white70, size: 46),
+                      )
+                    : Icon(
+                        isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
+                        color: Colors.white70,
+                        size: 46,
+                      ),
+                const SizedBox(height: 14),
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  ),
+                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

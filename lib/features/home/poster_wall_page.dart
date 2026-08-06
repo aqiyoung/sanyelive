@@ -38,7 +38,7 @@ class PosterWallPage extends ConsumerWidget {
 
             return Column(
               children: [
-                const _HomeTopBar(),
+                _HomeTopBar(showSearch: fullMode),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.only(bottom: 20),
@@ -48,6 +48,11 @@ class PosterWallPage extends ConsumerWidget {
                         const _HeroBanner(),
                         const SizedBox(height: 18),
                         const _CategoryShortcutBar(),
+                        const SizedBox(height: 18),
+                      ],
+                      // —— 电视直播模式: 频道分类入口网格 ——
+                      if (!fullMode) ...[
+                        const _ChannelCategorySection(),
                         const SizedBox(height: 18),
                       ],
                       // —— 电视直播模块 (两种模式都显示, 作为核心内容) ——
@@ -86,7 +91,10 @@ class PosterWallPage extends ConsumerWidget {
 }
 
 class _HomeTopBar extends StatelessWidget {
-  const _HomeTopBar();
+  const _HomeTopBar({this.showSearch = true});
+
+  /// 电视直播模式 (showSearch=false) 隐藏搜索框 + 播放记录图标, 仅留品牌 + 模式标签.
+  final bool showSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -110,37 +118,52 @@ class _HomeTopBar extends StatelessWidget {
               letterSpacing: 0.4,
             ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.go('/search'),
-              child: Container(
-                height: 38,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: context.bgCardHigh,
-                  borderRadius: BorderRadius.circular(19),
-                  border: Border.all(color: context.fgBorder),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.search_rounded, color: context.fgSub, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '庆余年 第二季',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: context.fgSub, fontSize: 13),
+          if (showSearch) ...[
+            const SizedBox(width: 14),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.go('/search'),
+                child: Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: context.bgCardHigh,
+                    borderRadius: BorderRadius.circular(19),
+                    border: Border.all(color: context.fgBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search_rounded, color: context.fgSub, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '庆余年 第二季',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: context.fgSub, fontSize: 13),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          _TopIcon(icon: Icons.history_rounded, onTap: () => context.go('/playback-history')),
+            const SizedBox(width: 8),
+            _TopIcon(icon: Icons.history_rounded, onTap: () => context.go('/playback-history')),
+          ] else ...[
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: context.fgAccent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '电视直播',
+                style: TextStyle(color: context.fgAccent, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -401,6 +424,95 @@ class _CategoryShortcutBar extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// 电视直播模式首页的「频道分类」入口网格 (仅 TV 模式显示).
+/// 每个 tile 跳转对应 /category/<id>, 复用 CategoryPage 既有路由与过滤逻辑,
+/// 与完整模式下的 _CategoryShortcutBar (含影视分类) 区分开.
+class _ChannelCategorySection extends StatelessWidget {
+  const _ChannelCategorySection();
+
+  static const List<_ChannelCat> _cats = [
+    _ChannelCat('全部直播', Icons.live_tv_rounded, Color(0xFFE53935), '/category/live'),
+    _ChannelCat('央视', Icons.tv_rounded, Color(0xFF3D7CFF), '/category/cctv'),
+    _ChannelCat('卫视', Icons.satellite_rounded, Color(0xFF8E44AD), '/category/satellite'),
+    _ChannelCat('体育', Icons.sports_soccer_rounded, Color(0xFF43A047), '/category/体育'),
+    _ChannelCat('地方', Icons.location_on_rounded, Color(0xFFF0B429), '/category/local'),
+    _ChannelCat('影视', Icons.movie_creation_rounded, Color(0xFF00BCD4), '/category/影视'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            '频道分类',
+            style: TextStyle(color: context.fgMain, fontSize: 20, fontWeight: FontWeight.w900),
+          ),
+        ),
+        const SizedBox(height: 12),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          crossAxisCount: 3,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.4,
+          children: _cats.map((c) => _ChannelCatTile(cat: c)).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChannelCat {
+  const _ChannelCat(this.label, this.icon, this.color, this.route);
+  final String label;
+  final IconData icon;
+  final Color color;
+  final String route;
+}
+
+class _ChannelCatTile extends StatelessWidget {
+  const _ChannelCatTile({required this.cat});
+  final _ChannelCat cat;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.go(cat.route),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.bgCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.fgBorder),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: cat.color.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(cat.icon, color: cat.color, size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              cat.label,
+              style: TextStyle(color: context.fgMain, fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
       ),
     );
   }

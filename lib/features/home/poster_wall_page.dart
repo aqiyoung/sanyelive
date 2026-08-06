@@ -1041,14 +1041,9 @@ class _LiveTvModule extends StatelessWidget {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                primary?.logoUrl != null && primary!.logoUrl!.isNotEmpty
-                                    ? Image.network(
-                                        primary.logoUrl!,
-                                        width: 54,
-                                        fit: BoxFit.contain,
-                                        errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 34),
-                                      )
-                                    : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 34),
+                                isLoading
+                                    ? Icon(Icons.hourglass_empty_rounded, color: context.fgSub, size: 34)
+                                    : _ChannelLogo(channel: primary, size: 54, bright: true),
                                 const SizedBox(height: 9),
                                 Container(
                                   width: 38,

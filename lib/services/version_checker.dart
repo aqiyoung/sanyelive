@@ -50,7 +50,7 @@ const List<String> kDefaultEndpointUrls = [
   // list API 按 created 排序, 拿第一个 (最新创建), 稳定版和 pre-release 都覆盖
   // per_page=5 防止一次拉太多, 但保证拿到最新的
   //
-  'https://api.github.com/repos/aqiyoung/iptv-app/releases', // primary: 直连 (0.6s, 6/24 实测)
+  'https://api.github.com/repos/aqiyoung/sanyelive/releases', // primary: 直连 (0.6s, 6/24 实测)
 ];
 
 /// 兼容老代码 — 取 chain[0]. 单元测试可 overrideWithValue.

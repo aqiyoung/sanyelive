@@ -34,7 +34,7 @@ import 'theme_provider.dart';
 //   暗色主题联动.  之前 hardcode 浅米色文字在暗背景下看不清.  不再 import
 //   IptvColors — 全部跟主题走.
 
-const String kGitHubRepoUrl = 'https://github.com/aqiyoung/iptv-app';
+const String kGitHubRepoUrl = 'https://github.com/aqiyoung/sanyelive';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});

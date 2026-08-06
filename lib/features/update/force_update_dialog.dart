@@ -53,7 +53,7 @@ class _ForceUpdateDialogContentState
 
   /// 构建 GitHub releases 页面 URL.
   String _buildReleasesUrl(String tagName) {
-    return 'https://github.com/aqiyoung/iptv-app/releases/tag/$tagName';
+    return 'https://github.com/aqiyoung/sanyelive/releases/tag/$tagName';
   }
 
   Future<void> _openGitHub(BuildContext context, String tagName) async {

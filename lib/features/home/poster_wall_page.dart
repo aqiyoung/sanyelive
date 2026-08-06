@@ -36,50 +36,45 @@ class PosterWallPage extends ConsumerWidget {
                 .toList();
             final displayChannels = liveChannels.isNotEmpty ? liveChannels : channels;
 
+            final isLoading = snapshot.connectionState == ConnectionState.waiting;
+
             return Column(
               children: [
                 _HomeTopBar(showSearch: fullMode),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    children: [
-                      // —— 仅完整功能模式: 影视海报轮播 + 分类快捷 ——
-                      if (fullMode) ...[
-                        const _HeroBanner(),
-                        const SizedBox(height: 18),
-                        const _CategoryShortcutBar(),
-                        const SizedBox(height: 18),
-                      ],
-                      // —— 电视直播模式: 频道分类入口网格 ——
-                      if (!fullMode) ...[
-                        const _ChannelCategorySection(),
-                        const SizedBox(height: 18),
-                      ],
-                      // —— 电视直播模块 (两种模式都显示, 作为核心内容) ——
-                      _LiveTvModule(
-                        isLoading: snapshot.connectionState == ConnectionState.waiting,
-                        channels: displayChannels.take(4).toList(),
-                        error: snapshot.error,
-                      ),
-                      // —— 仅完整功能模式: 影视推荐区 ——
-                      if (fullMode) ...[
-                        const SizedBox(height: 20),
-                        _VodSection(
-                          title: '今日推荐',
-                          provider: vodRecommendedProvider,
-                          badges: const ['HOT', 'VIP', '独播'],
+                  child: fullMode
+                      ? ListView(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          children: [
+                            const _HeroBanner(),
+                            const SizedBox(height: 18),
+                            const _CategoryShortcutBar(),
+                            const SizedBox(height: 18),
+                            _LiveTvModule(
+                              isLoading: isLoading,
+                              channels: displayChannels.take(4).toList(),
+                              error: snapshot.error,
+                            ),
+                            const SizedBox(height: 20),
+                            _VodSection(
+                              title: '今日推荐',
+                              provider: vodRecommendedProvider,
+                              badges: const ['HOT', 'VIP', '独播'],
+                            ),
+                            const SizedBox(height: 20),
+                            _VodSectionWithTabs(
+                              title: '热播剧集',
+                              provider: vodSeriesProvider,
+                              badges: const ['热播', 'VIP', '热播', 'VIP', 'VIP'],
+                              tabs: const ['全部', '古装', '都市', '悬疑', '爱情'],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        )
+                      : _TvLeanbackHome(
+                          isLoading: isLoading,
+                          channels: displayChannels,
                         ),
-                        const SizedBox(height: 20),
-                        _VodSectionWithTabs(
-                          title: '热播剧集',
-                          provider: vodSeriesProvider,
-                          badges: const ['热播', 'VIP', '热播', 'VIP', 'VIP'],
-                          tabs: const ['全部', '古装', '都市', '悬疑', '爱情'],
-                        ),
-                      ],
-                      const SizedBox(height: 20),
-                    ],
-                  ),
                 ),
               ],
             );
@@ -152,6 +147,8 @@ class _HomeTopBar extends StatelessWidget {
             _TopIcon(icon: Icons.history_rounded, onTap: () => context.go('/playback-history')),
           ] else ...[
             const Spacer(),
+            const _ClockText(),
+            const SizedBox(width: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -182,6 +179,374 @@ class _TopIcon extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       icon: Icon(icon, color: context.fgMain, size: 22),
       onPressed: onTap,
+    );
+  }
+}
+
+/// TV 模式下栏右侧的实时时钟 (每 30s 刷新), 增强电视端氛围.
+class _ClockText extends StatelessWidget {
+  const _ClockText();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: Stream.periodic(const Duration(seconds: 30), (i) => i),
+      builder: (context, _) {
+        final now = TimeOfDay.now();
+        final h = now.hour.toString().padLeft(2, '0');
+        final m = now.minute.toString().padLeft(2, '0');
+        return Text(
+          '$h:$m',
+          style: TextStyle(color: context.fgSub, fontSize: 13, fontWeight: FontWeight.w600),
+        );
+      },
+    );
+  }
+}
+
+/// TV 模式首页 (Leanback 风格):
+/// 精选 Hero (主推直播) → 横向分类 chips → 多行「正在直播 / 央视 / 卫视 / 体育」频道墙.
+class _TvLeanbackHome extends StatelessWidget {
+  const _TvLeanbackHome({required this.isLoading, required this.channels});
+
+  final bool isLoading;
+  final List<Channel> channels;
+
+  @override
+  Widget build(BuildContext context) {
+    final featured = channels.isNotEmpty ? channels.first : null;
+    final cctv = channels.where((c) => c.categories.contains('央视')).toList();
+    final satellite = channels.where((c) => c.categories.contains('卫视')).toList();
+    final sports = channels.where((c) => c.categories.contains('体育')).toList();
+
+    return ListView(
+      padding: const EdgeInsets.only(top: 8, bottom: 24),
+      children: [
+        if (isLoading && featured == null)
+          const Padding(
+            padding: EdgeInsets.all(40),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else
+          _TvHero(channel: featured, isLoading: isLoading),
+        const SizedBox(height: 18),
+        const _ChannelChips(),
+        const SizedBox(height: 22),
+        _ChannelRow(title: '正在直播', channels: channels),
+        const SizedBox(height: 20),
+        if (cctv.isNotEmpty) ...[
+          _ChannelRow(title: '央视频道', channels: cctv),
+          const SizedBox(height: 20),
+        ],
+        if (satellite.isNotEmpty) ...[
+          _ChannelRow(title: '卫视频道', channels: satellite),
+          const SizedBox(height: 20),
+        ],
+        if (sports.isNotEmpty) ...[
+          _ChannelRow(title: '体育频道', channels: sports),
+          const SizedBox(height: 20),
+        ],
+      ],
+    );
+  }
+}
+
+/// 精选 Hero — 主推一个直播频道, 大播放键 + LIVE 徽标 + 节目信息条.
+class _TvHero extends StatelessWidget {
+  const _TvHero({required this.channel, required this.isLoading});
+
+  final Channel? channel;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final onTap = channel == null ? null : () => context.go('/player/${channel!.id}');
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1A0E12), Color(0xFF101418), Color(0xFF1A1015)],
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -40,
+                    top: -30,
+                    bottom: -30,
+                    child: Container(
+                      width: 220,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFFE53935).withValues(alpha: 0.32),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        channel?.logoUrl != null && channel!.logoUrl!.isNotEmpty
+                            ? Image.network(
+                                channel!.logoUrl!,
+                                width: 76,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) =>
+                                    Icon(Icons.live_tv_rounded, color: Colors.white70, size: 46),
+                              )
+                            : Icon(
+                                isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
+                                color: Colors.white70,
+                                size: 46,
+                              ),
+                        const SizedBox(height: 14),
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                          ),
+                          child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Positioned(left: 16, top: 16, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
+                  Positioned(
+                    right: 16,
+                    top: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        channel?.displayName ?? '视界直播',
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: const BoxDecoration(
+                        color: Color(0x80000000),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(24),
+                          bottomRight: Radius.circular(24),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '正在直播',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            channel?.displayName ?? '精彩节目直播中',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 横向滚动的频道分类 chips (全部/央视/卫视/体育/地方/影视), 点选跳转对应分类页.
+class _ChannelChips extends StatelessWidget {
+  const _ChannelChips();
+
+  static const List<_Chip> _chips = [
+    _Chip('全部直播', Icons.live_tv_rounded, '/category/live'),
+    _Chip('央视', Icons.tv_rounded, '/category/cctv'),
+    _Chip('卫视', Icons.satellite_rounded, '/category/satellite'),
+    _Chip('体育', Icons.sports_soccer_rounded, '/category/体育'),
+    _Chip('地方', Icons.location_on_rounded, '/category/local'),
+    _Chip('影视', Icons.movie_creation_rounded, '/category/影视'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          final c = _chips[i];
+          return GestureDetector(
+            onTap: () => context.go(c.route),
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: context.bgCard,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: context.fgBorder),
+              ),
+              child: Row(
+                children: [
+                  Icon(c.icon, color: context.fgAccent, size: 16),
+                  const SizedBox(width: 6),
+                  Text(c.label, style: TextStyle(color: context.fgMain, fontSize: 13, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Chip {
+  const _Chip(this.label, this.icon, this.route);
+  final String label;
+  final IconData icon;
+  final String route;
+}
+
+/// 一行可横向滚动的频道卡片墙 (标题 + LIVE 卡片).
+class _ChannelRow extends StatelessWidget {
+  const _ChannelRow({required this.title, required this.channels});
+
+  final String title;
+  final List<Channel> channels;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            title,
+            style: TextStyle(color: context.fgMain, fontSize: 18, fontWeight: FontWeight.w900),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 116,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: channels.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) => _ChannelCard(channel: channels[i]),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 单个频道卡片: 台标 + LIVE 徽标 + 频道名.
+class _ChannelCard extends StatelessWidget {
+  const _ChannelCard({required this.channel});
+
+  final Channel channel;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.go('/player/${channel.id}'),
+      child: Container(
+        width: 150,
+        decoration: BoxDecoration(
+          color: context.bgCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.fgBorder),
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: channel.logoUrl != null && channel.logoUrl!.isNotEmpty
+                    ? Image.network(
+                        channel.logoUrl!,
+                        fit: BoxFit.contain,
+                        height: 48,
+                        errorBuilder: (_, __, ___) =>
+                            Icon(Icons.live_tv_rounded, color: context.fgSub, size: 30),
+                      )
+                    : Icon(Icons.live_tv_rounded, color: context.fgSub, size: 30),
+              ),
+            ),
+            Positioned(
+              left: 8,
+              top: 8,
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE53935),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'LIVE',
+                    style: TextStyle(color: Color(0xFFE53935), fontSize: 9, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 10,
+              child: Text(
+                channel.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -424,95 +789,6 @@ class _CategoryShortcutBar extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-/// 电视直播模式首页的「频道分类」入口网格 (仅 TV 模式显示).
-/// 每个 tile 跳转对应 /category/<id>, 复用 CategoryPage 既有路由与过滤逻辑,
-/// 与完整模式下的 _CategoryShortcutBar (含影视分类) 区分开.
-class _ChannelCategorySection extends StatelessWidget {
-  const _ChannelCategorySection();
-
-  static const List<_ChannelCat> _cats = [
-    _ChannelCat('全部直播', Icons.live_tv_rounded, Color(0xFFE53935), '/category/live'),
-    _ChannelCat('央视', Icons.tv_rounded, Color(0xFF3D7CFF), '/category/cctv'),
-    _ChannelCat('卫视', Icons.satellite_rounded, Color(0xFF8E44AD), '/category/satellite'),
-    _ChannelCat('体育', Icons.sports_soccer_rounded, Color(0xFF43A047), '/category/体育'),
-    _ChannelCat('地方', Icons.location_on_rounded, Color(0xFFF0B429), '/category/local'),
-    _ChannelCat('影视', Icons.movie_creation_rounded, Color(0xFF00BCD4), '/category/影视'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            '频道分类',
-            style: TextStyle(color: context.fgMain, fontSize: 20, fontWeight: FontWeight.w900),
-          ),
-        ),
-        const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          crossAxisCount: 3,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.4,
-          children: _cats.map((c) => _ChannelCatTile(cat: c)).toList(),
-        ),
-      ],
-    );
-  }
-}
-
-class _ChannelCat {
-  const _ChannelCat(this.label, this.icon, this.color, this.route);
-  final String label;
-  final IconData icon;
-  final Color color;
-  final String route;
-}
-
-class _ChannelCatTile extends StatelessWidget {
-  const _ChannelCatTile({required this.cat});
-  final _ChannelCat cat;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.go(cat.route),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.bgCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.fgBorder),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: cat.color.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Icon(cat.icon, color: cat.color, size: 24),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              cat.label,
-              style: TextStyle(color: context.fgMain, fontSize: 13, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
       ),
     );
   }

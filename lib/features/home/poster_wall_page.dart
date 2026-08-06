@@ -642,13 +642,13 @@ class _ChannelRow extends StatelessWidget {
 class _ChannelLogo extends StatelessWidget {
   const _ChannelLogo({required this.channel, this.size = 48, this.bright = false});
 
-  final Channel channel;
+  final Channel? channel;
   final double size;
   final bool bright;
 
   @override
   Widget build(BuildContext context) {
-    final logo = channel.logoUrl;
+    final logo = channel?.logoUrl;
     if (logo != null && logo.isNotEmpty) {
       return Image.network(
         logo,
@@ -661,7 +661,7 @@ class _ChannelLogo extends StatelessWidget {
   }
 
   Widget _fallback(BuildContext context) {
-    final name = channel.displayName.trim();
+    final name = (channel?.displayName ?? '').trim();
     final ch = name.isNotEmpty ? name[0] : '?';
     final Color fg = bright ? Colors.white : context.fgAccent;
     final Color bg = bright

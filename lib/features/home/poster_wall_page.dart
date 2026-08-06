@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/theme/colors.dart';
 import '../settings/app_mode_provider.dart';
@@ -650,11 +651,12 @@ class _ChannelLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final logo = channel?.logoUrl;
     if (logo != null && logo.isNotEmpty) {
-      return Image.network(
-        logo,
+      return CachedNetworkImage(
+        imageUrl: logo,
         fit: BoxFit.contain,
         height: size,
-        errorBuilder: (_, __, ___) => _fallback(context),
+        placeholder: (_, __) => SizedBox(height: size),
+        errorWidget: (_, __, ___) => _fallback(context),
       );
     }
     return _fallback(context);

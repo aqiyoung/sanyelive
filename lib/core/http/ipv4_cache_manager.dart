@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -20,14 +21,15 @@ class IPv4CacheManager extends CacheManager with ImageCacheManager {
             key,
             stalePeriod: const Duration(days: 7),
             maxNrOfCacheObjects: 200,
-            httpGetter: _Ipv4HttpGetter(),
+            fileService: _Ipv4FileService(),
           ),
         );
 }
 
-class _Ipv4HttpGetter extends HttpGetter {
-  @override
-  Future<http.StreamedResponse> get(http.BaseRequest request) {
+class _Ipv4FileService extends HttpFileService {
+  _Ipv4FileService() : super(httpClient: _createIpv4Client());
+
+  static http.Client _createIpv4Client() {
     final prev = HttpOverrides.current;
     HttpOverrides.global = null;
     HttpClient client;
@@ -48,16 +50,13 @@ class _Ipv4HttpGetter extends HttpGetter {
           );
         }
         return ConnectionTask.fromSocket(
-          Future<Socket>.error(
-              const SocketException('Proxy not supported, use system')),
+          Future<Socket>.error(const SocketException('Proxy not supported')),
           () {},
         );
       };
     } finally {
       HttpOverrides.global = prev;
     }
-
-    final ioClient = IOClient(client);
-    return ioClient.send(request).timeout(const Duration(seconds: 15));
+    return IOClient(client);
   }
 }

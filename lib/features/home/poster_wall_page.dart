@@ -420,13 +420,12 @@ class _LiveTvModule extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: borderColor),
         ),
-        // 固定紧凑高度, 左右等高, 消除预览框下方留白
         child: SizedBox(
-          height: 120,
+          height: 116,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 左: 直播预览 (景观比例占位, 放大 logo + 底部节目条填满黑框, 不空旷)
+              // 左: 直播预览 (logo + 播放按钮居中成视觉重心, 顶部标/底部节目条贴边, 黑框不再空旷)
               Expanded(
                 flex: 5,
                 child: GestureDetector(
@@ -437,15 +436,32 @@ class _LiveTvModule extends StatelessWidget {
                       color: Colors.black,
                       child: Stack(
                         children: [
+                          // 视觉重心: logo + 半透明播放按钮 整体居中, 填充黑框中部
                           Center(
-                            child: primary?.logoUrl != null && primary!.logoUrl!.isNotEmpty
-                                ? Image.network(
-                                    primary.logoUrl!,
-                                    width: 88,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 44),
-                                  )
-                                : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 44),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                primary?.logoUrl != null && primary!.logoUrl!.isNotEmpty
+                                    ? Image.network(
+                                        primary.logoUrl!,
+                                        width: 54,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 34),
+                                      )
+                                    : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 34),
+                                const SizedBox(height: 9),
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.14),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white.withOpacity(0.28)),
+                                  ),
+                                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22),
+                                ),
+                              ],
+                            ),
                           ),
                           const Positioned(left: 8, top: 8, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
                           Positioned(
@@ -460,7 +476,7 @@ class _LiveTvModule extends StatelessWidget {
                               child: Text(primary?.displayName ?? '视界', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
                             ),
                           ),
-                          // 底部节目条: 填满黑框下方空白
+                          // 底部节目条
                           Positioned(
                             left: 0,
                             right: 0,
@@ -489,7 +505,7 @@ class _LiveTvModule extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // 右: 正在直播频道紧凑列表 (小字号, 填满整列)
+              // 右: 正在直播频道列表 (spaceBetween 均匀撑满整列, 下方不留白)
               Expanded(
                 flex: 6,
                 child: Column(
@@ -511,32 +527,29 @@ class _LiveTvModule extends StatelessWidget {
                           ? const Center(child: _LiveListText(title: '加载中', subtitle: '读取频道库'))
                           : rest.isEmpty
                               ? const Center(child: _LiveListText(title: '暂无频道', subtitle: '请检查数据'))
-                              : ListView.separated(
-                                  padding: EdgeInsets.zero,
-                                  itemCount: rest.length,
-                                  separatorBuilder: (_, __) => const SizedBox(height: 9),
-                                  itemBuilder: (context, index) {
-                                    final ch = rest[index];
-                                    return GestureDetector(
-                                      onTap: () => context.go('/player/${ch.id}'),
-                                      child: Row(
-                                        children: [
-                                          Container(width: 6, height: 6, decoration: BoxDecoration(color: const Color(0xFFE53935), borderRadius: BorderRadius.circular(3))),
-                                          const SizedBox(width: 6),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: rest
+                                      .map((ch) => GestureDetector(
+                                            onTap: () => context.go('/player/${ch.id}'),
+                                            child: Row(
                                               children: [
-                                                Text(ch.displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700)),
-                                                const SizedBox(height: 1),
-                                                Text('即将播出 · 精彩节目', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgSub, fontSize: 10)),
+                                                Container(width: 6, height: 6, decoration: BoxDecoration(color: const Color(0xFFE53935), borderRadius: BorderRadius.circular(3))),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(ch.displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700)),
+                                                      const SizedBox(height: 1),
+                                                      Text('即将播出 · 精彩节目', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgSub, fontSize: 10)),
+                                                    ],
+                                                  ),
+                                                ),
                                               ],
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
+                                          ))
+                                      .toList(),
                                 ),
                     ),
                   ],

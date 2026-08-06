@@ -315,6 +315,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _controller = controller;
     _openedChannelId = ch.id;
     if (mounted) setState(() => _previewReady = false);
+    // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
+    // 会恢复音量 (setVolume(100)).
+    unawaited(player.setVolume(0));
     // 直接对共享 Player 开流做预览, 不碰 PlayerService (避开其 _playing 守卫).
     unawaited(
       player

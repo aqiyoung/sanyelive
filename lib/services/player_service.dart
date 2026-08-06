@@ -216,6 +216,8 @@ class PlayerService extends ChangeNotifier {
     //  折中:  await stop (50-200ms),  但 set loading 在 stop 之前已经发出,
     //  UI 不会白屏.  stop 完成后立即 open,  不引入额外延迟.
     if (_player != null) {
+      // 恢复音量 — 首页 Hero 预览可能是静音的 (setVolume(0)), 进播放页必须出声.
+      await _player.setVolume(100);
       await _player.stop();
     }
 
@@ -283,6 +285,8 @@ class PlayerService extends ChangeNotifier {
 
     // 6/17 修声音残留: 跟 [play] 一样,  先 stop 旧 player 避免双声
     if (_player != null) {
+      // 恢复音量 — 首页 Hero 预览可能是静音的 (setVolume(0)), 手动选源也要出声.
+      await _player.setVolume(100);
       await _player.stop();
     }
 

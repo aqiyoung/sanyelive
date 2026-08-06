@@ -38,20 +38,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanyelive/features/settings/theme_provider.dart'
     show sharedPreferencesProvider;
 
-///   gh-proxy.com 403 (rate limit) → cf-workers-proxy 被 CF 保护返 HTML → 链式 fallback.
-///   curl 实测 (6/24 本机不走代理):
-///     - api.github.com 直连 → 200 OK 0.6s ✅ (国内能直连, 最快最稳)
-///     - cf-workers-proxy-9e9.pages.dev → 200 OK 1.3~2.8s ✅ (直连不通时兜底)
-///     - gh-proxy.com → 403 rate limit (共享 IP 被限, 不再使用)
-///   APP 运行环境 (用户手机/盒子) 未必能直连 GitHub,  所以保留 cf-worker 兜底.
-///   gh-proxy.com 彻底弃用 (403 频率太高, chain 里放它只会浪费一次超时).
+///   FeiNiuMusic 标准做法 (已验证可用): 用 `/releases/latest` 单请求拿最新
+///   stable release, 并带 `User-Agent` + `Accept` 头.  GitHub API 对**没有
+///   User-Agent 的请求会直接 403 拒掉** — 这正是旧版"检查不到更新"的根因
+///   (请求被静默失败, 不弹窗).  参照 FeiNiuMusic 补上请求头后即稳定.
+///   sanyelive 的 release 非 pre-release, `/releases/latest` 即最新版.
 const List<String> kDefaultEndpointUrls = [
-  // /releases/latest 只返回 latest stable, beta 用户装了之后永远看不到更新
-  // list API 按 created 排序, 拿第一个 (最新创建), 稳定版和 pre-release 都覆盖
-  // per_page=5 防止一次拉太多, 但保证拿到最新的
-  //
-  'https://api.github.com/repos/aqiyoung/sanyelive/releases', // primary: 直连 (0.6s, 6/24 实测)
+  'https://api.github.com/repos/aqiyoung/sanyelive/releases/latest',
 ];
+
+/// FeiNiuMusic 同款请求头 — GitHub API 必须有 User-Agent, 否则 403.
+const Map<String, String> kGitHubApiHeaders = {
+  'User-Agent': 'sanyelive',
+  'Accept': 'application/vnd.github.v3+json',
+};
 
 /// 兼容老代码 — 取 chain[0]. 单元测试可 overrideWithValue.
 String get kDefaultEndpointUrl => kDefaultEndpointUrls.first;
@@ -368,6 +368,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
           options: Options(
             receiveTimeout: const Duration(seconds: 8),
             responseType: ResponseType.plain,
+            headers: kGitHubApiHeaders,
           ),
         );
         if (resp.statusCode == 200) {

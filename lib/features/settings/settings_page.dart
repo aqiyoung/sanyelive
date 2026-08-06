@@ -326,42 +326,104 @@ class SettingsPage extends ConsumerWidget {
   // 走跟启动时一样的逻辑 (cache 命中跳过, fetch GitHub API).
   // state 变化时用 listenManual 监听弹 SnackBar / Dialog.
   void _checkUpdate(BuildContext context, WidgetRef ref) {
-    // 1. 显示 loading SnackBar.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('正在检查更新…'),
-        duration: Duration(seconds: 2),
+    // 1. 居中 loading 弹窗 (检查完成即关).
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 16),
+              Text('正在检查更新…'),
+            ],
+          ),
+        ),
       ),
     );
 
-    // 2. 监听 state 变化 — 一次性, 弹 SnackBar / Dialog 后不持续触发.
+    // 2. 监听 state 变化 — 一次性, 弹居中结果弹窗后不持续触发.
     // listenManual 在 widget dispose 时自动 cancel, 不会泄漏.
+    bool isFirst = true;
     ref.listenManual<VersionCheckState>(
       versionCheckerProvider,
       (prev, next) {
+        // fireImmediately 的首次 (旧 state) 跳过, 不关 loading / 不弹.
+        if (isFirst) {
+          isFirst = false;
+          return;
+        }
+        // 关闭 loading 弹窗 (非根 Navigator 栈顶即它).
+        Navigator.of(context).pop();
         if (next is VersionCheckUpToDate) {
-          _showUpdateSnack(context, '已是最新版本 ${next.latestVersion}');
+          _showResultDialog(
+            context,
+            '已是最新版本',
+            next.latestVersion,
+            Icons.check_circle_outline_rounded,
+            Colors.green.shade600,
+          );
         } else if (next is VersionCheckOutdated) {
           // outdated 走 ForceUpdateDialog.show() (跟启动时一致, barrierDismissible=false
           ForceUpdateDialog.show(context);
         } else if (next is VersionCheckFailed) {
-          _showUpdateSnack(context, '检查更新失败: ${next.reason}');
+          _showResultDialog(
+            context,
+            '检查更新失败',
+            next.reason,
+            Icons.error_outline_rounded,
+            Colors.red.shade600,
+          );
         }
       },
       fireImmediately: true,
     );
 
-    // 3. 触发 fetch (走 checkOnStartup 跟启动时一致 — 1h cache / fetch API).
+    // 3. 触发 fetch (走 checkForce 强制, 绕过 cache).
     // ⚠️ 必须用 .read(provider.notifier) 而不是 .read(provider),
-    // .notifier 拿 Notifier 实例,  才能调 checkOnStartup() 方法.
+    // .notifier 拿 Notifier 实例,  才能调 checkForce() 方法.
     ref.read(versionCheckerProvider.notifier).checkForce();
   }
 
-  void _showUpdateSnack(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        duration: const Duration(seconds: 3),
+  /// 居中结果弹窗 (替代底部 SnackBar), 用于"已是最新" / "检查失败".
+  void _showResultDialog(
+    BuildContext context,
+    String title,
+    String msg,
+    IconData icon,
+    Color color,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        content: Text(msg, style: const TextStyle(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('知道了'),
+          ),
+        ],
       ),
     );
   }

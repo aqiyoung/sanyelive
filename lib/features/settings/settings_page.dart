@@ -20,6 +20,7 @@ import '../../services/version_checker.dart'
         VersionCheckOutdated,
         VersionCheckFailed,
         endpointProvider,
+        autoCheckUpdateProvider,
         kDefaultEndpointUrl;
 import '../update/force_update_dialog.dart' show ForceUpdateDialog;
 import '../../../core/theme/colors.dart';
@@ -137,6 +138,20 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: const Text('当前版本 + 最新版本对比'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context, ref),
+              ),
+              const _SettingsGap(),
+              Consumer(
+                builder: (context, ref, _) {
+                  final auto = ref.watch(autoCheckUpdateProvider);
+                  return SwitchListTile(
+                    secondary: const Icon(Icons.autorenew_outlined),
+                    title: const Text('启动时自动检查更新'),
+                    subtitle: const Text('打开应用时后台检查，有新版本弹窗提示'),
+                    value: auto,
+                    onChanged: (v) =>
+                        ref.read(autoCheckUpdateProvider.notifier).set(v),
+                  );
+                },
               ),
               // "所有容器分割不要线".  视觉上是空白,  不是线.
               const _SettingsGap(),

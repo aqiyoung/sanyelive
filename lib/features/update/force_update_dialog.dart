@@ -130,6 +130,18 @@ class _ForceUpdateDialogContentState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (s.releaseName.isNotEmpty && s.releaseName != s.latestVersion)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    s.releaseName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor,
+                    ),
+                  ),
+                ),
               Text(
                 '${s.currentVersion} → ${s.latestVersion}',
                 style: TextStyle(

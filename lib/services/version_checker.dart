@@ -59,6 +59,9 @@ String get kDefaultEndpointUrl => kDefaultEndpointUrls.first;
 /// SharedPreferences 持久化.
 const String kEndpointPrefsKey = 'version_checker.endpoint_url';
 
+/// 「启动时自动检查更新」开关持久化键 (默认开启).
+const String kAutoCheckUpdateKey = 'version_checker.auto_check_update';
+
 /// 老版本可能存了 gh-proxy.com,  build() 自动迁移到直连.
 /// 当前 endpoint URL — 默认 api.github.com 直连.
 /// 单元测试可 overrideWithValue.
@@ -123,6 +126,26 @@ class EndpointNotifier extends Notifier<String> {
 final endpointProvider =
     NotifierProvider<EndpointNotifier, String>(EndpointNotifier.new);
 
+/// 「启动时自动检查更新」开关 — 默认开启.
+/// 关闭后 checkOnStartup() 直接 return (不 fetch);  手动 checkForce() 不受影响.
+class AutoCheckUpdateNotifier extends Notifier<bool> {
+  late final SharedPreferences _prefs;
+
+  @override
+  bool build() {
+    _prefs = ref.read(sharedPreferencesProvider);
+    return _prefs.getBool(kAutoCheckUpdateKey) ?? true;
+  }
+
+  Future<void> set(bool value) async {
+    await _prefs.setBool(kAutoCheckUpdateKey, value);
+    state = value;
+  }
+}
+
+final autoCheckUpdateProvider =
+    NotifierProvider<AutoCheckUpdateNotifier, bool>(AutoCheckUpdateNotifier.new);
+
 /// 兼容旧代码 — get kGitHubReleasesUrl 改成 get endpoint.
 @Deprecated('Use endpointProvider instead')
 String get kGitHubReleasesUrl => kDefaultEndpointUrl;
@@ -176,6 +199,7 @@ class VersionCheckUpToDate extends VersionCheckState {
 /// 有新版本.
 class VersionCheckOutdated extends VersionCheckState {
   const VersionCheckOutdated({
+    required this.releaseName,
     required this.latestVersion,
     required this.latestVersionCode,
     required this.currentVersion,
@@ -185,6 +209,7 @@ class VersionCheckOutdated extends VersionCheckState {
     required this.isCritical,
   });
 
+  final String releaseName;
   final String latestVersion;
   final int latestVersionCode;
   final String currentVersion;
@@ -240,6 +265,9 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     if (_checking) return;
     _checking = true;
     try {
+      // 0. 用户关闭了「启动时自动检查更新」→ 直接跳过 (手动 checkForce 不受影响).
+      if (!ref.read(autoCheckUpdateProvider)) return;
+
       // 1. cache 命中 (< 1h) → 直接跳过 fetch,  state 保持 idle
       final lastCheck = _prefs.getInt(_Keys.lastCheckTime);
       final now = DateTime.now().millisecondsSinceEpoch;
@@ -284,6 +312,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
         }
 
         state = VersionCheckOutdated(
+          releaseName: parsed.releaseName,
           latestVersion: parsed.tagName,
           latestVersionCode: parsed.versionCode,
           currentVersion: currentStr,
@@ -456,10 +485,12 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     if (versionCode == null) return null;
 
     final body = (json['body'] as String?) ?? '';
+    final releaseName = (json['name'] as String?)?.trim() ?? tagName;
     final isCritical = _isCriticalRelease(body);
 
     return _ParsedRelease(
       tagName: tagName,
+      releaseName: releaseName,
       versionCode: versionCode,
       apkAssetName: apkName,
       apkDownloadUrl: apkUrl,
@@ -570,10 +601,12 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     if (versionCode == null) return null;
 
     final body = (json['body'] as String?) ?? '';
+    final releaseName = (json['name'] as String?)?.trim() ?? tagName;
     final isCritical = _isCriticalRelease(body);
 
     return {
       'tagName': tagName,
+      'releaseName': releaseName,
       'versionCode': versionCode,
       'apkAssetName': apkName,
       'apkDownloadUrl': apkUrl,
@@ -586,6 +619,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
 class _ParsedRelease {
   _ParsedRelease({
     required this.tagName,
+    required this.releaseName,
     required this.versionCode,
     required this.apkAssetName,
     required this.apkDownloadUrl,
@@ -593,6 +627,7 @@ class _ParsedRelease {
     required this.isCritical,
   });
   final String tagName;
+  final String releaseName;
   final int versionCode;
   final String apkAssetName;
   final String apkDownloadUrl;

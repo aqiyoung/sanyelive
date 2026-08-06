@@ -1,12 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../core/theme/colors.dart';
+import '../settings/app_mode_provider.dart';
 import '../../../data/providers/vod_provider.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/content.dart';
+import '../../../data/channel_filter.dart';
 import '../../../data/repositories/channel_repository.dart';
+import '../../../data/source_dispatcher.dart';
+import '../../../services/player_service.dart';
 
 /// 视界 海报墙首页
 class PosterWallPage extends ConsumerWidget {
@@ -14,13 +22,16 @@ class PosterWallPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 电视直播模式 (默认): 首页只展示 TV 频道模块 (_LiveTvModule),
+    // 隐藏影视海报轮播 / 分类快捷 / 今日推荐 / 热播剧集等 VOD 内容.
+    // 完整功能模式: 展示全部模块 (顺序与之前一致).
+    final fullMode = ref.watch(appModeProvider);
     return ColoredBox(
       color: context.bgBase,
       child: SafeArea(
         bottom: false,
         top: false,
         child: FutureBuilder<List<Channel>>(
-          // v0.3.13.0: 改用 channelsProvider (includes _enrichWithRemoteLogos) —
           // 本地 logo 为 null 时拿远程 logo fill, 台标出现.
           // channelsProvider 同步返本地 (loadBundled 有缓存, 零 IO), 远程拉取
           // fire-and-forget, FutureBuilder 首帧不白屏.
@@ -32,45 +43,45 @@ class PosterWallPage extends ConsumerWidget {
                 .toList();
             final displayChannels = liveChannels.isNotEmpty ? liveChannels : channels;
 
+            final isLoading = snapshot.connectionState == ConnectionState.waiting;
+
             return Column(
               children: [
-                const _HomeTopBar(),
+                _HomeTopBar(showSearch: fullMode),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    children: [
-                      const _HeroBanner(),
-                      const SizedBox(height: 18),
-                      const _CategoryShortcutBar(),
-                      const SizedBox(height: 18),
-                      _LiveTvModule(
-                        isLoading: snapshot.connectionState == ConnectionState.waiting,
-                        channels: displayChannels.take(4).toList(),
-                        error: snapshot.error,
-                      ),
-                      const SizedBox(height: 20),
-                      _VodSection(
-                        title: '今日推荐',
-                        provider: vodRecommendedProvider,
-                        badges: const ['HOT', 'VIP', '独播'],
-                      ),
-                      const SizedBox(height: 20),
-                      _VodSectionWithTabs(
-                        title: '热播电影',
-                        provider: vodMoviesProvider,
-                        badges: const ['热播', 'VIP', '独播', '热播', 'VIP'],
-                        tabs: const ['全部', '动作', '科幻', '喜剧'],
-                      ),
-                      const SizedBox(height: 20),
-                      _VodSectionWithTabs(
-                        title: '热播剧集',
-                        provider: vodSeriesProvider,
-                        badges: const ['热播', 'VIP', '热播', 'VIP', 'VIP'],
-                        tabs: const ['全部', '古装', '都市', '悬疑'],
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
+                  child: fullMode
+                      ? ListView(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          children: [
+                            const _HeroBanner(),
+                            const SizedBox(height: 18),
+                            const _CategoryShortcutBar(),
+                            const SizedBox(height: 18),
+                            _LiveTvModule(
+                              isLoading: isLoading,
+                              channels: displayChannels.take(4).toList(),
+                              error: snapshot.error,
+                            ),
+                            const SizedBox(height: 20),
+                            _VodSection(
+                              title: '今日推荐',
+                              provider: vodRecommendedProvider,
+                              badges: const ['HOT', 'VIP', '独播'],
+                            ),
+                            const SizedBox(height: 20),
+                            _VodSectionWithTabs(
+                              title: '热播剧集',
+                              provider: vodSeriesProvider,
+                              badges: const ['热播', 'VIP', '热播', 'VIP', 'VIP'],
+                              tabs: const ['全部', '古装', '都市', '悬疑', '爱情'],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        )
+                      : _TvLeanbackHome(
+                          isLoading: isLoading,
+                          channels: displayChannels,
+                        ),
                 ),
               ],
             );
@@ -82,7 +93,10 @@ class PosterWallPage extends ConsumerWidget {
 }
 
 class _HomeTopBar extends StatelessWidget {
-  const _HomeTopBar();
+  const _HomeTopBar({this.showSearch = true});
+
+  /// 电视直播模式 (showSearch=false) 隐藏搜索框 + 播放记录图标, 仅留品牌 + 模式标签.
+  final bool showSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -90,15 +104,11 @@ class _HomeTopBar extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16, 10 + MediaQuery.of(context).padding.top, 16, 8),
       child: Row(
         children: [
-          // GPT 设计的品牌 icon
-          ClipRRect(
-            borderRadius: BorderRadius.circular(7),
-            child: Image.asset(
-              'assets/icons/shijie_logo.png',
-              width: 28,
-              height: 28,
-              fit: BoxFit.cover,
-            ),
+          // 品牌 icon
+          Image.asset(
+            'assets/icons/app_logo.png',
+            width: 28,
+            height: 28,
           ),
           const SizedBox(width: 8),
           Text(
@@ -110,37 +120,54 @@ class _HomeTopBar extends StatelessWidget {
               letterSpacing: 0.4,
             ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.go('/search'),
-              child: Container(
-                height: 38,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: context.bgCardHigh,
-                  borderRadius: BorderRadius.circular(19),
-                  border: Border.all(color: context.fgBorder),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.search_rounded, color: context.fgSub, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '庆余年 第二季',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: context.fgSub, fontSize: 13),
+          if (showSearch) ...[
+            const SizedBox(width: 14),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.go('/search'),
+                child: Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: context.bgCardHigh,
+                    borderRadius: BorderRadius.circular(19),
+                    border: Border.all(color: context.fgBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search_rounded, color: context.fgSub, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '庆余年 第二季',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: context.fgSub, fontSize: 13),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          _TopIcon(icon: Icons.history_rounded, onTap: () => context.go('/playback-history')),
+            const SizedBox(width: 8),
+            _TopIcon(icon: Icons.history_rounded, onTap: () => context.go('/playback-history')),
+          ] else ...[
+            const Spacer(),
+            const _ClockText(),
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: context.fgAccent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '电视直播',
+                style: TextStyle(color: context.fgAccent, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -159,6 +186,568 @@ class _TopIcon extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       icon: Icon(icon, color: context.fgMain, size: 22),
       onPressed: onTap,
+    );
+  }
+}
+
+/// TV 模式下栏右侧的实时时钟 (每 30s 刷新), 增强电视端氛围.
+class _ClockText extends StatelessWidget {
+  const _ClockText();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: Stream.periodic(const Duration(seconds: 30), (i) => i),
+      builder: (context, _) {
+        final now = TimeOfDay.now();
+        final h = now.hour.toString().padLeft(2, '0');
+        final m = now.minute.toString().padLeft(2, '0');
+        return Text(
+          '$h:$m',
+          style: TextStyle(color: context.fgSub, fontSize: 13, fontWeight: FontWeight.w600),
+        );
+      },
+    );
+  }
+}
+
+/// TV 模式首页 (Leanback 风格):
+/// 精选 Hero (主推直播) → 横向分类 chips → 多行「正在直播 / 央视 / 卫视 / 体育」频道墙.
+class _TvLeanbackHome extends StatelessWidget {
+  const _TvLeanbackHome({required this.isLoading, required this.channels});
+
+  final bool isLoading;
+  final List<Channel> channels;
+
+  @override
+  Widget build(BuildContext context) {
+    final featured = channels.isNotEmpty ? channels.first : null;
+    // 复用 ChannelFilter (与分类页 / chips 路由一致), 避免 categories 派生
+    // 与分类页过滤逻辑不一致导致首页分类行缺失.
+    final cctv = ChannelFilter.cctv(channels);
+    final satellite = ChannelFilter.satellite(channels);
+    final local = ChannelFilter.local(channels);
+    final sports = ChannelFilter.byCategory(channels, '体育');
+    final movie = ChannelFilter.byCategory(channels, '影视');
+
+    return ListView(
+      padding: const EdgeInsets.only(top: 8, bottom: 24),
+      children: [
+        if (isLoading && featured == null)
+          const Padding(
+            padding: EdgeInsets.all(40),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else
+          _TvHero(channel: featured, isLoading: isLoading),
+        const SizedBox(height: 18),
+        const _ChannelChips(),
+        const SizedBox(height: 22),
+        _ChannelRow(title: '正在直播', channels: channels),
+        const SizedBox(height: 20),
+        if (cctv.isNotEmpty) ...[
+          _ChannelRow(title: '央视频道', channels: cctv),
+          const SizedBox(height: 20),
+        ],
+        if (satellite.isNotEmpty) ...[
+          _ChannelRow(title: '卫视频道', channels: satellite),
+          const SizedBox(height: 20),
+        ],
+        if (local.isNotEmpty) ...[
+          _ChannelRow(title: '地方频道', channels: local),
+          const SizedBox(height: 20),
+        ],
+        if (sports.isNotEmpty) ...[
+          _ChannelRow(title: '体育频道', channels: sports),
+          const SizedBox(height: 20),
+        ],
+        if (movie.isNotEmpty) ...[
+          _ChannelRow(title: '影视频道', channels: movie),
+          const SizedBox(height: 20),
+        ],
+      ],
+    );
+  }
+}
+
+/// 精选 Hero — 主推一个直播频道, 内嵌真实播放预览 (复用全局 media_kit 共享
+/// Player + VideoController, 不新建第二个 native player). 叠加 LIVE 徽标 +
+/// 节目信息条. 点击进入全屏播放页.
+///
+/// libmpv 不可用 (TV box 上 dlopen 失败) 或取流失败时, 自动降级到静态
+/// 台标 + 播放键兜底 (_HeroBackdrop), 不会崩.
+class _TvHero extends ConsumerStatefulWidget {
+  const _TvHero({required this.channel, required this.isLoading});
+
+  final Channel? channel;
+  final bool isLoading;
+
+  @override
+  ConsumerState<_TvHero> createState() => _TvHeroState();
+}
+
+class _TvHeroState extends ConsumerState<_TvHero> {
+  bool _previewReady = false;
+  bool _previewFailed = false;
+  String? _openedChannelId;
+  Player? _player;
+  VideoController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // 首帧后再开流 — 避免 build 期间触发 Riverpod "modify during build".
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startPreview());
+  }
+
+  @override
+  void didUpdateWidget(covariant _TvHero old) {
+    super.didUpdateWidget(old);
+    if (old.channel?.id != widget.channel?.id) _startPreview();
+  }
+
+  void _startPreview() {
+    final ch = widget.channel;
+    if (ch == null) return;
+    // 同一频道已尝试过 (成功或失败) 不再重复开流.
+    if (_openedChannelId == ch.id && (_previewReady || _previewFailed)) return;
+
+    final player = ref.read(mediaKitPlayerProvider);
+    final controller = ref.read(mediaKitVideoControllerProvider);
+    if (player == null || controller == null) {
+      // libmpv 不可用 → 静态兜底.
+      if (mounted) setState(() => _previewFailed = true);
+      return;
+    }
+    final sources = SourceDispatcher.dispatch(ch);
+    if (sources.isEmpty) {
+      if (mounted) setState(() => _previewFailed = true);
+      return;
+    }
+    _player = player;
+    _controller = controller;
+    _openedChannelId = ch.id;
+    if (mounted) setState(() => _previewReady = false);
+    // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
+    // 会恢复音量 (setVolume(100)).
+    unawaited(player.setVolume(0));
+    // 直接对共享 Player 开流做预览, 不碰 PlayerService (避开其 _playing 守卫).
+    unawaited(
+      player
+          .open(Media(sources.first))
+          .then((_) {
+            if (mounted && _openedChannelId == ch.id) {
+              setState(() => _previewReady = true);
+            }
+          })
+          .catchError((_) {
+            if (mounted && _openedChannelId == ch.id) {
+              setState(() => _previewFailed = true);
+            }
+          }),
+    );
+  }
+
+  @override
+  void dispose() {
+    // 离开首页: 暂停共享 Player, 避免预览声音在其他页面或后台继续播放.
+    // 不 dispose 共享 Player — 其生命周期由 PlayerService 管理.
+    try {
+      _player?.pause();
+    } catch (_) {
+      // 共享 player 可能已被释放, 静默忽略.
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // watch 保持共享 Player / controller 在首页期间存活.
+    final player = ref.watch(mediaKitPlayerProvider);
+    final controller = ref.watch(mediaKitVideoControllerProvider);
+    _player ??= player;
+    _controller ??= controller;
+
+    final channel = widget.channel;
+    final onTap = channel == null ? null : () => context.go('/player/${channel.id}');
+    final showVideo = _controller != null && !_previewFailed;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (showVideo)
+                  SizedBox.expand(
+                    child: Video(
+                      key: ValueKey(channel?.id ?? 'hero'),
+                      controller: _controller!,
+                      fit: BoxFit.cover,
+                      aspectRatio: 16 / 9,
+                    ),
+                  )
+                else
+                  _HeroBackdrop(
+                    channel: channel,
+                    isLoading: widget.isLoading,
+                    failed: _previewFailed,
+                  ),
+                // 开流完成前显示加载圈 (盖在黑色视频面上).
+                if (showVideo && !_previewReady)
+                  const ColoredBox(
+                    color: Color(0x66000000),
+                    child: Center(
+                      child: SizedBox(
+                        width: 30,
+                        height: 30,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                const Positioned(left: 16, top: 16, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
+                Positioned(
+                  right: 16,
+                  top: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      channel?.displayName ?? '视界直播',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: const BoxDecoration(
+                      color: Color(0x80000000),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '正在直播',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          channel?.displayName ?? '精彩节目直播中',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Hero 静态兜底背景 — libmpv 不可用 / 取流失败 / 加载中时显示 (台标 + 播放键).
+class _HeroBackdrop extends StatelessWidget {
+  const _HeroBackdrop({required this.channel, required this.isLoading, required this.failed});
+
+  final Channel? channel;
+  final bool isLoading;
+  final bool failed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A0E12), Color(0xFF101418), Color(0xFF1A1015)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -40,
+            top: -30,
+            bottom: -30,
+            child: Container(
+              width: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFE53935).withValues(alpha: 0.32),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (channel != null)
+                  _ChannelLogo(channel: channel, size: 76, bright: true)
+                else
+                  Icon(
+                    isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
+                    color: Colors.white70,
+                    size: 46,
+                  ),
+                const SizedBox(height: 14),
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  ),
+                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 横向滚动的频道分类 chips (全部/央视/卫视/体育/地方/影视), 点选跳转对应分类页.
+class _ChannelChips extends StatelessWidget {
+  const _ChannelChips();
+
+  static const List<_Chip> _chips = [
+    _Chip('全部直播', Icons.live_tv_rounded, '/category/live'),
+    _Chip('央视', Icons.tv_rounded, '/category/cctv'),
+    _Chip('卫视', Icons.satellite_rounded, '/category/satellite'),
+    _Chip('体育', Icons.sports_soccer_rounded, '/category/体育'),
+    _Chip('地方', Icons.location_on_rounded, '/category/local'),
+    _Chip('影视', Icons.movie_creation_rounded, '/category/影视'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, i) {
+          final c = _chips[i];
+          return GestureDetector(
+            onTap: () => context.go(c.route),
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: context.bgCard,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: context.fgBorder),
+              ),
+              child: Row(
+                children: [
+                  Icon(c.icon, color: context.fgAccent, size: 16),
+                  const SizedBox(width: 6),
+                  Text(c.label, style: TextStyle(color: context.fgMain, fontSize: 13, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Chip {
+  const _Chip(this.label, this.icon, this.route);
+  final String label;
+  final IconData icon;
+  final String route;
+}
+
+/// 一行可横向滚动的频道卡片墙 (标题 + LIVE 卡片).
+class _ChannelRow extends StatelessWidget {
+  const _ChannelRow({required this.title, required this.channels});
+
+  final String title;
+  final List<Channel> channels;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            title,
+            style: TextStyle(color: context.fgMain, fontSize: 18, fontWeight: FontWeight.w900),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 116,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: channels.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) => _ChannelCard(channel: channels[i]),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 频道台标: 优先网络 logo (logoUrl), 失败 / 为 null 时降级为文字台标
+/// (频道首字 + 主题色块). 解决 70% 频道 logo 为 null 导致首页卡片"无台标"
+/// 的问题 —— 文字台标必现,  保证每个卡片都有清晰标识.
+///
+/// [bright] = true 用于 Hero 深色兜底背景 (白色文字块),  false 用于卡片
+/// (主题 accent 色块).
+class _ChannelLogo extends StatelessWidget {
+  const _ChannelLogo({required this.channel, this.size = 48, this.bright = false});
+
+  final Channel? channel;
+  final double size;
+  final bool bright;
+
+  @override
+  Widget build(BuildContext context) {
+    final logo = channel?.logoUrl;
+    if (logo != null && logo.isNotEmpty) {
+      return Image.network(
+        logo,
+        fit: BoxFit.contain,
+        height: size,
+        errorBuilder: (_, __, ___) => _fallback(context),
+      );
+    }
+    return _fallback(context);
+  }
+
+  Widget _fallback(BuildContext context) {
+    final name = (channel?.displayName ?? '').trim();
+    final ch = name.isNotEmpty ? name[0] : '?';
+    final Color fg = bright ? Colors.white : context.fgAccent;
+    final Color bg = bright
+        ? Colors.white.withValues(alpha: 0.16)
+        : context.fgAccent.withValues(alpha: 0.14);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Text(
+          ch,
+          style: TextStyle(
+            color: fg,
+            fontSize: size * 0.46,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 单个频道卡片: 台标 + LIVE 徽标 + 频道名.
+class _ChannelCard extends StatelessWidget {
+  const _ChannelCard({required this.channel});
+
+  final Channel channel;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.go('/player/${channel.id}'),
+      child: Container(
+        width: 150,
+        decoration: BoxDecoration(
+          color: context.bgCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.fgBorder),
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: _ChannelLogo(channel: channel, size: 48),
+              ),
+            ),
+            Positioned(
+              left: 8,
+              top: 8,
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE53935),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'LIVE',
+                    style: TextStyle(color: Color(0xFFE53935), fontSize: 9, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 10,
+              child: Text(
+                channel.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -366,7 +955,6 @@ class _CategoryShortcutBar extends StatelessWidget {
       _Shortcut('动漫', Icons.face_retouching_natural_rounded, const Color(0xFFF0B429), '/vod-category?cat=anime'),
       _Shortcut('纪录片', Icons.public_rounded, const Color(0xFF42A5F5), '/vod-category?cat=documentary'),
       _Shortcut('体育', Icons.sports_soccer_rounded, const Color(0xFF43A047), '/vod-category?cat=sports'),
-      // v0.3.13.0: 海外剧场 — 欧美剧/英剧/韩剧/日剧.
       _Shortcut('海外剧场', Icons.language_rounded, const Color(0xFF00BCD4), '/vod-category?cat=overseas'),
     ];
 
@@ -416,12 +1004,12 @@ class _LiveTvModule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // v0.3.13.0: 直播模块跟随 theme — 浅色米白底深棕字, 深色深棕黑底米色字.
     final bgColor = context.bgCard;
     final borderColor = context.fgBorder;
     final textColor = context.fgMain;
 
     final primary = channels.isNotEmpty ? channels.first : null;
+    final rest = channels.skip(1).take(3).toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -432,43 +1020,82 @@ class _LiveTvModule extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: borderColor),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 一栏：预览缩略图
-            Expanded(
-              flex: 3,
-              child: GestureDetector(
-                onTap: primary == null ? null : () => context.go('/player/${primary.id}'),
-                child: AspectRatio(
-                  aspectRatio: 0.7,
+        child: SizedBox(
+          height: 116,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 左: 直播预览 (logo + 播放按钮居中成视觉重心, 顶部标/底部节目条贴边, 黑框不再空旷)
+              Expanded(
+                flex: 5,
+                child: GestureDetector(
+                  onTap: primary == null ? null : () => context.go('/player/${primary.id}'),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     child: Container(
                       color: Colors.black,
                       child: Stack(
                         children: [
+                          // 视觉重心: logo + 半透明播放按钮 整体居中, 填充黑框中部
                           Center(
-                            child: primary?.logoUrl != null && primary!.logoUrl!.isNotEmpty
-                                ? Image.network(
-                                    primary.logoUrl!,
-                                    width: 48,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 32),
-                                  )
-                                : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                primary?.logoUrl != null && primary!.logoUrl!.isNotEmpty
+                                    ? Image.network(
+                                        primary.logoUrl!,
+                                        width: 54,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) => Icon(Icons.live_tv_rounded, color: context.fgSub, size: 34),
+                                      )
+                                    : Icon(isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded, color: context.fgSub, size: 34),
+                                const SizedBox(height: 9),
+                                Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.14),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white.withOpacity(0.28)),
+                                  ),
+                                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22),
+                                ),
+                              ],
+                            ),
                           ),
-                          const Positioned(left: 6, top: 6, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
+                          const Positioned(left: 8, top: 8, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
                           Positioned(
-                            right: 6,
-                            bottom: 6,
+                            right: 8,
+                            top: 8,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.black54,
-                                borderRadius: BorderRadius.circular(3),
+                                borderRadius: BorderRadius.circular(5),
                               ),
-                              child: Text(primary?.displayName ?? '', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                              child: Text(primary?.displayName ?? '视界', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                          // 底部节目条
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                              decoration: const BoxDecoration(
+                                color: Color(0x73000000),
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(16),
+                                  bottomRight: Radius.circular(16),
+                                ),
+                              ),
+                              child: Text(
+                                '正在直播 · ${primary?.displayName ?? "精彩节目"}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ),
                         ],
@@ -477,87 +1104,72 @@ class _LiveTvModule extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            // 二栏：正在直播详情
-            Expanded(
-              flex: 4,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('正在直播', style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 8),
-                  Text('新闻30分', style: TextStyle(color: context.fgAccent, fontSize: 17, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text('12:00', style: TextStyle(color: context.fgSub, fontSize: 10)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(99),
-                          child: LinearProgressIndicator(
-                            value: 0.62,
-                            minHeight: 2.5,
-                            color: const Color(0xFFE53935),
-                            backgroundColor: context.fgBorder,
-                          ),
+              const SizedBox(width: 12),
+              // 右: 正在直播频道列表 (紧凑排列 + 细分隔线边界感, 填满整列不留白)
+              Expanded(
+                flex: 6,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text('正在直播', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w800)),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => context.go('/category/live'),
+                          child: Text('全部', style: TextStyle(color: context.fgAccent, fontSize: 11, fontWeight: FontWeight.w700)),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text('12:30', style: TextStyle(color: context.fgSub, fontSize: 10)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.arrow_forward_rounded, color: context.fgSub, size: 10),
-                      const SizedBox(width: 4),
-                      Text('午间剧场 · 辉煌岁月', style: TextStyle(color: context.fgSub, fontSize: 11, fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            // 三栏：其他频道列表
-            Expanded(
-              flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('其他频道', style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 8),
-                  if (isLoading)
-                    const Text('加载中...', style: TextStyle(color: context.fgSub, fontSize: 12))
-                  else if (channels.isEmpty)
-                    const Text('暂无频道', style: TextStyle(color: context.fgSub, fontSize: 12))
-                  else
-                    ...channels.skip(1).take(4).map((ch) => GestureDetector(
-                          onTap: () => context.go('/player/${ch.id}'),
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 7),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 4, height: 4,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFE53935),
-                                    shape: BoxShape.circle,
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: isLoading
+                          ? const Center(child: _LiveListText(title: '加载中', subtitle: '读取频道库'))
+                          : rest.isEmpty
+                              ? const Center(child: _LiveListText(title: '暂无频道', subtitle: '请检查数据'))
+                              : ListView.separated(
+                                  padding: EdgeInsets.zero,
+                                  itemCount: rest.length,
+                                  separatorBuilder: (_, __) => Divider(
+                                    height: 10,
+                                    thickness: 1,
+                                    color: context.fgBorder.withValues(alpha: 0.7),
                                   ),
+                                  itemBuilder: (context, index) {
+                                    final ch = rest[index];
+                                    return GestureDetector(
+                                      onTap: () => context.go('/player/${ch.id}'),
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 2),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Container(width: 6, height: 6, decoration: BoxDecoration(color: const Color(0xFFE53935), borderRadius: BorderRadius.circular(3))),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(ch.displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700)),
+                                                  const SizedBox(height: 2),
+                                                  Text('即将播出 · 精彩节目', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgSub, fontSize: 10)),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                const SizedBox(width: 6),
-                                Text(ch.displayName, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                          ),
-                        )),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),        ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -598,7 +1210,6 @@ class _PosterCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // v0.3.11.62: 有真实可播源 → 直接点播; 否则跳搜索
         if (content.sourceUrls.isNotEmpty &&
             !content.sourceUrls.first.contains('example.com')) {
           context.go('/player/vod?url=${Uri.encodeComponent(content.sourceUrls.first)}&title=${Uri.encodeComponent(content.title)}');
@@ -693,7 +1304,6 @@ class _Shortcut {
   final String? route;
 }
 
-/// v0.3.11.64: VOD 动态内容区 — 用 Riverpod provider 替换 mock 数据
 class _VodSection extends ConsumerWidget {
   const _VodSection({required this.title, required this.provider, required this.badges});
 
@@ -756,7 +1366,8 @@ class _VodSection extends ConsumerWidget {
 }
 
 /// 热播剧集 / 热播电影 — 带分类筛选标签的 VOD 横滚区.
-/// v0.3.12+95: tabs 放标题同一行, 标题字号 16, 选中态红色描边 + 浅红底.
+/// 参考图: 标题行下方是「全部 / 古装 / 都市 / 悬疑 / 爱情」筛选标签,
+/// 选中态红色描边 + 浅红底, 未选中灰字灰边.
 class _VodSectionWithTabs extends ConsumerStatefulWidget {
   const _VodSectionWithTabs({
     required this.title,
@@ -786,65 +1397,68 @@ class _VodSectionWithTabsState extends ConsumerState<_VodSectionWithTabs> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: SizedBox(
-            height: 28,
-            child: Row(
-              children: [
-                Text(widget.title,
-                    style: TextStyle(
-                        color: context.fgMain,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.zero,
-                    itemCount: widget.tabs.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 6),
-                    itemBuilder: (context, index) {
-                      final isSelected = _selectedTab == index;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedTab = index),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? context.fgAccent.withValues(alpha: 0.12)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isSelected ? context.fgAccent : context.fgBorder,
-                              width: isSelected ? 1.2 : 1,
-                            ),
-                          ),
-                          child: Text(
-                            widget.tabs[index],
-                            style: TextStyle(
-                              color: isSelected ? context.fgAccent : context.fgSub,
-                              fontSize: 11,
-                              fontWeight:
-                                  isSelected ? FontWeight.w700 : FontWeight.w500,
-                            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(widget.title,
+                      style: TextStyle(
+                          color: context.fgMain,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900)),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => context.go('/search'),
+                    child: Row(
+                      children: [
+                        Text('更多', style: TextStyle(color: context.fgSub, fontSize: 13)),
+                        Icon(Icons.chevron_right_rounded,
+                            color: context.fgSub, size: 18),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 28,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.zero,
+                  itemCount: widget.tabs.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final isSelected = _selectedTab == index;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedTab = index),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? context.fgAccent.withValues(alpha: 0.12)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected ? context.fgAccent : context.fgBorder,
+                            width: isSelected ? 1.2 : 1,
                           ),
                         ),
-                      );
-                    },
-                  ),
+                        child: Text(
+                          widget.tabs[index],
+                          style: TextStyle(
+                            color: isSelected ? context.fgAccent : context.fgSub,
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: () => context.go('/search'),
-                  child: Row(
-                    children: [
-                      Text('更多', style: TextStyle(color: context.fgSub, fontSize: 12)),
-                      Icon(Icons.chevron_right_rounded,
-                          color: context.fgSub, size: 16),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),

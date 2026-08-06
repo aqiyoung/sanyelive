@@ -5,7 +5,6 @@
 ///
 /// 生成脚本: 根据 channels_cn.json 的 alt_names/channel_name_zh + 中文名匹配.
 ///
-/// v0.3.10.21 (6/27): 清空真实节目单映射, 所有频道 fallback 到占位节目单
 /// (上午档/下午档/黄金档/夜间档).  原有映射注释保留, 需要时取消注释即可恢复.
 // ignore: dangling_library_doc_comments
 final Map<String, String> kChannelIdToEpg = {
@@ -152,7 +151,6 @@ final Map<String, String> kChannelIdToEpg = {
   'ShandongTVVarietyChannel.cn': '山东卫视',
   'SichuanTVWomenandChildrenChannel.cn': '四川卫视',
   'ZhejiangInternationalChannel.cn': '浙江卫视',
-  // ── v0.3.10.17 补充映射 ──
   'CCTV164K.cn@CNIPTV': 'CCTV16',
   'CGNT.cn@CNIPTV_doc': 'CGTN纪录',
   '香港卫视.cn': '凤凰中文',

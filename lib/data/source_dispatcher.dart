@@ -1,7 +1,4 @@
-/// source_dispatcher.dart — 统一播放源调度 (v0.3.5.3 6/18 新增)
 ///
-/// 背景 (老板 14:02 拍板 "去找央视的源"):
-///   v0.3.5 标 CCTV 16 频道 "全活", 实际多频道死了.  本 dispatcher 把 CCTV
 ///   频道的选源逻辑 (cctvSource 优先) 集中在这里, 避免散在多处.
 ///
 /// 之前的逻辑 ([PlayerService.play] in lib/services/player_service.dart):
@@ -9,7 +6,6 @@
 ///   - 不会区分 CCTV / 非 CCTV
 ///   - CCTV 死了就报错, 不会降级到 cctvSource
 ///
-/// v0.3.5.3 之后的逻辑:
 ///   - [dispatch] 拿到 channel, 决定走 [CctvSourcePicker.pickSources] 还是
 ///     直接 channel.sources
 ///   - CCTV 主频道: cctvSource (按健康分) → sources (iptv-org) → known_sources
@@ -41,7 +37,6 @@ class SourceDispatcher {
 
   /// 给定 channel, 返回按优先级排序的播放源 URL 列表.
   ///
-  /// 调度规则 (v0.3.5.3):
   ///   1. CCTV 主频道 (CCTV-1~17, 5+): [CctvSourcePicker.pickSources]
   ///      内部 cctvSource[0] > sources[0] > known_sources[0]
   ///   2. 其他 channel: 老逻辑 — sources + known_sources (repository 已经合并过)

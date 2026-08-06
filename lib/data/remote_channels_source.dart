@@ -1,4 +1,3 @@
-/// v0.3.8+125 (6/21 老板拍):  远程分类频道数据源.
 ///
 /// 数据源:  aqiyoung/iptv-channels-organized repo (每周一 cron 自动生成).
 /// JSON schema 跟 iptv-org 单条 Channel 兼容 (id/name/country/categories/
@@ -18,7 +17,6 @@ import 'package:http/http.dart' as http;
 
 import 'models/channel.dart';
 
-/// v0.3.8+125:  远程 repo raw base.  raw.githubusercontent.com 公开访问
 /// (假设 repo public);  若改 private 必须换 github API + token.  当前
 /// schema 见 meta.json + channels/*.json 顶层 { _meta, groups } 结构.
 const _repoBase =
@@ -73,7 +71,6 @@ class RemoteChannelsSource {
   /// provinces (按省/直辖市分).  international.json 用 countries (按 ISO 国家码).
   /// 兼容二个字段名 — fetch 付一个不报错.  flatten 所有 group 进单一 List<Channel>.
   List<Channel> _parseChannels(Map<String, dynamic> json) {
-    // v0.3.8+126 (6/21 老板反馈 "卫视怎么还在地方分类"):
     // 之前只查 json['groups'] — satellite/local 用 'provinces',  international
     // 用 'countries'.  查不到 → 报 "channels JSON 缺 groups 字段",  bundle.all
     // 退化成只含 cctv 部分.  app 读取时本地 fallback 被跳过,  CategoryGrid 拿到
@@ -104,7 +101,6 @@ class RemoteChannelsSource {
   }
 }
 
-/// v0.3.8+125:  远程 bundle — 4 大分类 + meta + flat all list.
 class RemoteChannelsBundle {
   RemoteChannelsBundle({
     required this.meta,
@@ -141,7 +137,6 @@ class RemoteChannelsException implements Exception {
   String toString() => 'RemoteChannelsException: $message';
 }
 
-/// v0.3.8+125:  Riverpod provider — 单例 RemoteChannelsSource.
 final remoteChannelsSourceProvider = Provider<RemoteChannelsSource>((ref) {
   // ProviderScope dispose 时自动关 client — 避免 http leak.
   final source = RemoteChannelsSource();
@@ -152,7 +147,6 @@ final remoteChannelsSourceProvider = Provider<RemoteChannelsSource>((ref) {
   return source;
 });
 
-/// v0.3.8+125:  AsyncNotifier — 启动时拉一次,  失败 throw 让 caller fallback.
 /// 显式 refresh() 触发重拉 (settings / 强制刷新入口).
 class RemoteChannelsNotifier extends AsyncNotifier<RemoteChannelsBundle> {
   @override

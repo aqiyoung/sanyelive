@@ -120,6 +120,13 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Analyze (fail fast on compile errors)
+        # 门禁: tag 推送只触发 release.yml, 不触发 ci.yml 的 analyze,
+        # 所以这里补一道. 让 Dart 类型/导入错误在 flutter build (Gradle, 几分钟)
+        # 之前快速失败 (几十秒), 直接报行号, 而不是埋在 Gradle 日志里.
+        # --no-fatal-infos 与 ci.yml 一致: 只拦 error + warning, 不拦 info lint.
+        run: flutter analyze --no-fatal-infos
+
       - name: Check source health (v0.3.5.1 + v0.3.5.3)
         continue-on-error: true
         # v0.3.5.1 (6/18): 老板 11:41 装机实测 CCTV-5 加载不出来, 加 scripts/check_sources.py 验每条源.

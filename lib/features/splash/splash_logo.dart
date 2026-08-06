@@ -1,10 +1,10 @@
-// v0.3.12+66 (2026-07-07): 视界品牌升级 v2 — 改用 GPT 设计 icon 做 splash.
 //
 // 设计变更:
 //   - 旧 v1: 红底 + Icons.play_arrow_rounded (Flutter primitive)
 //   - 新 v2: GPT 设计原图 (红→深紫渐变 + 白三角 + 3D 光泽)
 //   - 动画: 2s total (0.5s scale-in 0.5→1.0 overshoot + 1s hold + 0.5s fade-out)
-//   - Asset: assets/icons/shijie_logo.png (GPT 原图缩放)
+//   - Asset: assets/icons/app_logo.png (v0.3.12.110 替换 — 深蓝底 IPTV 风格图标,
+//     带播放三角 / TV 框 / 信号波纹, 透明背景)
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -103,7 +103,6 @@ class _SplashLogo extends StatelessWidget {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              // v0.3.13.0: 阴影跟随 theme primary (赤陶), 跟 splash 背景 scheme.surface 联动.
               color: context.fgAccent.withValues(alpha: 0.35),
               blurRadius: 30,
               offset: const Offset(0, 10),
@@ -112,12 +111,12 @@ class _SplashLogo extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(40),
-          child: Image.asset(
-            'assets/icons/shijie_logo.png',
-            width: 180,
-            height: 180,
-            fit: BoxFit.cover,
-          ),
+                  child: Image.asset(
+                    'assets/icons/app_logo.png',
+                    width: 180,
+                    height: 180,
+                    fit: BoxFit.contain,
+                  ),
         ),
       ),
     );

@@ -1,21 +1,16 @@
-// 0.3.6+19 设置页.
 //
 // 一个 ListTile "主题" → 弹出 RadioListTile 选 系统 / 浅色 / 深色.
 // 复用 theme_provider, 切换后立即持久化 (SharedPreferences),
 // main.dart 的 ConsumerWidget 监听 themeModeProvider 同步给 MaterialApp.themeMode.
 //
-// v0.3.7+80 (6/19): 加 2 个 tile — "检查更新" + "关于视界".
 //  关于: 描述项目 + 贴 GitHub 地址 + 一键复制按钮.  不用 url_launcher 包
-//  (省 1MB + Android query intent 配置),  复制 URL 让老板自己粘贴到浏览器看.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-// v0.3.11 Beta 分支
 
-// v0.3.7.2 (6/19): 不再 import main.dart (主 dart 写死 const 没用),  用 Provider 读运行时版本号.
 import '../../services/version_checker.dart'
     show
         currentVersionStringProvider,
@@ -25,6 +20,7 @@ import '../../services/version_checker.dart'
         VersionCheckOutdated,
         VersionCheckFailed,
         endpointProvider,
+        autoCheckUpdateProvider,
         kDefaultEndpointUrl;
 import '../update/force_update_dialog.dart' show ForceUpdateDialog;
 import '../../../core/theme/colors.dart';
@@ -33,23 +29,20 @@ import '../../../data/models/vod_source.dart';
 import '../../../services/tvbox_config_parser.dart';
 import '../../../services/vod_source_registry.dart';
 import 'theme_provider.dart';
-// v0.3.8+102 (6/20 15:02 老板反馈): 删主题切换, 锁死浅色.  theme_provider
+import 'app_mode_provider.dart';
 // 保留文件 (兼容老 prefs), 但 settings_page 不再 import, 也不暴露 UI.
 
-// v0.3.8+93 (6/20 P1-1): settings_page 所有 IptvColors 颜色 (textPrimary
 //   / textSecondary) 都改走 colorScheme.onSurface / onSurfaceVariant,  跟
 //   暗色主题联动.  之前 hardcode 浅米色文字在暗背景下看不清.  不再 import
 //   IptvColors — 全部跟主题走.
 
-// v0.3.7+80 (6/19): GitHub 项目地址常量.  复制到剪贴板用.
-const String kGitHubRepoUrl = 'https://github.com/aqiyoung/iptv-app';
+const String kGitHubRepoUrl = 'https://github.com/aqiyoung/sanyelive';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // v0.3.8+102 (6/20 15:02 老板反馈): 删主题切换, 锁死浅色. 不再 watch themeModeProvider.
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -82,7 +75,6 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
       body: ListView(
-        // v0.3.8+97 (6/20 13:11 老板反馈): _ThinDivider 太原始,  老板要高端.
         // 改成 iOS-style 卡片分组:
         //   - 3 张卡片 (外观 / 系统 / 关于)
         //   - 卡片间靠间距 + group label 区分,  不画线
@@ -116,6 +108,22 @@ class SettingsPage extends ConsumerWidget {
                 value: _autoDarkMode,
                 onChanged: (v) => _setAutoDark(context, ref, v),
               ),
+              const _SettingsGap(),
+              // 完整功能模式: 默认关 = 电视直播精简界面 (首页+我的),
+              // 开 = 显示全部 5 个底部标签 (首页/短视频/会员/发现/我的).
+              Consumer(
+                builder: (context, ref, _) {
+                  final full = ref.watch(appModeProvider);
+                  return SwitchListTile(
+                    secondary: const Icon(Icons.grid_view_rounded),
+                    title: const Text('完整功能模式'),
+                    subtitle: const Text('开启后显示短视频/会员/发现等全部入口'),
+                    value: full,
+                    onChanged: (v) =>
+                        ref.read(appModeProvider.notifier).setFull(v),
+                  );
+                },
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -124,7 +132,6 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 6),
           _SettingsCard(
             children: [
-              // v0.3.7+80: 手动触发 versionCheckerProvider.notifier.checkOnStartup().
               ListTile(
                 leading: const Icon(Icons.system_update_alt_outlined),
                 title: const Text('检查更新'),
@@ -132,11 +139,22 @@ class SettingsPage extends ConsumerWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context, ref),
               ),
-              // v0.3.8+98 (6/20 13:39): 用透明间隔条代替 divider — 老板说
+              const _SettingsGap(),
+              Consumer(
+                builder: (context, ref, _) {
+                  final auto = ref.watch(autoCheckUpdateProvider);
+                  return SwitchListTile(
+                    secondary: const Icon(Icons.autorenew_outlined),
+                    title: const Text('启动时自动检查更新'),
+                    subtitle: const Text('打开应用时后台检查，有新版本弹窗提示'),
+                    value: auto,
+                    onChanged: (v) =>
+                        ref.read(autoCheckUpdateProvider.notifier).set(v),
+                  );
+                },
+              ),
               // "所有容器分割不要线".  视觉上是空白,  不是线.
               const _SettingsGap(),
-              // v0.3.7+92 (6/20 08:42 老板反馈): 默认 endpoint 改为 gh-proxy.com
-              // v0.3.8+95: 启动时 pattern match 自动迁移老 api.github.com URL.
               Consumer(
                 builder: (context, ref, _) {
                   final endpoint = ref.watch(endpointProvider);
@@ -186,11 +204,13 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // ─── v0.3.13.0: 影视源管理卡片 ──────────────────────────────
-          const _SettingsGroupLabel(label: '影视源'),
-          const SizedBox(height: 6),
-          _VodSourceManagementCard(),
-          const SizedBox(height: 32),
+          // 影视源 (VOD) 仅完整功能模式可见, TV 直播模式隐藏.
+          if (ref.watch(appModeProvider)) ...[
+            const _SettingsGroupLabel(label: '影视源'),
+            const SizedBox(height: 6),
+            _VodSourceManagementCard(),
+            const SizedBox(height: 32),
+          ],
 
           // ─── 底部 footer (slogan,  跟 about 区分) ─────────────────────────
           Padding(
@@ -210,7 +230,6 @@ class SettingsPage extends ConsumerWidget {
   }
 
   // ─── 关于对话框 ───────────────────────────────────────────────────────────
-  // v0.3.7+80: 弹一个 dialog,  描述项目 (基于 Flutter + media_kit 视频播放,
   // 极简新中式设计,  直播 + 影视).  底部贴 GitHub 地址 + 复制按钮.
   void _showAbout(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -293,7 +312,6 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
-  // v0.3.7+80: 复制 GitHub 地址到剪贴板 + SnackBar 提示.
   void _copyRepoUrl(BuildContext context) {
     Clipboard.setData(const ClipboardData(text: kGitHubRepoUrl));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -305,55 +323,111 @@ class SettingsPage extends ConsumerWidget {
   }
 
   // ─── 检查更新 ─────────────────────────────────────────────────────────────
-  // v0.3.7+80: 调 versionCheckerProvider.notifier.checkOnStartup() —
   // 走跟启动时一样的逻辑 (cache 命中跳过, fetch GitHub API).
   // state 变化时用 listenManual 监听弹 SnackBar / Dialog.
   void _checkUpdate(BuildContext context, WidgetRef ref) {
-    // 1. 显示 loading SnackBar.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('正在检查更新…'),
-        duration: Duration(seconds: 2),
+    // 1. 居中 loading 弹窗 (检查完成即关).
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 16),
+              Text('正在检查更新…'),
+            ],
+          ),
+        ),
       ),
     );
 
-    // 2. 监听 state 变化 — 一次性, 弹 SnackBar / Dialog 后不持续触发.
+    // 2. 监听 state 变化 — 一次性, 弹居中结果弹窗后不持续触发.
     // listenManual 在 widget dispose 时自动 cancel, 不会泄漏.
+    bool isFirst = true;
     ref.listenManual<VersionCheckState>(
       versionCheckerProvider,
       (prev, next) {
+        // fireImmediately 的首次 (旧 state) 跳过, 不关 loading / 不弹.
+        if (isFirst) {
+          isFirst = false;
+          return;
+        }
+        // 关闭 loading 弹窗 (非根 Navigator 栈顶即它).
+        Navigator.of(context).pop();
         if (next is VersionCheckUpToDate) {
-          _showUpdateSnack(context, '已是最新版本 ${next.latestVersion}');
+          _showResultDialog(
+            context,
+            '已是最新版本',
+            next.latestVersion,
+            Icons.check_circle_outline_rounded,
+            Colors.green.shade600,
+          );
         } else if (next is VersionCheckOutdated) {
           // outdated 走 ForceUpdateDialog.show() (跟启动时一致, barrierDismissible=false
-          // P0/critical 时强制更新,  老板点不过去).
           ForceUpdateDialog.show(context);
         } else if (next is VersionCheckFailed) {
-          _showUpdateSnack(context, '检查更新失败: ${next.reason}');
+          _showResultDialog(
+            context,
+            '检查更新失败',
+            next.reason,
+            Icons.error_outline_rounded,
+            Colors.red.shade600,
+          );
         }
       },
       fireImmediately: true,
     );
 
-    // 3. 触发 fetch (走 checkOnStartup 跟启动时一致 — 1h cache / fetch API).
+    // 3. 触发 fetch (走 checkForce 强制, 绕过 cache).
     // ⚠️ 必须用 .read(provider.notifier) 而不是 .read(provider),
-    // .notifier 拿 Notifier 实例,  才能调 checkOnStartup() 方法.
+    // .notifier 拿 Notifier 实例,  才能调 checkForce() 方法.
     ref.read(versionCheckerProvider.notifier).checkForce();
   }
 
-  void _showUpdateSnack(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        duration: const Duration(seconds: 3),
+  /// 居中结果弹窗 (替代底部 SnackBar), 用于"已是最新" / "检查失败".
+  void _showResultDialog(
+    BuildContext context,
+    String title,
+    String msg,
+    IconData icon,
+    Color color,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        content: Text(msg, style: const TextStyle(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('知道了'),
+          ),
+        ],
       ),
     );
   }
 
-  // ─── 更新源 URL 编辑 (v0.3.7+85, v0.3.10.13) ──────────────────────────────────────────
-  // v0.3.7+85: 老板手机国内访问 api.github.com 经常超时, 弹 dialog 让老板填国内中转 URL.
-  // v0.3.10.13 (6/24): 默认改为直连 api.github.com,  老 gh-proxy.com URL 自动迁移.
-  // 老板还是能在 dialog 里改 (填 CF Worker / 自建镜像 / 重置回默认).
   // 填完调 endpointProvider.notifier.setEndpoint() 持久化.
   Future<void> _editEndpoint(BuildContext context, WidgetRef ref) async {
     final current = ref.read(endpointProvider);
@@ -381,7 +455,6 @@ class SettingsPage extends ConsumerWidget {
                 controller: controller,
                 decoration: InputDecoration(
                   labelText: '更新源 URL',
-                  // v0.3.8+99 (6/20 14:03 老板反馈): 删 OutlineInputBorder 四
                   // 周边框线,  改 UnderlineInputBorder (只保留 focus 时的下
                   // 划线).  iOS-style 极简风格.
                   border: UnderlineInputBorder(
@@ -439,10 +512,7 @@ class SettingsPage extends ConsumerWidget {
 
 // ─── 内部组件 ──────────────────────────────────────────────────────────────
 
-/// v0.3.7+80: 细分割线,  跟设置页 ListTile 之间分隔用,  复用 0.5px outlineVariant.
-/// v0.3.8+98 (6/20 13:39 老板反馈): _SettingsGap = 卡片内部两个 ListTile
 /// 之间的"透明间隔条" (背景色 = bgParchment, 高度 8).
-/// 老板原话: "所有容器分割不要线. 用其他方式来把它隔开".
 /// 跟 _SettingsDivider (线条) 不同,  这个是"留白"分隔:
 ///   - 从 bgElevated 卡片背景 → bgParchment scaffold 背景的色块
 ///   - 高度 8px,  让两个 ListTile 不粘在一起
@@ -460,7 +530,6 @@ class _SettingsGap extends StatelessWidget {
   }
 }
 
-/// v0.3.8+97 (6/20 13:11 老板反馈): _SettingsCard = iOS-style 卡片.
 /// 圆角 12 + bgElevated (#FFFCF6) 背景 + 内部 ListTile 自动适配.
 /// 卡片间不画线, 靠 group label + spacing 区分.
 class _SettingsCard extends StatelessWidget {
@@ -473,7 +542,6 @@ class _SettingsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.bgCard,
         borderRadius: BorderRadius.circular(12),
-        // v0.3.8+97: 不画边框, 靠背景色差 + 圆角 + 阴影让卡片"浮"起来
         // boxShadow: [
         //   BoxShadow(
         //     color: Colors.black.withValues(alpha: 0.04),
@@ -483,7 +551,6 @@ class _SettingsCard extends StatelessWidget {
         // ],
       ),
       clipBehavior: Clip.antiAlias, // 让内部 ListTile ripple 不溢出圆角
-      // v0.3.13.0: 标题字体跟 _MineTile 一致 (15sp / w900 Roboto — 老板要求
       // 设置页和我的页 UI 字体保持一致). DefaultTextStyle 让内部所有 ListTile
       // title 自动继承, 不再用 ListTile 默认的 16sp/w500 Material 样式.
       child: DefaultTextStyle(
@@ -500,7 +567,6 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
-/// v0.3.8+97: _SettingsGroupLabel = 卡片上方的小标题 (12px, onSurfaceVariant).
 /// iOS Settings.app 风格: "外观" / "系统" / "关于".
 class _SettingsGroupLabel extends StatelessWidget {
   const _SettingsGroupLabel({required this.label});
@@ -523,7 +589,6 @@ class _SettingsGroupLabel extends StatelessWidget {
   }
 }
 
-/// v0.3.7+80: 关于对话框里的小节 (label + content),  label 加粗.
 class _AboutSection extends StatelessWidget {
   const _AboutSection({required this.label, required this.child});
   final String label;
@@ -607,7 +672,6 @@ Future<void> _setAutoDark(BuildContext context, WidgetRef ref, bool value) async
   // TODO: 实现自动深色 (日落检测)
 }
 
-/// v0.3.13.0: VOD 源管理卡片 (设置页).
 /// 当前源 / 管理源 toggle / 导入 TVBox 源.
 class _VodSourceManagementCard extends ConsumerWidget {
   const _VodSourceManagementCard();

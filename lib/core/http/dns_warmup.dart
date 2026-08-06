@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-/// v0.3.7+50 (6/19) — DNS + TCP 预热, 砍首切频道 "硬延迟".
 ///
 /// ## 问题
 ///
@@ -109,7 +108,6 @@ class DnsWarmup {
     try {
       final socket = await Socket.connect(host, 80).timeout(_perHostTimeout);
       // 立刻关闭: 目的只是让 OS 把 DNS + TCP 状态缓存下来, 不真传数据.
-      // v0.3.8+169: catch close 异常, 避免 unhandled exception.
       try {
         await socket.close();
       } catch (_) {}

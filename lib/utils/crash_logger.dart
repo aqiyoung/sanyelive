@@ -1,14 +1,11 @@
-// v0.3.10.11 (6/23 老板反馈 腾讯极光盒子 6 v0.3.10.8 闪退):
-//  本地 crash 日志 — 老板装 APK 后看不到 logcat 时,  我们能从 crash.log 拿到线索.
 //  写到 externalFilesDir (/sdcard/Android/data/<pkg>/files/) 不需要权限,
-//  老板 adb pull 出来就行.
 //  三类错误: flutter_error (UI 构建期) + platform_error (native 异步, JNI 崩)
 //  + zoned_error (runZonedGuarded 包裹的异步).
 
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui'
-    show ErrorCallback; // v0.3.10.11: 兼容写法 (ErrorCallback 在 dart:ui)
+    show ErrorCallback;
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,7 +15,6 @@ class CrashLogger {
 
   static bool _initialized = false;
   static File? _logFile;
-  // v0.3.10.11: 保留 FlutterError.onError 旧 handler (e.g. _ErrorBoundary
   // 在 main.dart 设的),  我们加自己的 chain,  不覆盖.  同样
   // PlatformDispatcher.onError 也保留.
   static FlutterExceptionHandler? _prevFlutterOnError;
@@ -31,7 +27,6 @@ class CrashLogger {
     if (_initialized) return;
     _initialized = true;
 
-    // v0.3.10.15: 同时写两个位置:
     //   1. /sdcard/Download/iptv_crash.log — TV 盒子文件管理器可直接看到
     //   2. app 内部存储 — adb pull 备用
     try {
@@ -98,10 +93,8 @@ class CrashLogger {
     await _writeLog(msg);
   }
 
-  /// 当前 log 文件路径 (给 UI 显示, 老板可以 adb pull 这个路径).
   static String? get logFilePath => _logFile?.path;
 
-  /// v0.3.10.13: 读取 native crash log (MainActivity.kt 写的).
   /// 返回文件内容,  不存在则返回 null.
   static Future<String?> readNativeCrashLog() async {
     try {

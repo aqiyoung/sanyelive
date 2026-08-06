@@ -5,13 +5,10 @@ import '../../../core/theme/typography.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/epg.dart';
 import '../../../data/repositories/epg_repository.dart';
-import '../../../widgets/glass_container.dart';
 
-/// "现在播什么 + 接下来" 节目卡 — P1-1 轻玻璃 (blur 12 + 白边)
 ///
 /// 数据来源: [epgForChannelProvider]
 /// - 有 EPG 数据: 显示当前节目 (title + 进度条 + 剩余时间) + 下一档
-/// - 无 EPG 数据: 退化为 "LIVE · 节目时间" 占位 (卡 6 完整 EPG)
 class NowNextProgram extends ConsumerWidget {
   const NowNextProgram({super.key, required this.channel});
 
@@ -28,7 +25,6 @@ class NowNextProgram extends ConsumerWidget {
         if (entries.isEmpty) {
           return _EmptyState(channel: channel, isLoading: false);
         }
-        // v0.3.8+164 (6/22 老板 08:09 反馈 "节目卡只显示 直播中, 没节目名"):
         // +163 之前 _findCurrent 跟 _findNext 用 DateTime.now().toUtc(),
         // EpgService._placeholderSchedule 返的 EpgEntry.start/end 是 local time
         // (DateTime(now.year, now.month, now.day) 是 local).  toUtc() 转 UTC 后跟
@@ -79,68 +75,83 @@ class _ProgramCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPlaceholder = current?.title == '敬请期待';
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: GlassContainer(
-        borderRadius: 12,
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SectionLabel(
-                text: '节目单', accent: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 6),
-            if (isPlaceholder) ...[
-              Text(
-                '敬请期待',
-                style: IptvTypography.serifTitle.copyWith(fontSize: 18),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(
+            text: '节目单',
+            accent: scheme.primary,
+          ),
+          const SizedBox(height: 6),
+          if (isPlaceholder) ...[
+            Text(
+              '敬请期待',
+              style: IptvTypography.serifTitle.copyWith(fontSize: 18),
+            ),
+          ] else ...[
+            Text(
+              current?.title ?? '暂无节目信息',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: IptvTypography.serifTitle.copyWith(fontSize: 18),
+            ),
+            if (current != null) ...[
+              const SizedBox(height: 8),
+              _ProgressBar(
+                start: current!.start,
+                end: current!.end,
+                now: now,
               ),
-            ] else ...[
+              const SizedBox(height: 4),
               Text(
-                current?.title ?? '暂无节目信息',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: IptvTypography.serifTitle.copyWith(fontSize: 18),
+                '${_fmt(current!.start.toLocal())} – '
+                '${_fmt(current!.end.toLocal())}  '
+                '·  剩余 ${_remaining(current!.end, now)}',
+                style: IptvTypography.caption.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
-              if (current != null) ...[
-                const SizedBox(height: 8),
-                _ProgressBar(
-                  start: current!.start,
-                  end: current!.end,
-                  now: now,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_fmt(current!.start.toLocal())} – '
-                  '${_fmt(current!.end.toLocal())}  '
-                  '·  剩余 ${_remaining(current!.end, now)}',
-                  style: IptvTypography.caption.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ],
-              if (next != null) ...[
-                const SizedBox(height: 12),
-                _SectionLabel(
-                    text: '即将播出',
-                    accent: Theme.of(context).colorScheme.secondary),
-                const SizedBox(height: 4),
+            ],
+            if (next != null) ...[
+              const SizedBox(height: 12),
+              _SectionLabel(
+                text: '即将播出',
+                accent: scheme.secondary,
+              ),
+              const SizedBox(height: 4),
               Text(
                 next!.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: IptvTypography.body.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 '${_fmt(next!.start.toLocal())} – ${_fmt(next!.end.toLocal())}',
                 style: IptvTypography.caption.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
@@ -220,30 +231,38 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: GlassContainer(
-        borderRadius: 12,
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Icon(Icons.live_tv,
-                size: 18, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                isLoading
-                    ? '节目单加载中…'
-                    // v0.3.8+93 (6/20 P0-2): 去掉 "节目单待接入"
-                    // ——  EpgService 现在返时段占位 (上午/下午/黄金/夜间).
-                    // 频道上直播中 + 当前档名,  看着就象样.
-                    : '${channel.displayName} · 直播中',
-                style: IptvTypography.body.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Icon(Icons.live_tv, size: 18, color: scheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isLoading
+                  ? '节目单加载中…'
+                  // ——  EpgService 现在返时段占位 (上午/下午/黄金/夜间).
+                  // 频道上直播中 + 当前档名,  看着就象样.
+                  : '${channel.displayName} · 直播中',
+              style: IptvTypography.body.copyWith(
+                color: scheme.onSurfaceVariant,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

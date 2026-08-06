@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="视界 logo">
+  <!-- 朱砂红圆角方印 -->
+  <rect x="12" y="12" width="232" height="232" rx="52" ry="52" fill="#C1352B"/>
+  <!-- 内描边：印章质感 -->
+  <rect x="26" y="26" width="204" height="204" rx="40" ry="40" fill="none" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="4"/>
+  <!-- 白色播放三角（圆角） -->
+  <path d="M98 80 L98 176 L186 128 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

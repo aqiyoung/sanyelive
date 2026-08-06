@@ -1,4 +1,3 @@
-// v0.3.13.1 (7/9 老板要求): TVBox JSON 源文件解析 — 提取 type:1 MacCMS 源.
 //
 // 这 4 个 URL 是行业公开的 TVBox / 影视聚合配置 (俗称 "盒子源"):
 //   - TVBox 格式顶层 { spider, sites[], lives[], rules[], parses[] }
@@ -8,7 +7,6 @@
 //
 // 我们只取 type == 1 且 api 非空的站点,  转成 VodSource.
 //
-// v0.3.13.1: 自动检测 typeId 方案.  拉取源的 class 列表 (ac=list&t=1),  匹配
 // 常见中文分类名 (电影/连续剧/综艺/动漫/纪录片/体育/海外),  映射到 app 的
 // category keys.  检测失败则 fallback 到 bfzyapiTypeIds.
 //
@@ -19,7 +17,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../data/models/vod_source.dart';
 
-/// 4 个公开 TVBox 聚合源 URL (老板 7/9 给出).
 const List<String> kTvBoxSourceUrls = [
   'https://9280.kstore.space/wex.json',
   'https://dxawi.github.io/0/0.json',
@@ -86,7 +83,6 @@ class TvBoxConfigParser {
         } catch (_) {
           host = 'tvbox';
         }
-        // v0.3.13.1: 自动检测 typeId 方案.
         final detected = await _detectTypeIds(api);
         result.add(VodSource(
           id: '${host}_${result.length}',

@@ -103,7 +103,6 @@ class CategoryPage extends ConsumerWidget {
     );
   }
 
-  /// v0.3.11.59: live 页按 primaryCategory 分组渲染, 每组一个标题 + 频道列表
   List<Widget> _buildGroupedSections(BuildContext context, List<Channel> all) {
     // 按 primaryCategory 分组, 保持插入顺序
     final order = <String>[];
@@ -195,10 +194,8 @@ class CategoryPage extends ConsumerWidget {
         return ChannelFilter.satellite(all);
       case 'local':
         return ChannelFilter.local(all);
-      // v0.3.8+110 (6/20 老板加国际频道):  i18n = 非中文区 country
       case 'international':
         return ChannelFilter.international(all);
-      // v0.3.10.13 (6/24): 中文分类筛选
       default:
         return ChannelFilter.byCategory(all, categoryId);
     }
@@ -214,10 +211,8 @@ class CategoryPage extends ConsumerWidget {
         return '卫视';
       case 'local':
         return '地方';
-      // v0.3.8+110 (6/20 老板加国际频道):  i18n 中文名
       case 'international':
         return '国际';
-      // v0.3.10.13 (6/24): 中文分类名 (id 也是中文)
       case '新闻':
         return '新闻';
       case '影视':
@@ -258,7 +253,6 @@ class _BackBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: onBack,
-            // 6/18 v0.3.6.1 hotfix: textPrimary → onSurface
             color: Theme.of(context).colorScheme.onSurface,
           ),
           const SizedBox(width: 4),
@@ -343,7 +337,6 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.inbox_outlined,
               size: 48,
-              // 6/18 v0.3.6.1 hotfix: textSecondary → onSurfaceVariant
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
@@ -355,7 +348,4 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// v0.3.8+108 (6/20 老板反馈): 删 _CctvUnavailableBanner class.
-// 之前 v0.3.6+49 加这个 banner 是为了告诉老板 CCTV 公开源难搞.
-// 但老板今天说 "去掉吧" — 看到就烦.  直接进频道列表,
 // 播放页 failover 多个候选源尝试.

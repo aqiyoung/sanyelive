@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/colors.dart';
+import '../settings/app_mode_provider.dart';
 import 'poster_wall_page.dart';
 
 /// 视界主页 — 外层统一管理底部导航
@@ -19,54 +20,95 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _currentIndex = 0;
 
+  /// 根据模式构建底部导航项 + 对应页面.
+  /// 电视直播模式 (默认): 仅 [首页, 我的].
+  /// 完整功能模式: [首页, 短视频, 会员, 发现, 我的].
+  List<_NavItem> _navItems() {
+    final live = _NavItem(
+      icon: Icons.home_outlined,
+      activeIcon: const Icon(Icons.home_rounded, size: 24, weight: 700),
+      label: '首页',
+      page: const PosterWallPage(),
+    );
+    final mine = _NavItem(
+      icon: Icons.person_outline_rounded,
+      activeIcon: const Icon(Icons.person_rounded, size: 24, weight: 700),
+      label: '我的',
+      page: const _MinePage(),
+    );
+    if (!ref.read(appModeProvider)) {
+      return [live, mine];
+    }
+    return [
+      live,
+      _NavItem(
+        icon: Icons.smart_display_outlined,
+        activeIcon: const Icon(Icons.smart_display_rounded, size: 24, weight: 700),
+        label: '短视频',
+        page: _ActionHubPage(
+          title: '短视频',
+          subtitle: '短视频频道还没接入，先为你打开搜索。',
+          icon: Icons.smart_display_rounded,
+          primaryLabel: '去搜索内容',
+          onPrimary: () => context.go('/search'),
+        ),
+      ),
+      _NavItem(
+        icon: Icons.workspace_premium_outlined,
+        activeIcon: const Icon(Icons.workspace_premium_rounded, size: 24, weight: 700),
+        label: '会员',
+        page: _ActionHubPage(
+          title: '会员',
+          subtitle: '会员体系暂未上线，当前所有直播入口都可直接使用。',
+          icon: Icons.workspace_premium_rounded,
+          primaryLabel: '看电视直播',
+          onPrimary: () => context.go('/category/live'),
+        ),
+      ),
+      _NavItem(
+        icon: Icons.explore_outlined,
+        activeIcon: const Icon(Icons.explore_rounded, size: 24, weight: 700),
+        label: '发现',
+        page: _ActionHubPage(
+          title: '发现',
+          subtitle: '发现页先聚合频道分类，后续再接专题内容。',
+          icon: Icons.explore_rounded,
+          primaryLabel: '浏览体育频道',
+          onPrimary: () => context.go('/category/体育'),
+          secondaryLabel: '浏览娱乐频道',
+          onSecondary: () => context.go('/category/娱乐'),
+        ),
+      ),
+      mine,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
-    // v0.3.13.0: 状态栏跟随 theme brightness (浅色 → 黑图标, 深色 → 白图标).
+    // 监听模式变化 → 导航项数量会变, 需钳制 _currentIndex 防越界.
+    ref.watch(appModeProvider);
+    final items = _navItems();
+    final safeIndex = _currentIndex.clamp(0, items.length - 1);
+
     final overlay = _resolveOverlay(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlay,
       child: Scaffold(
       backgroundColor: context.bgBase,
       body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          const PosterWallPage(),
-          _ActionHubPage(
-            title: '短视频',
-            subtitle: '短视频频道还没接入，先为你打开搜索。',
-            icon: Icons.smart_display_rounded,
-            primaryLabel: '去搜索内容',
-            onPrimary: () => context.go('/search'),
-          ),
-          _ActionHubPage(
-            title: '会员',
-            subtitle: '会员体系暂未上线，当前所有直播入口都可直接使用。',
-            icon: Icons.workspace_premium_rounded,
-            primaryLabel: '看电视直播',
-            onPrimary: () => context.go('/category/live'),
-          ),
-          _ActionHubPage(
-            title: '发现',
-            subtitle: '发现页先聚合频道分类，后续再接专题内容。',
-            icon: Icons.explore_rounded,
-            primaryLabel: '浏览体育频道',
-            onPrimary: () => context.go('/category/体育'),
-            secondaryLabel: '浏览娱乐频道',
-            onSecondary: () => context.go('/category/娱乐'),
-          ),
-          const _MinePage(),
-        ],
+        index: safeIndex,
+        children: items.map((e) => e.page).toList(),
       ),
       bottomNavigationBar: _StreamingBottomNav(
-        currentIndex: _currentIndex,
+        currentIndex: safeIndex,
         onTap: (i) => setState(() => _currentIndex = i),
+        items: items,
       ),
     ),
     );
   }
 
   SystemUiOverlayStyle _resolveOverlay(BuildContext context) {
-    // v0.3.13.0: 跟随 theme brightness — 浅色黑图标 / 深色白图标.
     final isDark = context.appBrightness == Brightness.dark;
     return SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -79,11 +121,29 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
+class _NavItem {
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.page,
+  });
+  final IconData icon;
+  final Widget activeIcon;
+  final String label;
+  final Widget page;
+}
+
 class _StreamingBottomNav extends StatelessWidget {
-  const _StreamingBottomNav({required this.currentIndex, required this.onTap});
+  const _StreamingBottomNav({
+    required this.currentIndex,
+    required this.onTap,
+    required this.items,
+  });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final List<_NavItem> items;
 
   @override
   Widget build(BuildContext context) {
@@ -102,40 +162,22 @@ class _StreamingBottomNav extends StatelessWidget {
               onTap: onTap,
               backgroundColor: Colors.transparent,
               elevation: 0,
-              selectedItemColor: Colors.red.shade600,
-              unselectedItemColor: Colors.grey.shade400,
+              // 选中=强调色 (赤陶, 主题主色), 未选中=次文字色 (比硬编码灰色深, 看得清)
+              // 两套颜色都走 Theme, 深浅色自动适配.
+              selectedItemColor: context.fgAccent,
+              unselectedItemColor: context.fgSub,
               showSelectedLabels: true,
               showUnselectedLabels: true,
               type: BottomNavigationBarType.fixed,
               selectedFontSize: 12,
               unselectedFontSize: 12,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined, size: 24),
-                  activeIcon: Icon(Icons.home_rounded, size: 24, weight: 700),
-                  label: '首页',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.smart_display_outlined, size: 24),
-                  activeIcon: Icon(Icons.smart_display_rounded, size: 24, weight: 700),
-                  label: '短视频',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.workspace_premium_outlined, size: 24),
-                  activeIcon: Icon(Icons.workspace_premium_rounded, size: 24, weight: 700),
-                  label: '会员',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.explore_outlined, size: 24),
-                  activeIcon: Icon(Icons.explore_rounded, size: 24, weight: 700),
-                  label: '发现',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline_rounded, size: 24),
-                  activeIcon: Icon(Icons.person_rounded, size: 24, weight: 700),
-                  label: '我的',
-                ),
-              ],
+              items: items
+                  .map((e) => BottomNavigationBarItem(
+                        icon: Icon(e.icon, size: 24),
+                        activeIcon: e.activeIcon,
+                        label: e.label,
+                      ))
+                  .toList(),
             ),
           ),
         ),
@@ -149,6 +191,7 @@ class _MinePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final fullMode = ref.watch(appModeProvider);
     return ColoredBox(
       color: context.bgBase,
       child: SafeArea(
@@ -163,14 +206,10 @@ class _MinePage extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.asset(
-                          'assets/icons/shijie_logo.png',
-                          width: 72,
-                          height: 72,
-                          fit: BoxFit.cover,
-                        ),
+                      Image.asset(
+                        'assets/icons/app_logo.png',
+                        width: 72,
+                        height: 72,
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -184,7 +223,7 @@ class _MinePage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '全新品牌升级 • 直播 + 影视',
+                        fullMode ? '全新品牌升级 • 直播 + 影视' : '专注电视直播',
                         style: TextStyle(
                           color: context.fgSub,
                           fontSize: 12,
@@ -197,9 +236,11 @@ class _MinePage extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _MineTile(icon: Icons.search_rounded, title: '搜索节目', subtitle: '搜索频道、视频内容', onTap: () => context.go('/search')),
-            _MineTile(icon: Icons.favorite_border_rounded, title: '我的收藏', subtitle: '收藏的直播频道和视频', onTap: () => context.go('/favorites')),
-            _MineTile(icon: Icons.tv_rounded, title: '电视频道', subtitle: '央视 / 卫视 / 体育 / 娱乐直播', onTap: () => context.go('/category/live')),
+            // 电视频道置顶 (TV 模式主打); 搜索仅在完整功能模式出现.
+            _MineTile(icon: Icons.tv_rounded, title: '电视频道', subtitle: '央视 / 卫视 / 体育 / 地方直播', onTap: () => context.go('/category/live')),
+            if (fullMode)
+              _MineTile(icon: Icons.search_rounded, title: '搜索节目', subtitle: '搜索频道、视频内容', onTap: () => context.go('/search')),
+            _MineTile(icon: Icons.favorite_border_rounded, title: '我的收藏', subtitle: '收藏的直播频道', onTap: () => context.go('/favorites')),
             _MineTile(icon: Icons.settings_rounded, title: '设置', subtitle: '主题、更新、关于', onTap: () => context.go('/settings')),
             const SizedBox(height: 24),
             Padding(
@@ -215,9 +256,10 @@ class _MinePage extends ConsumerWidget {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: 8,
+                itemCount: fullMode ? 8 : 4,
                 itemBuilder: (context, index) {
-                  final isLive = index % 2 == 0;
+                  // TV 模式只展示直播卡片, 隐藏视频占位.
+                  final isLive = fullMode ? (index % 2 == 0) : true;
                   return Container(
                     width: 110,
                     margin: const EdgeInsets.only(right: 12),

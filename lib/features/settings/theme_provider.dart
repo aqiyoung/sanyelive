@@ -1,4 +1,3 @@
-// 0.3.6+19 暗色主题持久化.
 //
 // 设计:
 //   - ThemeProviderNotifier 继承 Notifier<ThemeMode>, 是 StateNotifier 的
@@ -38,7 +37,6 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 
 /// ThemeMode 持久化 + 切换.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
-  // v0.3.8+93 (6/20 P1-3): 从 private 升 public,  main.dart 启动
   // _applySystemUiOverlay(prefs) 要读,  不绕 ThemeModeNotifier.
   static const kThemeModeKey = 'theme_mode';
 

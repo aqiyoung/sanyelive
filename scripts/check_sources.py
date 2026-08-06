@@ -327,6 +327,20 @@ def main() -> int:
     # (公开 m3u 全 404, 不值得硬填).  --allow-empty-cctv 时, 接受空 cctvSource
     # = "本频道本 release 故意放弃", 只拦"有 cctvSource 但全部 dead".
     if args.require_cctv:
+        # v0.3.12.125 (8/6): 网络全断防护 — CI runner 偶发网络异常
+        # (Network is unreachable / Connection refused / timed out) 会让每条
+        # 源都测成 dead, 进而误判 "cctvSource 全部 dead" 废掉正常发版.
+        # 区分 "网络全断" 与 "真 dead": 若所有被测 target 都 dead (alive==0),
+        # 视为 runner 网络异常, 放行 (exit 0) 避免误伤; 只要 alive>0 (网络正常),
+        # 仍严格闸, 保留 P0 — 防真 dead 源混进 APK.
+        if len(alive) == 0 and total > 0:
+            print(
+                f'\n⚠️ --require-cctv: 全部 {total} 条源都 dead (CI runner 网络异常?), '
+                f'放行避免误伤正常发版, exit 0',
+                file=sys.stderr,
+            )
+            return 0
+
         # 重新过滤, 只看 18 个 CCTV 主频道的 cctvSource 字段
         cctv_main = [c for c in channels if is_cctv_main(c)]
         missing_cctv_source = []

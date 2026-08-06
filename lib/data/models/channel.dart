@@ -25,11 +25,9 @@ class Channel {
   final String? logoUrl;
   final List<String> sources;
 
-  /// v0.3.5.3 (6/18): CCTV 专属播放源 — 经过真机 fetch 验证的健康 CDN 列表.
   /// 跟 [sources] 不冲突, 播放时优先级 cctvSource[0] > sources[0] > known_sources.
   /// 存放位置: assets/data/channels_cn.json 18 个 CCTV entry 的 cctvSource 字段.
   /// 优点: sources 字段保留 iptv-org / known_sources 历史兼容, 老的 release
-  /// 升级到 v0.3.5.3 不会丢源, 只是优先用 cctvSource.
   final List<String> cctvSource;
   final bool isNsfw;
 
@@ -69,10 +67,8 @@ class Channel {
 
   /// 中英对照的副标题 — 原名跟 displayName 不同时才返, 否则 null
   String? get displaySubtitle {
-    // v0.3.10.13 (6/24): 副标题显示分类名 (中文), 不再显示英文原名.
     final cats = categories;
     if (cats.isEmpty) return null;
-    // v0.3.10.16: 英文分类名映射为中文
     const enToZh = {
       'general': '综合',
       'news': '新闻',
@@ -99,7 +95,6 @@ class Channel {
   /// 实际定义在 lib/data/channel_name_zh.dart, 运行时通过 import 注入.
   static const Map<String, String> _manualZhMap = kChannelNameZh;
 
-  /// v0.3.10.16: 从频道属性推导中文分类.
   /// 远端 iptv-org 数据是英文分类 (general/cctv/satellite), 这里统一转为中文.
   static List<String> _deriveCategories(Channel ch) {
     final cid = ch.id;
@@ -174,7 +169,6 @@ class Channel {
     return ['地方'];
   }
 
-  /// v0.3.11.62: VOD 点播临时频道 — 用任意播放 URL 构造一个 Channel,
   /// 复用现有 play()/playSingleSource() 全链路 (错误/换源 UI 通用).
   /// id 用 url 的 hash 保证唯一且可寻址; sources 只含这一个 VOD URL.
   factory Channel.fromVod(String url, {required String title}) {
@@ -188,7 +182,6 @@ class Channel {
   }
 
   factory Channel.fromJson(Map<String, dynamic> j) {
-    // v0.3.5.1 (6/18): 支持 string 和 {url, type} dict 两种 source 格式.
     // channels_cn.json 现有 145 string 源 (iptv-org 原始格式) + 83 dict 源
     // (merge_known_sources.py 把 known_sources.json 合并后改的格式).
     // 之前 .cast<String>() 在 dict 上 view 不报错, 但访问时 TypeError 炸,
@@ -203,7 +196,6 @@ class Channel {
         if (url is String) sources.add(url);
       }
     }
-    // v0.3.5.3 (6/18): cctvSource 字段解析 (跟 sources 同格式, 优先用).
     // 老 channels_cn.json 没有这字段, 走默认 const <String>[] (空数组).
     // 跟 sources 字段一样容忍 string 和 {url, type} dict 两种格式.
     final rawCctvSource = (j['cctvSource'] as List?) ?? const [];
@@ -216,7 +208,6 @@ class Channel {
         if (url is String) cctvSource.add(url);
       }
     }
-    // v0.3.10.16: 从属性推导中文分类 (覆盖远端英文分类)
     final derivedCategories = _deriveCategories(
       Channel(
         id: j['id'] as String,

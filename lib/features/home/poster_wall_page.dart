@@ -11,6 +11,7 @@ import '../settings/app_mode_provider.dart';
 import '../../../data/providers/vod_provider.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/content.dart';
+import '../../../data/channel_filter.dart';
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
 import '../../../services/player_service.dart';
@@ -221,9 +222,13 @@ class _TvLeanbackHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final featured = channels.isNotEmpty ? channels.first : null;
-    final cctv = channels.where((c) => c.categories.contains('央视')).toList();
-    final satellite = channels.where((c) => c.categories.contains('卫视')).toList();
-    final sports = channels.where((c) => c.categories.contains('体育')).toList();
+    // 复用 ChannelFilter (与分类页 / chips 路由一致), 避免 categories 派生
+    // 与分类页过滤逻辑不一致导致首页分类行缺失.
+    final cctv = ChannelFilter.cctv(channels);
+    final satellite = ChannelFilter.satellite(channels);
+    final local = ChannelFilter.local(channels);
+    final sports = ChannelFilter.byCategory(channels, '体育');
+    final movie = ChannelFilter.byCategory(channels, '影视');
 
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 24),
@@ -248,8 +253,16 @@ class _TvLeanbackHome extends StatelessWidget {
           _ChannelRow(title: '卫视频道', channels: satellite),
           const SizedBox(height: 20),
         ],
+        if (local.isNotEmpty) ...[
+          _ChannelRow(title: '地方频道', channels: local),
+          const SizedBox(height: 20),
+        ],
         if (sports.isNotEmpty) ...[
           _ChannelRow(title: '体育频道', channels: sports),
+          const SizedBox(height: 20),
+        ],
+        if (movie.isNotEmpty) ...[
+          _ChannelRow(title: '影视频道', channels: movie),
           const SizedBox(height: 20),
         ],
       ],
@@ -501,19 +514,14 @@ class _HeroBackdrop extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                channel?.logoUrl != null && channel!.logoUrl!.isNotEmpty
-                    ? Image.network(
-                        channel!.logoUrl!,
-                        width: 76,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) =>
-                            Icon(Icons.live_tv_rounded, color: Colors.white70, size: 46),
-                      )
-                    : Icon(
-                        isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
-                        color: Colors.white70,
-                        size: 46,
-                      ),
+                if (channel != null)
+                  _ChannelLogo(channel: channel, size: 76, bright: true)
+                else
+                  Icon(
+                    isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
+                    color: Colors.white70,
+                    size: 46,
+                  ),
                 const SizedBox(height: 14),
                 Container(
                   width: 56,
@@ -625,6 +633,61 @@ class _ChannelRow extends StatelessWidget {
   }
 }
 
+/// 频道台标: 优先网络 logo (logoUrl), 失败 / 为 null 时降级为文字台标
+/// (频道首字 + 主题色块). 解决 70% 频道 logo 为 null 导致首页卡片"无台标"
+/// 的问题 —— 文字台标必现,  保证每个卡片都有清晰标识.
+///
+/// [bright] = true 用于 Hero 深色兜底背景 (白色文字块),  false 用于卡片
+/// (主题 accent 色块).
+class _ChannelLogo extends StatelessWidget {
+  const _ChannelLogo({required this.channel, this.size = 48, this.bright = false});
+
+  final Channel channel;
+  final double size;
+  final bool bright;
+
+  @override
+  Widget build(BuildContext context) {
+    final logo = channel.logoUrl;
+    if (logo != null && logo.isNotEmpty) {
+      return Image.network(
+        logo,
+        fit: BoxFit.contain,
+        height: size,
+        errorBuilder: (_, __, ___) => _fallback(context),
+      );
+    }
+    return _fallback(context);
+  }
+
+  Widget _fallback(BuildContext context) {
+    final name = channel.displayName.trim();
+    final ch = name.isNotEmpty ? name[0] : '?';
+    final Color fg = bright ? Colors.white : context.fgAccent;
+    final Color bg = bright
+        ? Colors.white.withValues(alpha: 0.16)
+        : context.fgAccent.withValues(alpha: 0.14);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Text(
+          ch,
+          style: TextStyle(
+            color: fg,
+            fontSize: size * 0.46,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// 单个频道卡片: 台标 + LIVE 徽标 + 频道名.
 class _ChannelCard extends StatelessWidget {
   const _ChannelCard({required this.channel});
@@ -647,15 +710,7 @@ class _ChannelCard extends StatelessWidget {
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(10),
-                child: channel.logoUrl != null && channel.logoUrl!.isNotEmpty
-                    ? Image.network(
-                        channel.logoUrl!,
-                        fit: BoxFit.contain,
-                        height: 48,
-                        errorBuilder: (_, __, ___) =>
-                            Icon(Icons.live_tv_rounded, color: context.fgSub, size: 30),
-                      )
-                    : Icon(Icons.live_tv_rounded, color: context.fgSub, size: 30),
+                child: _ChannelLogo(channel: channel, size: 48),
               ),
             ),
             Positioned(

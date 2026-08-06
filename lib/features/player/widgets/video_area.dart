@@ -108,14 +108,14 @@ class VideoArea extends StatelessWidget {
               ),
             PlayerStatus.error => ErrorOverlay(message: state.error ?? '播放失败'),
             PlayerStatus.playing => const SizedBox.shrink(),
-            // 播放态右下角品牌水印 (提升纯黑视频区质感)
-            if (state.status == PlayerStatus.playing)
-              const Positioned(
-                right: 12,
-                bottom: 12,
-                child: _BrandWatermark(),
-              ),
           },
+          // 播放态右下角品牌水印 (提升纯黑视频区质感)
+          if (state.status == PlayerStatus.playing)
+            const Positioned(
+              right: 12,
+              bottom: 12,
+              child: _BrandWatermark(),
+            ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/colors.dart';
+import '../../settings/app_mode_provider.dart';
 import '../../../data/providers/vod_provider.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/content.dart';
@@ -14,6 +15,10 @@ class PosterWallPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 电视直播模式 (默认): 首页只展示 TV 频道模块 (_LiveTvModule),
+    // 隐藏影视海报轮播 / 分类快捷 / 今日推荐 / 热播剧集等 VOD 内容.
+    // 完整功能模式: 展示全部模块 (顺序与之前一致).
+    final fullMode = ref.watch(appModeProvider);
     return ColoredBox(
       color: context.bgBase,
       child: SafeArea(
@@ -38,28 +43,35 @@ class PosterWallPage extends ConsumerWidget {
                   child: ListView(
                     padding: const EdgeInsets.only(bottom: 20),
                     children: [
-                      const _HeroBanner(),
-                      const SizedBox(height: 18),
-                      const _CategoryShortcutBar(),
-                      const SizedBox(height: 18),
+                      // —— 仅完整功能模式: 影视海报轮播 + 分类快捷 ——
+                      if (fullMode) ...[
+                        const _HeroBanner(),
+                        const SizedBox(height: 18),
+                        const _CategoryShortcutBar(),
+                        const SizedBox(height: 18),
+                      ],
+                      // —— 电视直播模块 (两种模式都显示, 作为核心内容) ——
                       _LiveTvModule(
                         isLoading: snapshot.connectionState == ConnectionState.waiting,
                         channels: displayChannels.take(4).toList(),
                         error: snapshot.error,
                       ),
-                      const SizedBox(height: 20),
-                      _VodSection(
-                        title: '今日推荐',
-                        provider: vodRecommendedProvider,
-                        badges: const ['HOT', 'VIP', '独播'],
-                      ),
-                      const SizedBox(height: 20),
-                      _VodSectionWithTabs(
-                        title: '热播剧集',
-                        provider: vodSeriesProvider,
-                        badges: const ['热播', 'VIP', '热播', 'VIP', 'VIP'],
-                        tabs: const ['全部', '古装', '都市', '悬疑', '爱情'],
-                      ),
+                      // —— 仅完整功能模式: 影视推荐区 ——
+                      if (fullMode) ...[
+                        const SizedBox(height: 20),
+                        _VodSection(
+                          title: '今日推荐',
+                          provider: vodRecommendedProvider,
+                          badges: const ['HOT', 'VIP', '独播'],
+                        ),
+                        const SizedBox(height: 20),
+                        _VodSectionWithTabs(
+                          title: '热播剧集',
+                          provider: vodSeriesProvider,
+                          badges: const ['热播', 'VIP', '热播', 'VIP', 'VIP'],
+                          tabs: const ['全部', '古装', '都市', '悬疑', '爱情'],
+                        ),
+                      ],
                       const SizedBox(height: 20),
                     ],
                   ),

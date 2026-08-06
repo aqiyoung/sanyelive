@@ -28,6 +28,7 @@ import '../../../data/models/vod_source.dart';
 import '../../../services/tvbox_config_parser.dart';
 import '../../../services/vod_source_registry.dart';
 import 'theme_provider.dart';
+import 'app_mode_provider.dart';
 // 保留文件 (兼容老 prefs), 但 settings_page 不再 import, 也不暴露 UI.
 
 //   / textSecondary) 都改走 colorScheme.onSurface / onSurfaceVariant,  跟
@@ -105,6 +106,22 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: const Text('日落后自动切换深色'),
                 value: _autoDarkMode,
                 onChanged: (v) => _setAutoDark(context, ref, v),
+              ),
+              const _SettingsGap(),
+              // 完整功能模式: 默认关 = 电视直播精简界面 (首页+我的),
+              // 开 = 显示全部 5 个底部标签 (首页/短视频/会员/发现/我的).
+              Consumer(
+                builder: (context, ref, _) {
+                  final full = ref.watch(appModeProvider);
+                  return SwitchListTile(
+                    secondary: const Icon(Icons.grid_view_rounded),
+                    title: const Text('完整功能模式'),
+                    subtitle: const Text('开启后显示短视频/会员/发现等全部入口'),
+                    value: full,
+                    onChanged: (v) =>
+                        ref.read(appModeProvider.notifier).setFull(v),
+                  );
+                },
               ),
             ],
           ),

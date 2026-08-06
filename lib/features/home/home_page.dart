@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/colors.dart';
+import '../settings/app_mode_provider.dart';
 import 'poster_wall_page.dart';
 
 /// 视界主页 — 外层统一管理底部导航
@@ -19,46 +20,89 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _currentIndex = 0;
 
+  /// 根据模式构建底部导航项 + 对应页面.
+  /// 电视直播模式 (默认): 仅 [首页, 我的].
+  /// 完整功能模式: [首页, 短视频, 会员, 发现, 我的].
+  List<_NavItem> _navItems() {
+    final live = _NavItem(
+      icon: Icons.home_outlined,
+      activeIcon: const Icon(Icons.home_rounded, size: 24, weight: 700),
+      label: '首页',
+      page: const PosterWallPage(),
+    );
+    final mine = _NavItem(
+      icon: Icons.person_outline_rounded,
+      activeIcon: const Icon(Icons.person_rounded, size: 24, weight: 700),
+      label: '我的',
+      page: const _MinePage(),
+    );
+    if (!ref.read(appModeProvider)) {
+      return [live, mine];
+    }
+    return [
+      live,
+      _NavItem(
+        icon: Icons.smart_display_outlined,
+        activeIcon: const Icon(Icons.smart_display_rounded, size: 24, weight: 700),
+        label: '短视频',
+        page: _ActionHubPage(
+          title: '短视频',
+          subtitle: '短视频频道还没接入，先为你打开搜索。',
+          icon: Icons.smart_display_rounded,
+          primaryLabel: '去搜索内容',
+          onPrimary: () => context.go('/search'),
+        ),
+      ),
+      _NavItem(
+        icon: Icons.workspace_premium_outlined,
+        activeIcon: const Icon(Icons.workspace_premium_rounded, size: 24, weight: 700),
+        label: '会员',
+        page: _ActionHubPage(
+          title: '会员',
+          subtitle: '会员体系暂未上线，当前所有直播入口都可直接使用。',
+          icon: Icons.workspace_premium_rounded,
+          primaryLabel: '看电视直播',
+          onPrimary: () => context.go('/category/live'),
+        ),
+      ),
+      _NavItem(
+        icon: Icons.explore_outlined,
+        activeIcon: const Icon(Icons.explore_rounded, size: 24, weight: 700),
+        label: '发现',
+        page: _ActionHubPage(
+          title: '发现',
+          subtitle: '发现页先聚合频道分类，后续再接专题内容。',
+          icon: Icons.explore_rounded,
+          primaryLabel: '浏览体育频道',
+          onPrimary: () => context.go('/category/体育'),
+          secondaryLabel: '浏览娱乐频道',
+          onSecondary: () => context.go('/category/娱乐'),
+        ),
+      ),
+      mine,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    // 监听模式变化 → 导航项数量会变, 需钳制 _currentIndex 防越界.
+    ref.watch(appModeProvider);
+    final items = _navItems();
+    final safeIndex = _currentIndex.clamp(0, items.length - 1);
+
     final overlay = _resolveOverlay(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlay,
       child: Scaffold(
       backgroundColor: context.bgBase,
       body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          const PosterWallPage(),
-          _ActionHubPage(
-            title: '短视频',
-            subtitle: '短视频频道还没接入，先为你打开搜索。',
-            icon: Icons.smart_display_rounded,
-            primaryLabel: '去搜索内容',
-            onPrimary: () => context.go('/search'),
-          ),
-          _ActionHubPage(
-            title: '会员',
-            subtitle: '会员体系暂未上线，当前所有直播入口都可直接使用。',
-            icon: Icons.workspace_premium_rounded,
-            primaryLabel: '看电视直播',
-            onPrimary: () => context.go('/category/live'),
-          ),
-          _ActionHubPage(
-            title: '发现',
-            subtitle: '发现页先聚合频道分类，后续再接专题内容。',
-            icon: Icons.explore_rounded,
-            primaryLabel: '浏览体育频道',
-            onPrimary: () => context.go('/category/体育'),
-            secondaryLabel: '浏览娱乐频道',
-            onSecondary: () => context.go('/category/娱乐'),
-          ),
-          const _MinePage(),
-        ],
+        index: safeIndex,
+        children: items.map((e) => e.page).toList(),
       ),
       bottomNavigationBar: _StreamingBottomNav(
-        currentIndex: _currentIndex,
+        currentIndex: safeIndex,
         onTap: (i) => setState(() => _currentIndex = i),
+        items: items,
       ),
     ),
     );
@@ -77,11 +121,29 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
+class _NavItem {
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.page,
+  });
+  final IconData icon;
+  final Widget activeIcon;
+  final String label;
+  final Widget page;
+}
+
 class _StreamingBottomNav extends StatelessWidget {
-  const _StreamingBottomNav({required this.currentIndex, required this.onTap});
+  const _StreamingBottomNav({
+    required this.currentIndex,
+    required this.onTap,
+    required this.items,
+  });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final List<_NavItem> items;
 
   @override
   Widget build(BuildContext context) {
@@ -100,40 +162,22 @@ class _StreamingBottomNav extends StatelessWidget {
               onTap: onTap,
               backgroundColor: Colors.transparent,
               elevation: 0,
-              selectedItemColor: Colors.red.shade600,
-              unselectedItemColor: Colors.grey.shade400,
+              // 选中=强调色 (赤陶, 主题主色), 未选中=次文字色 (比硬编码灰色深, 看得清)
+              // 两套颜色都走 Theme, 深浅色自动适配.
+              selectedItemColor: context.fgAccent,
+              unselectedItemColor: context.fgSub,
               showSelectedLabels: true,
               showUnselectedLabels: true,
               type: BottomNavigationBarType.fixed,
               selectedFontSize: 12,
               unselectedFontSize: 12,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined, size: 24),
-                  activeIcon: Icon(Icons.home_rounded, size: 24, weight: 700),
-                  label: '首页',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.smart_display_outlined, size: 24),
-                  activeIcon: Icon(Icons.smart_display_rounded, size: 24, weight: 700),
-                  label: '短视频',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.workspace_premium_outlined, size: 24),
-                  activeIcon: Icon(Icons.workspace_premium_rounded, size: 24, weight: 700),
-                  label: '会员',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.explore_outlined, size: 24),
-                  activeIcon: Icon(Icons.explore_rounded, size: 24, weight: 700),
-                  label: '发现',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline_rounded, size: 24),
-                  activeIcon: Icon(Icons.person_rounded, size: 24, weight: 700),
-                  label: '我的',
-                ),
-              ],
+              items: items
+                  .map((e) => BottomNavigationBarItem(
+                        icon: Icon(e.icon, size: 24),
+                        activeIcon: e.activeIcon,
+                        label: e.label,
+                      ))
+                  .toList(),
             ),
           ),
         ),

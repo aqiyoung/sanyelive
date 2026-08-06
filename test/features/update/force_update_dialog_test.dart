@@ -53,6 +53,7 @@ void main() {
   }) {
     container.read(versionCheckerProvider.notifier).debugSetState(
           VersionCheckOutdated(
+            releaseName: 'Test Release',
             latestVersion: version,
             latestVersionCode: versionCode,
             currentVersion: '0.3.7',

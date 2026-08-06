@@ -199,7 +199,7 @@ class VersionCheckUpToDate extends VersionCheckState {
 /// 有新版本.
 class VersionCheckOutdated extends VersionCheckState {
   const VersionCheckOutdated({
-    required this.releaseName,
+    this.releaseName = '',
     required this.latestVersion,
     required this.latestVersionCode,
     required this.currentVersion,

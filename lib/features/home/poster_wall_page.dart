@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/theme/colors.dart';
 import '../../../data/providers/vod_provider.dart';
@@ -83,9 +82,9 @@ class _HomeTopBar extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16, 10 + MediaQuery.of(context).padding.top, 16, 8),
       child: Row(
         children: [
-          // 朱砂红印章品牌 icon (SVG, 浅色/深色自适应)
-          SvgPicture.asset(
-            'assets/icons/shijie_logo.svg',
+          // 品牌 icon
+          Image.asset(
+            'assets/icons/app_logo.png',
             width: 28,
             height: 28,
           ),

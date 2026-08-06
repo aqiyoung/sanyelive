@@ -191,6 +191,7 @@ class _MinePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final fullMode = ref.watch(appModeProvider);
     return ColoredBox(
       color: context.bgBase,
       child: SafeArea(
@@ -222,7 +223,7 @@ class _MinePage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '全新品牌升级 • 直播 + 影视',
+                        fullMode ? '全新品牌升级 • 直播 + 影视' : '专注电视直播',
                         style: TextStyle(
                           color: context.fgSub,
                           fontSize: 12,
@@ -235,9 +236,11 @@ class _MinePage extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _MineTile(icon: Icons.search_rounded, title: '搜索节目', subtitle: '搜索频道、视频内容', onTap: () => context.go('/search')),
-            _MineTile(icon: Icons.favorite_border_rounded, title: '我的收藏', subtitle: '收藏的直播频道和视频', onTap: () => context.go('/favorites')),
-            _MineTile(icon: Icons.tv_rounded, title: '电视频道', subtitle: '央视 / 卫视 / 体育 / 娱乐直播', onTap: () => context.go('/category/live')),
+            // 电视频道置顶 (TV 模式主打); 搜索仅在完整功能模式出现.
+            _MineTile(icon: Icons.tv_rounded, title: '电视频道', subtitle: '央视 / 卫视 / 体育 / 地方直播', onTap: () => context.go('/category/live')),
+            if (fullMode)
+              _MineTile(icon: Icons.search_rounded, title: '搜索节目', subtitle: '搜索频道、视频内容', onTap: () => context.go('/search')),
+            _MineTile(icon: Icons.favorite_border_rounded, title: '我的收藏', subtitle: '收藏的直播频道', onTap: () => context.go('/favorites')),
             _MineTile(icon: Icons.settings_rounded, title: '设置', subtitle: '主题、更新、关于', onTap: () => context.go('/settings')),
             const SizedBox(height: 24),
             Padding(
@@ -253,9 +256,10 @@ class _MinePage extends ConsumerWidget {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: 8,
+                itemCount: fullMode ? 8 : 4,
                 itemBuilder: (context, index) {
-                  final isLive = index % 2 == 0;
+                  // TV 模式只展示直播卡片, 隐藏视频占位.
+                  final isLive = fullMode ? (index % 2 == 0) : true;
                   return Container(
                     width: 110,
                     margin: const EdgeInsets.only(right: 12),

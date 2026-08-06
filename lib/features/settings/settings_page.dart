@@ -189,10 +189,13 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          const _SettingsGroupLabel(label: '影视源'),
-          const SizedBox(height: 6),
-          _VodSourceManagementCard(),
-          const SizedBox(height: 32),
+          // 影视源 (VOD) 仅完整功能模式可见, TV 直播模式隐藏.
+          if (ref.watch(appModeProvider)) ...[
+            const _SettingsGroupLabel(label: '影视源'),
+            const SizedBox(height: 6),
+            _VodSourceManagementCard(),
+            const SizedBox(height: 32),
+          ],
 
           // ─── 底部 footer (slogan,  跟 about 区分) ─────────────────────────
           Padding(

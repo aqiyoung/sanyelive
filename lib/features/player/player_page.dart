@@ -325,18 +325,13 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                       : _findChannel(channels, widget.channelId);
                   return Column(
                     children: [
-                      // 视频区 (16:9) — 底部圆角, 软化与下方米色界面的硬切
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(16),
-                        ),
-                        child: AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: VideoArea(
-                            controller: controller,
-                            state: state,
-                            channel: channel,
-                          ),
+                      // 视频区 (16:9) — 直角, 与下方界面硬切 (用户要求不要圆角)
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: VideoArea(
+                          controller: controller,
+                          state: state,
+                          channel: channel,
                         ),
                       ),
                       // 顶栏 (返回 / 频道名 / 时钟)

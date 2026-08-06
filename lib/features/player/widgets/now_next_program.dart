@@ -81,9 +81,6 @@ class _ProgramCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.6),
-        ),
         boxShadow: [
           BoxShadow(
             color: scheme.shadow.withValues(alpha: 0.08),
@@ -240,9 +237,6 @@ class _EmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.6),
-        ),
         boxShadow: [
           BoxShadow(
             color: scheme.shadow.withValues(alpha: 0.08),

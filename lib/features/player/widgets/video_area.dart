@@ -109,41 +109,6 @@ class VideoArea extends StatelessWidget {
             PlayerStatus.error => ErrorOverlay(message: state.error ?? '播放失败'),
             PlayerStatus.playing => const SizedBox.shrink(),
           },
-          // 播放态右下角品牌水印 (提升纯黑视频区质感)
-          if (state.status == PlayerStatus.playing)
-            const Positioned(
-              right: 12,
-              bottom: 12,
-              child: _BrandWatermark(),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 播放态右下角品牌水印 — 半透明白, 让纯黑视频区不空洞.
-class _BrandWatermark extends StatelessWidget {
-  const _BrandWatermark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: 0.55,
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.play_circle_outline, color: Colors.white, size: 14),
-          SizedBox(width: 4),
-          Text(
-            '视界',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
         ],
       ),
     );

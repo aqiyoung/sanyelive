@@ -505,7 +505,7 @@ class _LiveTvModule extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // 右: 正在直播频道列表 (spaceBetween 均匀撑满整列, 下方不留白)
+              // 右: 正在直播频道列表 (紧凑排列 + 细分隔线边界感, 填满整列不留白)
               Expanded(
                 flex: 6,
                 child: Column(
@@ -521,35 +521,47 @@ class _LiveTvModule extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Expanded(
                       child: isLoading
                           ? const Center(child: _LiveListText(title: '加载中', subtitle: '读取频道库'))
                           : rest.isEmpty
                               ? const Center(child: _LiveListText(title: '暂无频道', subtitle: '请检查数据'))
-                              : Column(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: rest
-                                      .map((ch) => GestureDetector(
-                                            onTap: () => context.go('/player/${ch.id}'),
-                                            child: Row(
-                                              children: [
-                                                Container(width: 6, height: 6, decoration: BoxDecoration(color: const Color(0xFFE53935), borderRadius: BorderRadius.circular(3))),
-                                                const SizedBox(width: 6),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(ch.displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700)),
-                                                      const SizedBox(height: 1),
-                                                      Text('即将播出 · 精彩节目', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgSub, fontSize: 10)),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
+                              : ListView.separated(
+                                  padding: EdgeInsets.zero,
+                                  itemCount: rest.length,
+                                  separatorBuilder: (_, __) => Divider(
+                                    height: 10,
+                                    thickness: 1,
+                                    color: context.fgBorder.withValues(alpha: 0.7),
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    final ch = rest[index];
+                                    return GestureDetector(
+                                      onTap: () => context.go('/player/${ch.id}'),
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 2),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Container(width: 6, height: 6, decoration: BoxDecoration(color: const Color(0xFFE53935), borderRadius: BorderRadius.circular(3))),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(ch.displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700)),
+                                                  const SizedBox(height: 2),
+                                                  Text('即将播出 · 精彩节目', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgSub, fontSize: 10)),
+                                                ],
+                                              ),
                                             ),
-                                          ))
-                                      .toList(),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                     ),
                   ],

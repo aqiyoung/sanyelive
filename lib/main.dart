@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/cctv_source.dart';
 import 'core/http/dns_warmup.dart';
+import 'core/http/ipv4_cache_manager.dart';
 import 'core/http/ipv4_client.dart';
 import 'core/router/router.dart';
 import 'core/theme/colors.dart';

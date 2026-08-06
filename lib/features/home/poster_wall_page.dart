@@ -7,6 +7,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../core/http/ipv4_cache_manager.dart';
 import '../../../core/theme/colors.dart';
 import '../settings/app_mode_provider.dart';
 import '../../../data/providers/vod_provider.dart';
@@ -653,6 +654,7 @@ class _ChannelLogo extends StatelessWidget {
     if (logo != null && logo.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: logo,
+        cacheManager: IPv4CacheManager(),
         fit: BoxFit.contain,
         height: size,
         placeholder: (_, __) => SizedBox(height: size),

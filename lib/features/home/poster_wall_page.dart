@@ -701,20 +701,40 @@ class _ChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 液态玻璃卡片: 浅色台标落在深色玻璃上才清晰. 平背景上 blur 看不出
-    // 效果, 改用 对角渐变底色 + 顶部高光 + 底部内阴影 + 细白边 + 圆角阴影
-    // 来营造通透发亮的液态玻璃质感 (非 flat 灰块).
+    // 浅色 parchment 背景上用纯白玻璃 (light) 才通透发亮, 不用深灰 dark
+    // 变体 (之前 dark 在浅背景上叠出灰塑料感). 白色台标 PNG 落在深色圆角
+    // logo 牌上, 既有对比又保持卡片整体干净明亮, 零灰感.
     return GestureDetector(
       onTap: () => context.go('/player/${channel.id}'),
       child: LiquidGlassContainer(
-        variant: LiquidGlassVariant.dark,
+        variant: LiquidGlassVariant.light,
         borderRadius: 20,
         width: 150,
         padding: const EdgeInsets.all(10),
         child: Stack(
           children: [
             Center(
-              child: _ChannelLogo(channel: channel, size: 48),
+              child: Container(
+                width: 56,
+                height: 56,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: <Color>[Color(0xFF2A3344), Color(0xFF131720)],
+                  ),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.28),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: _ChannelLogo(channel: channel, size: 40),
+              ),
             ),
             Positioned(
               left: 0,
@@ -745,7 +765,7 @@ class _ChannelCard extends StatelessWidget {
                 channel.displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700),
               ),
             ),
           ],

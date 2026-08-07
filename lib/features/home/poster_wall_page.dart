@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -705,68 +704,120 @@ class _ChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 容器做成深色磨砂玻璃: 浅色台标 (如 CCTV 白色 logo) 落在深色玻璃上
-    // 才能看清. blur 10 + 半透明黑底 + 细白边 + 投影, 形成玻璃质感.
+    // 液态玻璃卡片: 浅色台标落在深色玻璃上才清晰. 平背景上 blur 看不出
+    // 效果, 改用 对角渐变底色 + 顶部高光 + 底部内阴影 + 细白边 + 圆角阴影
+    // 来营造通透发亮的液态玻璃质感 (非 flat 灰块).
     return GestureDetector(
       onTap: () => context.go('/player/${channel.id}'),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: 150,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.34),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.20),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      child: Container(
+        width: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xBFFFFFFF), // 左上: 亮白高光
+              Color(0x73FFFFFF), // 中上: 半透白
+              Color(0xD11F2937), // 右下: 深石板 (logo 落在此, 对比足)
+            ],
+            stops: [0.0, 0.4, 1.0],
+          ),
+          border: Border.all(color: const Color(0x40FFFFFF), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 16,
+              offset: const Offset(0, 7),
             ),
-            child: Stack(
-              children: [
-                Center(
-                  child: _ChannelLogo(channel: channel, size: 48),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE53935),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'LIVE',
-                        style: TextStyle(color: Color(0xFFE53935), fontSize: 9, fontWeight: FontWeight.w800),
-                      ),
-                    ],
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              // 顶部高光: 液态玻璃的"反光"
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 34,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.55),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                    ),
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Text(
-                    channel.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+              // 底部内阴影: 增加体积感
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 42,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.22),
+                        Colors.black.withValues(alpha: 0.0),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              // 内容
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: _ChannelLogo(channel: channel, size: 48),
+                    ),
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE53935),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'LIVE',
+                            style: TextStyle(color: Color(0xFFE53935), fontSize: 9, fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Text(
+                        channel.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

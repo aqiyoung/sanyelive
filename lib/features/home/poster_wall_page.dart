@@ -650,8 +650,8 @@ class _ChannelLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     // 优先离线台标 (assets/logos, CI 构建前打包): 命中即本地渲染,
     // 不依赖设备端网络, 根治 70% 频道 logo 为 null 显示字母的问题.
-    // 容器 (_ChannelCard) 已是深色磨砂玻璃, 这里直接渲染台标即可,
-    // 不再给每个 logo 单独套托盘 (之前那样反而显脏).
+    // 容器 (_ChannelCard) 已统一为浅色液态玻璃, logo 牌本身也采用同风格
+    // 玻璃方块, 这里直接渲染台标即可, 不再单独套深色托盘.
     final local = tvLogoManifest[channel?.id];
     if (local != null && local.isNotEmpty) {
       return Image.asset(
@@ -675,11 +675,12 @@ class _ChannelLogo extends StatelessWidget {
     return _fallback(context);
   }
 
-  /// 兜底: 无台标时显示频道名首字. 容器已是深色玻璃, 直接用浅色字.
+  /// 兜底: 无台标时显示频道名首字.
+  /// 卡片里 logo 牌是浅玻璃底, 文字用深色; Hero 深色兜底用白色.
   Widget _fallback(BuildContext context) {
     final name = (channel?.displayName ?? '').trim();
     final ch = name.isNotEmpty ? name[0] : '?';
-    final Color fg = bright ? Colors.white : Colors.white.withValues(alpha: 0.92);
+    final Color fg = bright ? Colors.white : context.fgMain;
     return Center(
       child: Text(
         ch,
@@ -702,8 +703,8 @@ class _ChannelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 浅色 parchment 背景上用纯白玻璃 (light) 才通透发亮, 不用深灰 dark
-    // 变体 (之前 dark 在浅背景上叠出灰塑料感). 白色台标 PNG 落在深色圆角
-    // logo 牌上, 既有对比又保持卡片整体干净明亮, 零灰感.
+    // 变体 (之前 dark 在浅背景上叠出灰塑料感). 中间 logo 牌也做成浅色磨砂
+    // 玻璃小方块, 与卡片风格统一, 不再用深色底破坏整体通透感.
     return GestureDetector(
       onTap: () => context.go('/player/${channel.id}'),
       child: LiquidGlassContainer(
@@ -715,21 +716,21 @@ class _ChannelCard extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 56,
-                height: 56,
+                width: 58,
+                height: 58,
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: <Color>[Color(0xFF2A3344), Color(0xFF131720)],
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white.withValues(alpha: 0.38),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.65),
+                    width: 1,
                   ),
                   boxShadow: <BoxShadow>[
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.28),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),

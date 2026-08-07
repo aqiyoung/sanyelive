@@ -16,6 +16,7 @@
 //   });
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -76,6 +77,29 @@ class _ForceUpdateDialogContentState
       }
     } finally {
       if (mounted) setState(() => _launching = false);
+    }
+  }
+
+  /// 复制 APK 下载直链到剪贴板 (对齐飞牛音乐: 点下载不自动下, 而是复制链接,
+  /// 用户粘到浏览器 / 发给自己设备再下, 避开 TV 自动下载 APK 的权限坑).
+  Future<void> _copyApkLink(BuildContext context, String apkUrl) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: apkUrl));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已复制下载链接, 粘贴到浏览器即可下载 APK'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('复制下载链接失败: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('复制失败: $e')),
+        );
+      }
     }
   }
 
@@ -171,7 +195,7 @@ class _ForceUpdateDialogContentState
               ),
               const SizedBox(height: 12),
               Text(
-                '点击"去下载"将跳转 GitHub 下载最新 APK',
+                '点"复制下载链接"把 APK 直链复制到剪贴板, 粘贴到浏览器即可下载',
                 style: TextStyle(
                   fontSize: 12,
                   color: bodyColor.withValues(alpha: 0.6),
@@ -217,14 +241,23 @@ class _ForceUpdateDialogContentState
       );
     }
 
+    // 次要: 去浏览器打开 GitHub releases 页 (手动挑架构下载).
+    actions.add(
+      TextButton(
+        onPressed: () => _openGitHub(context, s.latestVersion),
+        child: const Text('去浏览器下载'),
+      ),
+    );
+
+    // 主操作: 复制 APK 直链到剪贴板 (对齐飞牛音乐, TV 上最稳).
     actions.add(
       FilledButton(
-        onPressed: () => _openGitHub(context, s.latestVersion),
+        onPressed: () => _copyApkLink(context, s.apkDownloadUrl),
         style: FilledButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,
         ),
-        child: const Text('去下载'),
+        child: const Text('复制下载链接'),
       ),
     );
 

@@ -284,14 +284,18 @@ jobs:
           code = int(os.environ['CODE'])
           release_url = os.environ['RELEASE_URL']
           dl_base = os.environ['DL_BASE']
+          # 国内可达: APK 直链烤上 gh-proxy 前缀, 复制后粘到浏览器即可下
+          # (raw.githubusercontent 直链在国内常被墙, 经代理才稳).
+          proxy = "https://gh-proxy.com/"
           data = {
               "tag": tag,
               "versionName": version_name,
               "versionCode": code,
+              "releaseName": tag,
               "apk": {
-                  "arm64-v8a": f"{dl_base}-arm64-v8a.apk",
-                  "armeabi-v7a": f"{dl_base}-armeabi-v7a.apk",
-                  "x86_64": f"{dl_base}-x86_64.apk",
+                  "arm64-v8a": f"{proxy}{dl_base}-arm64-v8a.apk",
+                  "armeabi-v7a": f"{proxy}{dl_base}-armeabi-v7a.apk",
+                  "x86_64": f"{proxy}{dl_base}-x86_64.apk",
               },
               "releaseUrl": release_url,
               "critical": False,

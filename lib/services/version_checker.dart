@@ -48,16 +48,24 @@ const String _kGitHubApiBaseUrl =
     'https://api.github.com/repos/aqiyoung/sanyelive/releases/latest';
 
 /// 版本信息静态源 — 放在 `raw.githubusercontent.com` 的 `meta` 分支.
-/// 每次发版由 CI (release.yml) 自动刷新.  这个域名正是 gh-proxy 等公共代理
-/// 的"主业" (代理 raw.githubusercontent.com),  国内稳达;  而公共镜像几乎都
-/// **不代理 api.github.com** 这个 API 域名,  这正是旧版"检查不到更新"的根因
-/// (直连被墙 + 代理不支持 API → 5 个端点全挂).  所以优先查这个 raw 版本源.
-const String _kVersionMetaUrl =
-    'https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json';
+/// 每次发版由 CI (release.yml) 自动刷新.  旧版直连 `api.github.com` 被墙 +
+/// 公共镜像不代理 API 域名 → "检查不到更新".  改用 raw 版本源 + 多镜像兜底.
+/// 注意: 这些都是**完整 URL** (代理已烤进路径),  循环时不再拼前缀,  prefix=''.
+/// 顺序按国内可靠性:  jsDelivr CDN (国内多节点, 最稳) → gh-proxy 系列 → 直连.
+const List<String> _kVersionMetaUrls = [
+  // jsDelivr: 正规 CDN, 国内节点多, 通常最稳.  @meta 指 meta 分支.
+  'https://cdn.jsdelivr.net/gh/aqiyoung/sanyelive@meta/version.json',
+  // gh-proxy 系列: 公共代理, 主业就是代理 raw.githubusercontent.com.
+  'https://gh-proxy.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  'https://ghps.cc/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  'https://github.moeyy.xyz/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  'https://gh.api.99988866.xyz/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  // 直连 raw (翻墙用户 / 兜底).
+  'https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+];
 
-/// 国内 GitHub 镜像前缀列表.  当直连 `api.github.com` 失败时, 自动依次尝试.
-/// 用法: `$prefix$_kGitHubApiBaseUrl`, APK 下载链接同理由 `$prefix$originalUrl` 代理.
-/// 顺序: 直连优先 → 公共镜像.  这些镜像在国内移动网络通常可用.
+/// 国内 GitHub 镜像前缀列表 (仅用于 GitHub API 兜底).  当直连 `api.github.com`
+/// 失败时, 自动依次尝试.  用法: `$prefix$_kGitHubApiBaseUrl`.
 const List<String> _kGitHubProxyPrefixes = [
   '', // 直连
   'https://gh-proxy.com/',
@@ -356,9 +364,10 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   /// 返回 (release JSON, 成功使用的镜像前缀). 前缀用于把 APK 下载链接也走
   /// 同一镜像, 避免源通了但下载地址被墙.
   Future<(Map<String, dynamic>, String)> _fetchLatestRelease() async {
-    // 1) meta 版本源 (raw, 国内稳达) — 优先.
-    for (final prefix in _kGitHubProxyPrefixes) {
-      final url = prefix.isEmpty ? _kVersionMetaUrl : '$prefix$_kVersionMetaUrl';
+    // 1) meta 版本源 (raw, 多镜像兜底, 国内稳达) — 优先.
+    //    这些 URL 已是完整地址 (代理烤进路径),  prefix='' 表示 APK 下载链接
+    //    不再二次拼前缀.
+    for (final url in _kVersionMetaUrls) {
       try {
         final resp = await _dio.get<dynamic>(
           url,
@@ -370,14 +379,14 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
         );
         if (resp.statusCode == 200 && resp.data is String) {
           final s = (resp.data as String).trim();
-          // 拿到 HTML (如代理没干活 / 404 页) 直接跳过这个前缀.
+          // 拿到 HTML (如代理没干活 / 404 页) 直接跳过这个源.
           if (s.startsWith('<')) continue;
           try {
             final decoded = jsonDecode(s);
             if (decoded is Map<String, dynamic> &&
                 decoded.containsKey('tag') &&
                 decoded.containsKey('versionCode')) {
-              return (decoded, prefix);
+              return (decoded, '');
             }
           } catch (_) {
             debugPrint('version_checker: meta JSON parse fail from $url');

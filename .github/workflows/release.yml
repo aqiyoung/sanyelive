@@ -325,22 +325,36 @@ jobs:
           fi
 
       - name: 推送新版本到 Telegram（私人）
-        if: startsWith(github.ref, 'refs/tags/')
+        if: success() && startsWith(github.ref, 'refs/tags/')
         env:
           TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           set -e
-          VERSION="${{ github.ref_name }}"
-          RELEASE_URL="https://github.com/aqiyoung/sanyelive/releases/tag/$VERSION"
-          echo "📦 视界 $VERSION 已发布！
-
-          $RELEASE_URL" > /tmp/msg.txt
+          # 只在构建成功时推送 (success() 保证 build/release 都过); 只发构建成功的包 + 日志链接.
+          TAG="${{ github.ref_name }}"
+          VNO_V="${TAG#v}"
+          CODE="${VNO_V##*.}"
+          BASE="${VNO_V%.*}"
+          VERSION_NAME="${BASE}+${CODE}"
+          PROXY="https://gh-proxy.com/"
+          DL_BASE="https://github.com/aqiyoung/sanyelive/releases/download/${TAG}/sanyelive-v${VERSION_NAME}"
+          LOG_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/logs"
+          {
+            echo "📦 视界 $TAG 构建成功"
+            echo ""
+            echo "APK 下载（3 架构，按设备选装）："
+            echo "• arm64-v8a（首选）：${PROXY}${DL_BASE}-arm64-v8a.apk"
+            echo "• armeabi-v7a（老盒）：${PROXY}${DL_BASE}-armeabi-v7a.apk"
+            echo "• x86_64（阿里盒）：${PROXY}${DL_BASE}-x86_64.apk"
+            echo ""
+            echo "构建日志：${LOG_URL}"
+          } > /tmp/msg.txt
+          cat /tmp/msg.txt
           # -f: HTTP 错误(如 401 token 失效 / 403 未与 bot /start)时 curl 返回非0,
           # 配合 set -e 让推送失败在 CI 里可见 (之前无 -f, Telegram 拒收也静默
           # success, 导致你从未真正收到). chat_id 可经 secret TELEGRAM_CHAT_ID 覆盖.
           curl -f -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${CHAT:-460212872}" \
             --data-urlencode "text=$(cat /tmp/msg.txt)" \
-            --data-urlencode "parse_mode=Markdown" \
             || echo "::error::Telegram 推送失败 — 检查 TELEGRAM_BOT_TOKEN 是否有效、chat_id 是否与你 /start 过该 bot"

@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sanyelive/widgets/liquid_glass_container.dart';
 
-import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../data/models/channel.dart';
 import '../../data/models/content.dart';
@@ -487,7 +486,6 @@ class _SearchResultTile extends StatelessWidget {
             ],
           ),
         ),
-    ),
-    ;
+    );
   }
 }

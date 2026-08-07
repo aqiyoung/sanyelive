@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -653,67 +654,44 @@ class _ChannelLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     // 优先离线台标 (assets/logos, CI 构建前打包): 命中即本地渲染,
     // 不依赖设备端网络, 根治 70% 频道 logo 为 null 显示字母的问题.
+    // 容器 (_ChannelCard) 已是深色磨砂玻璃, 这里直接渲染台标即可,
+    // 不再给每个 logo 单独套托盘 (之前那样反而显脏).
     final local = tvLogoManifest[channel?.id];
     if (local != null && local.isNotEmpty) {
-      return _glassBox(
-        Image.asset(
-          'assets/logos/$local',
-          fit: BoxFit.contain,
-          height: size * 0.72,
-          errorBuilder: (_, __, ___) => _fallbackText(context),
-        ),
+      return Image.asset(
+        'assets/logos/$local',
+        fit: BoxFit.contain,
+        height: size,
+        errorBuilder: (_, __, ___) => _fallback(context),
       );
     }
     final logo = channel?.logoUrl;
     if (logo != null && logo.isNotEmpty) {
-      return _glassBox(
-        CachedNetworkImage(
-          imageUrl: logo,
-          cacheManager: IPv4CacheManager(),
-          fit: BoxFit.contain,
-          height: size * 0.72,
-          placeholder: (_, __) => SizedBox(height: size * 0.72),
-          errorWidget: (_, __, ___) => _fallbackText(context),
-        ),
+      return CachedNetworkImage(
+        imageUrl: logo,
+        cacheManager: IPv4CacheManager(),
+        fit: BoxFit.contain,
+        height: size,
+        placeholder: (_, __) => SizedBox(height: size),
+        errorWidget: (_, __, ___) => _fallback(context),
       );
     }
     return _fallback(context);
   }
 
-  /// 透明玻璃/毛玻璃托盘: 给台标一个半透明底 + 细边线, 解决浅色台标
-  /// (如 CCTV 白色 logo) 在浅色卡片上看不清的问题. [bright] 用于深色背景,
-  /// 托盘变白透; 非 bright 用于浅色卡片, 托盘变黑透.
-  Widget _glassBox(Widget child) {
-    final Color bg = bright
-        ? Colors.white.withValues(alpha: 0.18)
-        : Colors.black.withValues(alpha: 0.14);
-    final Color border = bright
-        ? Colors.white.withValues(alpha: 0.24)
-        : Colors.black.withValues(alpha: 0.16);
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(size * 0.22),
-        border: Border.all(color: border),
-      ),
-      child: Center(child: child),
-    );
-  }
-
-  Widget _fallback(BuildContext context) => _glassBox(_fallbackText(context));
-
-  Widget _fallbackText(BuildContext context) {
+  /// 兜底: 无台标时显示频道名首字. 容器已是深色玻璃, 直接用浅色字.
+  Widget _fallback(BuildContext context) {
     final name = (channel?.displayName ?? '').trim();
     final ch = name.isNotEmpty ? name[0] : '?';
-    final Color fg = bright ? Colors.white : context.fgAccent;
-    return Text(
-      ch,
-      style: TextStyle(
-        color: fg,
-        fontSize: size * 0.46,
-        fontWeight: FontWeight.w900,
+    final Color fg = bright ? Colors.white : Colors.white.withValues(alpha: 0.92);
+    return Center(
+      child: Text(
+        ch,
+        style: TextStyle(
+          color: fg,
+          fontSize: size * 0.46,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
@@ -727,56 +705,69 @@ class _ChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 容器做成深色磨砂玻璃: 浅色台标 (如 CCTV 白色 logo) 落在深色玻璃上
+    // 才能看清. blur 10 + 半透明黑底 + 细白边 + 投影, 形成玻璃质感.
     return GestureDetector(
       onTap: () => context.go('/player/${channel.id}'),
-      child: Container(
-        width: 150,
-        decoration: BoxDecoration(
-          color: context.bgCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.fgBorder),
-        ),
-        child: Stack(
-          children: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: _ChannelLogo(channel: channel, size: 48),
-              ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 150,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.34),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.20),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            Positioned(
-              left: 8,
-              top: 8,
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE53935),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
+            child: Stack(
+              children: [
+                Center(
+                  child: _ChannelLogo(channel: channel, size: 48),
+                ),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE53935),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'LIVE',
+                        style: TextStyle(color: Color(0xFFE53935), fontSize: 9, fontWeight: FontWeight.w800),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'LIVE',
-                    style: TextStyle(color: Color(0xFFE53935), fontSize: 9, fontWeight: FontWeight.w800),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Text(
+                    channel.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Positioned(
-              left: 10,
-              right: 10,
-              bottom: 10,
-              child: Text(
-                channel.displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

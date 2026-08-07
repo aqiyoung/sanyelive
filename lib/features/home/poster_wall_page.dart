@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 
 import '../../../core/http/ipv4_cache_manager.dart';
 import '../../../core/theme/colors.dart';
@@ -571,14 +572,11 @@ class _ChannelChips extends StatelessWidget {
           final c = _chips[i];
           return GestureDetector(
             onTap: () => context.go(c.route),
-            child: Container(
-              alignment: Alignment.center,
+            child: LiquidGlassContainer(
+              variant: LiquidGlassVariant.light,
+              borderRadius: 20,
+              specular: false,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: context.bgCard,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: context.fgBorder),
-              ),
               child: Row(
                 children: [
                   Icon(c.icon, color: context.fgAccent, size: 16),
@@ -709,116 +707,49 @@ class _ChannelCard extends StatelessWidget {
     // 来营造通透发亮的液态玻璃质感 (非 flat 灰块).
     return GestureDetector(
       onTap: () => context.go('/player/${channel.id}'),
-      child: Container(
+      child: LiquidGlassContainer(
+        variant: LiquidGlassVariant.dark,
+        borderRadius: 20,
         width: 150,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xBFFFFFFF), // 左上: 亮白高光
-              Color(0x73FFFFFF), // 中上: 半透白
-              Color(0xD11F2937), // 右下: 深石板 (logo 落在此, 对比足)
-            ],
-            stops: [0.0, 0.4, 1.0],
-          ),
-          border: Border.all(color: const Color(0x40FFFFFF), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
+        padding: const EdgeInsets.all(10),
+        child: Stack(
+          children: [
+            Center(
+              child: _ChannelLogo(channel: channel, size: 48),
+            ),
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE53935),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'LIVE',
+                    style: TextStyle(color: Color(0xFFE53935), fontSize: 9, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Text(
+                channel.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
             ),
           ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              // 顶部高光: 液态玻璃的"反光"
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 34,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.55),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // 底部内阴影: 增加体积感
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 42,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.22),
-                        Colors.black.withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // 内容
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: _ChannelLogo(channel: channel, size: 48),
-                    ),
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE53935),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'LIVE',
-                            style: TextStyle(color: Color(0xFFE53935), fontSize: 9, fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: Text(
-                        channel.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -1046,14 +977,12 @@ class _CategoryShortcutBar extends StatelessWidget {
               width: 58,
               child: Column(
                 children: [
-                  Container(
+                  LiquidGlassContainer(
+                    variant: LiquidGlassVariant.light,
+                    borderRadius: 18,
                     width: 52,
                     height: 52,
-                    decoration: BoxDecoration(
-                      color: context.bgCard,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: context.fgBorder),
-                    ),
+                    specular: false,
                     child: Icon(item.icon, color: item.color, size: 27),
                   ),
                   const SizedBox(height: 7),
@@ -1077,8 +1006,6 @@ class _LiveTvModule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = context.bgCard;
-    final borderColor = context.fgBorder;
     final textColor = context.fgMain;
 
     final primary = channels.isNotEmpty ? channels.first : null;
@@ -1086,15 +1013,13 @@ class _LiveTvModule extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: borderColor),
-        ),
-        child: SizedBox(
-          height: 116,
+        child: LiquidGlassContainer(
+          variant: LiquidGlassVariant.light,
+          borderRadius: 22,
+          specular: false,
+          padding: const EdgeInsets.all(12),
+          child: SizedBox(
+            height: 116,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

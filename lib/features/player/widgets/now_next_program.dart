@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/typography.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/epg.dart';
@@ -76,19 +77,10 @@ class _ProgramCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPlaceholder = current?.title == '敬请期待';
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 12,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,19 +224,10 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 12,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [

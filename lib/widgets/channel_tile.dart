@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/colors.dart';
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../core/theme/typography.dart';
 import '../data/models/channel.dart';
 import '../features/favorites/favorite_button.dart';
@@ -31,25 +31,15 @@ class ChannelTile extends StatelessWidget {
     // favorite icon 仍然要 iptv org 原名 (作 channelName)
     final favName = channel?.name ?? channelName;
 
-    return Material(
-      color: Colors.transparent,
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 12,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          // (浅一档米色 + 圆角 12),  外层 list 用 SizedBox 间隔.  之前是 list+
-          // divider 风格,  +99/+100 删了 border 和 Divider,  但视觉上
-          // Scaffold 背景 (bgParchment #F5F4ED) 区分,  让用户"看得出来是
-          // 容器".  跟 settings page 的 _SettingsCard 是同一套语言.
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? IptvColors.darkSurface
-                : IptvColors.bgElevated,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
+        child: Row(
+          children: [
               SizedBox(
                 width: 48,
                 child: Text(

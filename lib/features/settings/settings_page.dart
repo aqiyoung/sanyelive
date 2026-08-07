@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 
 
 import '../../services/version_checker.dart'
@@ -437,19 +438,9 @@ class _SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.bgCard,
-        borderRadius: BorderRadius.circular(12),
-        // boxShadow: [
-        //   BoxShadow(
-        //     color: Colors.black.withValues(alpha: 0.04),
-        //     blurRadius: 8,
-        //     offset: const Offset(0, 2),
-        //   ),
-        // ],
-      ),
-      clipBehavior: Clip.antiAlias, // 让内部 ListTile ripple 不溢出圆角
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 12,
       // 设置页和我的页 UI 字体保持一致). DefaultTextStyle 让内部所有 ListTile
       // title 自动继承, 不再用 ListTile 默认的 16sp/w500 Material 样式.
       child: DefaultTextStyle(

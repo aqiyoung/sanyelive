@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/colors.dart';
 import '../settings/app_mode_provider.dart';
 import 'poster_wall_page.dart';
@@ -260,14 +261,11 @@ class _MinePage extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   // TV 模式只展示直播卡片, 隐藏视频占位.
                   final isLive = fullMode ? (index % 2 == 0) : true;
-                  return Container(
+                  return LiquidGlassContainer(
+                    variant: LiquidGlassVariant.light,
+                    borderRadius: 14,
                     width: 110,
                     margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      color: context.bgCard,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: context.fgBorder),
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -353,14 +351,11 @@ class _ActionHubPage extends StatelessWidget {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 24),
-            child: Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: context.bgCard,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: context.fgBorder),
-              ),
-              child: Column(
+              child: LiquidGlassContainer(
+                variant: LiquidGlassVariant.light,
+                borderRadius: 24,
+                padding: const EdgeInsets.all(22),
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(icon, color: context.fgAccent, size: 52),
@@ -401,14 +396,11 @@ class _MineTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         splashColor: context.fgAccent.withValues(alpha: 0.08),
         highlightColor: context.fgAccent.withValues(alpha: 0.04),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            color: context.bgCard,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: context.fgBorder),
-          ),
-          child: Row(
+          child: LiquidGlassContainer(
+            variant: LiquidGlassVariant.light,
+            borderRadius: 20,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
             children: [
               Icon(icon, color: context.fgAccent, size: 26),
               const SizedBox(width: 12),

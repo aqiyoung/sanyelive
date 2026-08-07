@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/colors.dart';
 import '../../../data/providers/vod_provider.dart';
 import '../../../data/models/vod_source.dart';
@@ -109,13 +110,12 @@ class _VodCategoryBrowserPageState extends ConsumerState<VodCategoryBrowserPage>
                   final active = i == _selectedSub;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedSub = i),
-                    child: Container(
+                    child: LiquidGlassContainer(
+                      variant: LiquidGlassVariant.light,
+                      borderRadius: 16,
+                      specular: false,
+                      tint: active ? context.fgAccent : null,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: active ? context.fgAccent.withValues(alpha: 0.13) : context.bgCardHigh,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: active ? context.fgAccent : context.fgBorder),
-                      ),
                       child: Text(
                         subList[i],
                         style: TextStyle(

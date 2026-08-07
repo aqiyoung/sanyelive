@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/typography.dart';
 // 主题联动).  theme_tokens_test.dart 严格 grep 不许硬编颜色常量.
 import '../../../data/category_zh.dart';
@@ -111,24 +112,13 @@ class _ChannelChip extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
-      child: Container(
-        // 02/03 频道名能显示完整.  之前 116px 装下 "CCTV+ 1 (1.0)" 还够,
-        // 但 "CCTV-1 综合" 被截.  现在 108 + 字号 12,  80% 频道能装下.
-        width: 108,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          // 之前选中: surfaceContainerHighest (白,  跟黑底 scaffold 获眼
-          // "白卡浮起");  非选中: surface (米色,  跟黑底反差小).
-          // 现在所有 chip = bgElevated 浅一档米色 (#FFFCF6) — 统一
-          // 容器.  选中加 accent 0.12α 浅红 overlay 表示"下一频道".
-          // ColorScheme 里对应的 token 是 surfaceContainerHighest
-          // (theme.dart: 16 行).  走 token 后主题变化能自动联动.
-          color: isNext
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
-              : Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
+        child: LiquidGlassContainer(
+          variant: LiquidGlassVariant.light,
+          borderRadius: 10,
+          width: 108,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          tint: isNext ? Theme.of(context).colorScheme.primary : null,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

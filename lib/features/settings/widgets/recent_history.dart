@@ -6,6 +6,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/colors.dart';
 import '../../../services/playback_history_service.dart';
 
@@ -84,13 +85,11 @@ class _HistoryCard extends StatelessWidget {
     final isLive = _isLive(entry.url);
     final typeColor = isLive ? scheme.primary : scheme.error;
 
-    return Container(
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 8,
       width: 80,
-      decoration: BoxDecoration(
-        color: context.bgCard,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
+      specular: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

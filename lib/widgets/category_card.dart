@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme/colors.dart';
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../core/theme/typography.dart';
 // 没有装饰).  改用 bgElevated 浅一档米色 + 圆角 16 显出容器.
 
@@ -20,47 +20,38 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      // 之前 +99/+100 删了 border, 但 CategoryCard bg 跟 Scaffold 同色
-      // 现在跟 ChannelTile 同样模式: 浅一档米色 + 圆角 16 让"一眼能看出
-      // 是独立容器".
-      color: IptvColors.bgElevated,
-      borderRadius: BorderRadius.circular(16),
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 16,
+      padding: const EdgeInsets.all(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  // ignore: deprecated_member_use
-                  color:
-                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon,
-                    color: Theme.of(context).colorScheme.primary, size: 22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color:
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(height: 12),
-              Text(title, style: IptvTypography.serifTitle),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: IptvTypography.caption.copyWith(fontSize: 11),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+              child: Icon(icon,
+                  color: Theme.of(context).colorScheme.primary, size: 22),
+            ),
+            const SizedBox(height: 12),
+            Text(title, style: IptvTypography.serifTitle),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: IptvTypography.caption.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

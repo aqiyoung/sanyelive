@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
@@ -413,22 +414,16 @@ class _SearchResultTile extends StatelessWidget {
     final accent = Theme.of(context).colorScheme.primary;
     // 独立容器 (浅一档米色 + 圆角 12).  选中态: accent 0.08 alpha bg
     // (区分).  非选中: bgElevated (#FFFCF6).  跟 ChannelTile 一致.
-    return Material(
-      color: Colors.transparent,
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 12,
+      tint: isSelected ? accent : null,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isSelected
-                // ignore: deprecated_member_use
-                ? accent.withValues(alpha: 0.12)
-                : context.bgCard,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
+        child: Row(
+          children: [
               SizedBox(
                 width: 48,
                 child: Text(

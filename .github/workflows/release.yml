@@ -262,7 +262,10 @@ jobs:
         # version.json (经 gh-proxy 等公共代理, 国内稳达). 这里每次发版把最新版本
         # 信息写回 meta 分支, 保证设备端能可靠拉到.  meta 分支独立于 main
         # (main 被 source-sync 机器人高频 force-push), 不会被覆盖.
+        # continue-on-error: APK 已在上一步发布, 此步失败不阻断发版 (设备端仍有
+        # GitHub API 兜底), 但正常情况下应成功.
         if: startsWith(github.ref, 'refs/tags/')
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -274,24 +277,42 @@ jobs:
           VERSION_NAME="${BASE}+${CODE}"
           RELEASE_URL="https://github.com/aqiyoung/sanyelive/releases/tag/${TAG}"
           DL_BASE="https://github.com/aqiyoung/sanyelive/releases/download/${TAG}/sanyelive-v${VERSION_NAME}"
-          VERSION_JSON=$(jq -n \
-            --arg tag "$TAG" \
-            --arg vn "$VERSION_NAME" \
-            --argjson code "$CODE" \
-            --arg ru "$RELEASE_URL" \
-            --arg a64 "${DL_BASE}-arm64-v8a.apk" \
-            --arg a72 "${DL_BASE}-armeabi-v7a.apk" \
-            --arg x86 "${DL_BASE}-x86_64.apk" \
-            --arg date "$(date -u +%Y-%m-%d)" \
-            '{tag:$tag, versionName:$vn, versionCode:$code, apk:{arm64-v8a:$a64, armeabi-v7a:$a72, x86_64:$x86}, releaseUrl:$ru, critical:false, notes:("视界 "+$tag+" 已发布, 详情见 GitHub Releases"), updatedAt:$date}')
-          CONTENT=$(echo -n "$VERSION_JSON" | base64 -w0)
-          SHA=$(gh api repos/aqiyoung/sanyelive/contents/version.json?ref=meta --jq .sha)
-          echo "Publishing version.json to meta: $VERSION_JSON"
-          gh api -X PUT repos/aqiyoung/sanyelive/contents/version.json \
-            -f branch=meta \
-            -f message="chore: bump version.json to $TAG" \
-            -f sha="$SHA" \
-            -f content="$CONTENT"
+          python3 - <<'PYEOF'
+          import base64, json, subprocess, os
+          tag = os.environ['TAG']
+          version_name = os.environ['VERSION_NAME']
+          code = int(os.environ['CODE'])
+          release_url = os.environ['RELEASE_URL']
+          dl_base = os.environ['DL_BASE']
+          data = {
+              "tag": tag,
+              "versionName": version_name,
+              "versionCode": code,
+              "apk": {
+                  "arm64-v8a": f"{dl_base}-arm64-v8a.apk",
+                  "armeabi-v7a": f"{dl_base}-armeabi-v7a.apk",
+                  "x86_64": f"{dl_base}-x86_64.apk",
+              },
+              "releaseUrl": release_url,
+              "critical": False,
+              "notes": f"视界 {tag} 已发布, 详情见 GitHub Releases",
+              "updatedAt": subprocess.run(["date", "-u", "+%Y-%m-%d"], capture_output=True, text=True).stdout.strip(),
+          }
+          raw = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
+          content = base64.b64encode(raw).decode()
+          sha = subprocess.run(
+              ["gh", "api", "repos/aqiyoung/sanyelive/contents/version.json?ref=meta", "--jq", ".sha"],
+              capture_output=True, text=True).stdout.strip()
+          r = subprocess.run(
+              ["gh", "api", "-X", "PUT", "repos/aqiyoung/sanyelive/contents/version.json",
+               "-f", "branch=meta",
+               "-f", f"message=chore: bump version.json to {tag}",
+               "-f", f"sha={sha}",
+               "-f", f"content={content}"],
+              capture_output=True, text=True)
+          print(r.stdout[:500])
+          print(r.stderr[:500])
+          PYEOF
           echo "✅ version.json -> meta 已更新"
 
       - name: 推送新版本到 Telegram（私人）

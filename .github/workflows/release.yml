@@ -265,8 +265,9 @@ jobs:
         # 静默失败 (python 没 check=True + continue-on-error 吞错, 步骤显示 success
         # 但 meta 实际没动), 导致 meta 卡在 v134 不更新 → 装了 v135~v137 的用户
         # 误判"已最新"、永远不弹更新.  改用 git clone meta 分支 + 写文件 + push
-        # (GITHUB_TOKEN 对 git push 一定有权限, 比 gh api PUT 可靠).  失败仍可见
-        # (continue-on-error 让 step 在 run 里标红, 但不阻断 APK 发布).
+        # (GITHUB_TOKEN 对 git push 一定有权限, 比 gh api PUT 可靠).
+        # v0.3.12+142: 之前 shell 变量未 export, Python 里 os.environ 读不到
+        # 导致 meta 仍卡 138; 现在显式 export 后再写文件提交.
         if: startsWith(github.ref, 'refs/tags/')
         continue-on-error: true
         env:
@@ -280,6 +281,7 @@ jobs:
           VERSION_NAME="${BASE}+${CODE}"
           RELEASE_URL="https://github.com/aqiyoung/sanyelive/releases/tag/${TAG}"
           DL_BASE="https://github.com/aqiyoung/sanyelive/releases/download/${TAG}/sanyelive-v${VERSION_NAME}"
+          export TAG VERSION_NAME CODE RELEASE_URL DL_BASE
           WORK=/tmp/meta-publish
           rm -rf "$WORK"
           git clone --depth 1 --branch meta "https://x-access-token:${GH_TOKEN}@github.com/aqiyoung/sanyelive.git" "$WORK"

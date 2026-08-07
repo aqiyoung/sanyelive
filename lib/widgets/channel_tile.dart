@@ -105,7 +105,7 @@ class ChannelTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+    ),
+    ;
   }
 }

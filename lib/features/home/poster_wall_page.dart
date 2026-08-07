@@ -575,7 +575,6 @@ class _ChannelChips extends StatelessWidget {
             child: LiquidGlassContainer(
               variant: LiquidGlassVariant.light,
               borderRadius: 20,
-              specular: false,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [

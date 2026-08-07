@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 
 /// 液态玻璃容器 — 全 app 卡片统一的玻璃视觉语言.
 ///
-/// 核心视觉: 低透明度底色 + 轻微背景模糊(BackdropFilter) + 顶部高光 +
+/// 核心视觉: 低透明度渐变底色 + BackdropFilter 背景模糊 + 顶部高光 +
 /// 底部内阴影 + 细白边 + 柔和投影, 营造通透发亮的磨砂玻璃质感.
 ///
-/// 之前实现把渐变/底色 alpha 设得太高(深色 0xD21F2937 ≈ 82%, 高光白 0xBF ≈
-/// 75%), 导致卡片看起来是实心的灰块, 完全不像玻璃. 现在把透明度压到
-/// 22~38%, 让背后的米色/深色页面能透过来, 配合 BackdropFilter 的轻微
-/// 模糊, 才是真正的"半透明玻璃片".
+/// 之前实现把底色/高光 alpha 设得太高(深色 0xD2 ≈ 82%, 高光 0xBF ≈ 75%), 在
+/// 浅色 parchment 背景上看起来像实心灰塑料块. 现在把透明度大幅压低, 让
+/// 背后的页面能明显透过来, 配合 blur 与高光白边, 才是真正的"透明玻璃片".
 ///
 /// - [variant] = [LiquidGlassVariant.light]: 浅色白透玻璃片, 文字/图标用
 ///   深色; [LiquidGlassVariant.dark]: 深色透底玻璃片, 白色台标/文字清晰.
@@ -55,20 +54,29 @@ class LiquidGlassContainer extends StatelessWidget {
     final double r = borderRadius;
     final bool dark = variant == LiquidGlassVariant.dark;
 
-    // 玻璃底色: 低透明度, 让背景能透过来, 才像真正的玻璃片.
-    final Color baseColor = dark
-        ? (tint ?? const Color(0xFF1F2937)).withValues(alpha: 0.40)
-        : (tint ?? Colors.white).withValues(alpha: 0.22);
+    // 玻璃底色: 极低透明度 + 对角渐变, 让背景能透过来并带有"折射"光泽.
+    final Gradient baseGradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[
+        dark
+            ? (tint ?? const Color(0xFF3D4855)).withValues(alpha: 0.18)
+            : (tint ?? Colors.white).withValues(alpha: 0.28),
+        dark
+            ? (tint ?? const Color(0xFF1F2937)).withValues(alpha: 0.12)
+            : (tint ?? Colors.white).withValues(alpha: 0.16),
+      ],
+    );
 
     final Color borderColor = dark
-        ? Colors.white.withValues(alpha: 0.20)
-        : Colors.white.withValues(alpha: 0.45);
+        ? Colors.white.withValues(alpha: 0.32)
+        : Colors.white.withValues(alpha: 0.50);
 
     final List<BoxShadow>? boxShadow = shadow
         ? <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: dark ? 0.18 : 0.08),
-              blurRadius: dark ? 14 : 12,
+              color: Colors.black.withValues(alpha: dark ? 0.10 : 0.06),
+              blurRadius: dark ? 16 : 14,
               offset: const Offset(0, 6),
             ),
           ]
@@ -80,7 +88,7 @@ class LiquidGlassContainer extends StatelessWidget {
       margin: margin,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(r),
-        color: baseColor,
+        gradient: baseGradient,
         border: Border.all(color: borderColor, width: 1),
         boxShadow: boxShadow,
       ),
@@ -95,7 +103,7 @@ class LiquidGlassContainer extends StatelessWidget {
                 top: 0,
                 left: 0,
                 right: 0,
-                height: r * 1.5,
+                height: r * 1.4,
                 child: IgnorePointer(
                   child: Container(
                     decoration: BoxDecoration(
@@ -103,7 +111,7 @@ class LiquidGlassContainer extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: <Color>[
-                          Colors.white.withValues(alpha: dark ? 0.22 : 0.35),
+                          Colors.white.withValues(alpha: dark ? 0.28 : 0.42),
                           Colors.white.withValues(alpha: 0.0),
                         ],
                       ),
@@ -111,12 +119,12 @@ class LiquidGlassContainer extends StatelessWidget {
                   ),
                 ),
               ),
-              // 底部内阴影: 增加体积感.
+              // 底部内阴影: 增加体积感, 但保持很淡以免显脏.
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: r * 1.8,
+                height: r * 1.6,
                 child: IgnorePointer(
                   child: Container(
                     decoration: BoxDecoration(
@@ -124,7 +132,7 @@ class LiquidGlassContainer extends StatelessWidget {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: <Color>[
-                          Colors.black.withValues(alpha: dark ? 0.16 : 0.06),
+                          Colors.black.withValues(alpha: dark ? 0.10 : 0.05),
                           Colors.black.withValues(alpha: 0.0),
                         ],
                       ),
@@ -138,14 +146,13 @@ class LiquidGlassContainer extends StatelessWidget {
       ),
     );
 
-    // 背景模糊: 让玻璃背后的内容呈现磨砂感. 在 Uniform 背景上效果较淡,
-    // 但有彩色/图案背景时会很明显; 即使 uniform 背景, blur 也能让玻璃
-    // 边缘更柔和.
+    // 背景模糊: 让玻璃背后的内容呈现磨砂感. 即使 uniform 背景, blur 也能让
+    // 玻璃边缘更柔和, 同时增强"毛玻璃"认知.
     if (blur) {
       glass = ClipRRect(
         borderRadius: BorderRadius.circular(r),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: glass,
         ),
       );

@@ -1,14 +1,14 @@
 {
-  "tag": "v0.3.12.131",
-  "versionName": "0.3.12+131",
-  "versionCode": 131,
+  "tag": "v0.3.12.133",
+  "versionName": "0.3.12+133",
+  "versionCode": 133,
   "apk": {
-    "arm64-v8a": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.131/sanyelive-v0.3.12+131-arm64-v8a.apk",
-    "armeabi-v7a": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.131/sanyelive-v0.3.12+131-armeabi-v7a.apk",
-    "x86_64": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.131/sanyelive-v0.3.12+131-x86_64.apk"
+    "arm64-v8a": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.133/sanyelive-v0.3.12+133-arm64-v8a.apk",
+    "armeabi-v7a": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.133/sanyelive-v0.3.12+133-armeabi-v7a.apk",
+    "x86_64": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.133/sanyelive-v0.3.12+133-x86_64.apk"
   },
-  "releaseUrl": "https://github.com/aqiyoung/sanyelive/releases/tag/v0.3.12.131",
+  "releaseUrl": "https://github.com/aqiyoung/sanyelive/releases/tag/v0.3.12.133",
   "critical": false,
-  "notes": "台标彻底离线化打包进 APK，卫视覆盖 51/52；更新检查改为可靠的 raw 版本源。",
+  "notes": "检查更新改为可靠的 raw 版本源 (gh-proxy 代理 raw.githubusercontent.com)，根治“检查不到更新”。",
   "updatedAt": "2026-08-07"
 }

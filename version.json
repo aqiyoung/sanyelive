@@ -1,14 +1,15 @@
 {
-  "tag": "v0.3.12.133",
-  "versionName": "0.3.12+133",
-  "versionCode": 133,
+  "tag": "v0.3.12.134",
+  "versionName": "0.3.12+134",
+  "versionCode": 134,
+  "releaseName": "v0.3.12.134",
   "apk": {
-    "arm64-v8a": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.133/sanyelive-v0.3.12+133-arm64-v8a.apk",
-    "armeabi-v7a": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.133/sanyelive-v0.3.12+133-armeabi-v7a.apk",
-    "x86_64": "https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.133/sanyelive-v0.3.12+133-x86_64.apk"
+    "arm64-v8a": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.134/sanyelive-v0.3.12+134-arm64-v8a.apk",
+    "armeabi-v7a": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.134/sanyelive-v0.3.12+134-armeabi-v7a.apk",
+    "x86_64": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.134/sanyelive-v0.3.12+134-x86_64.apk"
   },
-  "releaseUrl": "https://github.com/aqiyoung/sanyelive/releases/tag/v0.3.12.133",
+  "releaseUrl": "https://github.com/aqiyoung/sanyelive/releases/tag/v0.3.12.134",
   "critical": false,
-  "notes": "检查更新改为可靠的 raw 版本源 (gh-proxy 代理 raw.githubusercontent.com)，根治“检查不到更新”。",
+  "notes": "更新弹窗新增\"复制下载链接\"按钮(对齐飞牛音乐); 版本检测增加 jsDelivr CDN 镜像, 国内更稳。",
   "updatedAt": "2026-08-07"
 }

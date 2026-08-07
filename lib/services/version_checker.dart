@@ -43,9 +43,23 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
 ///   User-Agent 的请求会直接 403 拒掉** — 这正是旧版"检查不到更新"的根因
 ///   (请求被静默失败, 不弹窗).  参照 FeiNiuMusic 补上请求头后即稳定.
 ///   sanyelive 的 release 非 pre-release, `/releases/latest` 即最新版.
-const List<String> kDefaultEndpointUrls = [
-  'https://api.github.com/repos/aqiyoung/sanyelive/releases/latest',
+/// GitHub API 基础 URL (直连).  镜像 fallback 会在此基础上加前缀.
+const String _kGitHubApiBaseUrl =
+    'https://api.github.com/repos/aqiyoung/sanyelive/releases/latest';
+
+/// 国内 GitHub 镜像前缀列表.  当直连 `api.github.com` 失败时, 自动依次尝试.
+/// 用法: `$prefix$_kGitHubApiBaseUrl`, APK 下载链接同理由 `$prefix$originalUrl` 代理.
+/// 顺序: 直连优先 → 公共镜像.  这些镜像在国内移动网络通常可用.
+const List<String> _kGitHubProxyPrefixes = [
+  '', // 直连
+  'https://gh-proxy.com/',
+  'https://ghps.cc/',
+  'https://github.moeyy.xyz/',
+  'https://gh.api.99988866.xyz/',
 ];
+
+/// 兼容老代码 — 取基础 URL. 单元测试可 overrideWithValue.
+const List<String> kDefaultEndpointUrls = [_kGitHubApiBaseUrl];
 
 /// FeiNiuMusic 同款请求头 — GitHub API 必须有 User-Agent, 否则 403.
 const Map<String, String> kGitHubApiHeaders = {
@@ -53,8 +67,8 @@ const Map<String, String> kGitHubApiHeaders = {
   'Accept': 'application/vnd.github.v3+json',
 };
 
-/// 兼容老代码 — 取 chain[0]. 单元测试可 overrideWithValue.
-String get kDefaultEndpointUrl => kDefaultEndpointUrls.first;
+/// 兼容老代码 — 取基础 URL. 单元测试可 overrideWithValue.
+String get kDefaultEndpointUrl => _kGitHubApiBaseUrl;
 
 /// SharedPreferences 持久化.
 const String kEndpointPrefsKey = 'version_checker.endpoint_url';
@@ -228,9 +242,9 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   Future<void> _performCheck() async {
     final now = DateTime.now().millisecondsSinceEpoch;
     try {
-      // 2. fetch GitHub API
-      final release = await _fetchLatestRelease();
-      final parsed = _parseRelease(release);
+      // 2. fetch GitHub API (带镜像 fallback)
+      final (release, proxyPrefix) = await _fetchLatestRelease();
+      final parsed = _parseRelease(release, proxyPrefix);
       if (parsed == null) {
         state = const VersionCheckFailed('parse failed');
         await _prefs.setInt(_Keys.lastCheckTime, now);
@@ -278,11 +292,13 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
 
       await _prefs.setInt(_Keys.lastCheckTime, now);
     } on DioException catch (e) {
-      state = VersionCheckFailed('network: ${e.type}');
+      debugPrint('version_checker: network error → $e');
+      state = const VersionCheckFailed('网络连接失败，请检查网络或稍后重试');
       // 失败也写 last_check_time,  避免每启都重试刷流量.  下次 1h 后再试.
       await _prefs.setInt(_Keys.lastCheckTime, now);
     } catch (e) {
-      state = VersionCheckFailed('error: $e');
+      debugPrint('version_checker: unexpected error → $e');
+      state = const VersionCheckFailed('检查更新时出错，请稍后重试');
       await _prefs.setInt(_Keys.lastCheckTime, now);
     }
   }
@@ -319,41 +335,31 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
 
   // -------- private: 网络 --------
 
-  Future<Map<String, dynamic>> _fetchLatestRelease() async {
-    // v0.3.12+128 起只走内置默认源 (api.github.com 直连), 不再支持自定义
-    // 镜像 — 旧版自定义死链正是"检查不到更新"的元凶之一.
-    final seen = <String>{};
-    final ordered = <String>[];
-    for (final url in kDefaultEndpointUrls) {
-      if (seen.add(url)) ordered.add(url);
-    }
-
+  /// 返回 (release JSON, 成功使用的镜像前缀).  前缀用于后续把 APK 下载链接
+  /// 也走同一镜像, 避免 API 通了但下载地址被墙.
+  Future<(Map<String, dynamic>, String)> _fetchLatestRelease() async {
     String? lastError;
-    for (final url in ordered) {
+    for (final prefix in _kGitHubProxyPrefixes) {
+      final url = prefix.isEmpty ? _kGitHubApiBaseUrl : '$prefix$_kGitHubApiBaseUrl';
       try {
-        // 检测 body 是不是 JSON (cf-workers-proxy 6/23 11:50 返 HTML 会让
-        // 默认 json parser 抛 FormatException → 整个 chain 都 fail).
         final resp = await _dio.get<dynamic>(
           url,
           options: Options(
-            receiveTimeout: const Duration(seconds: 8),
+            receiveTimeout: const Duration(seconds: 10),
             responseType: ResponseType.plain,
             headers: kGitHubApiHeaders,
           ),
         );
         if (resp.statusCode == 200) {
           final data = resp.data;
-          // 手动 decode JSON,  先检测 HTML / 非 JSON 再 parse.
           if (data is String) {
             final s = data.replaceFirst(RegExp(r'^\s+'), '');
             if (s.startsWith('<') || s.startsWith('<!DOCTYPE')) {
-              lastError =
-                  'HTML response (CF protective registration?) from $url';
+              lastError = 'HTML response from $url';
               continue;
             }
             try {
               final decoded = jsonDecode(s);
-              // 两种都兼容,  list 取第一个 (最新创建).
               Map<String, dynamic> release;
               if (decoded is List<dynamic>) {
                 if (decoded.isEmpty) {
@@ -372,7 +378,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
                 lastError = 'non-Map/List JSON from $url';
                 continue;
               }
-              return release;
+              return (release, prefix);
             } catch (_) {
               lastError =
                   'invalid JSON from $url: ${s.substring(0, s.length.clamp(0, 80))}';
@@ -394,7 +400,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     throw Exception('All endpoints failed: $lastError');
   }
 
-  _ParsedRelease? _parseRelease(Map<String, dynamic> json) {
+  _ParsedRelease? _parseRelease(Map<String, dynamic> json, String proxyPrefix) {
     final tagName = json['tag_name'] as String?;
     if (tagName == null || tagName.isEmpty) return null;
 
@@ -411,7 +417,10 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       // arm64-v8a 优先
       if (name.contains('arm64-v8a') || apkName == null) {
         apkName = name;
-        apkUrl = a['browser_download_url'] as String?;
+        final originalUrl = a['browser_download_url'] as String?;
+        apkUrl = (originalUrl != null && proxyPrefix.isNotEmpty)
+            ? '$proxyPrefix$originalUrl'
+            : originalUrl;
         if (name.contains('arm64-v8a')) break;
       }
     }
@@ -513,7 +522,10 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   int debugCompareVersions(String a, String b) => _compareVersions(a, b);
 
   @visibleForTesting
-  static Map<String, dynamic>? debugParseRelease(Map<String, dynamic> json) {
+  static Map<String, dynamic>? debugParseRelease(
+    Map<String, dynamic> json, {
+    String proxyPrefix = '',
+  }) {
     final tagName = json['tag_name'] as String?;
     if (tagName == null || tagName.isEmpty) return null;
 
@@ -528,7 +540,10 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       if (!name.endsWith('.apk')) continue;
       if (name.contains('arm64-v8a') || apkName == null) {
         apkName = name;
-        apkUrl = a['browser_download_url'] as String?;
+        final originalUrl = a['browser_download_url'] as String?;
+        apkUrl = (originalUrl != null && proxyPrefix.isNotEmpty)
+            ? '$proxyPrefix$originalUrl'
+            : originalUrl;
         if (name.contains('arm64-v8a')) break;
       }
     }

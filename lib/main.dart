@@ -119,7 +119,11 @@ void main() async {
     try {
       await CrashLogger.log('step5: before PackageInfo');
       final info = await PackageInfo.fromPlatform();
-      runtimeVersion = 'v${info.version}.${info.buildNumber}';
+      // 用 pubspec 风格: version+buildNumber.  如果 PackageInfo.version 已经
+      // 含 '+' (某些环境), 直接用; 否则拼上 buildNumber.
+      final base = info.version.trim();
+      final build = info.buildNumber.trim();
+      runtimeVersion = base.contains('+') ? base : '$base+$build';
       runtimeVersionCode = int.tryParse(info.buildNumber) ?? 0;
       await CrashLogger.log('step5: PackageInfo OK: $runtimeVersion');
     } catch (e) {

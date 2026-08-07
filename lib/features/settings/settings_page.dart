@@ -171,7 +171,8 @@ class SettingsPage extends ConsumerWidget {
               Consumer(
                 builder: (context, ref, _) {
                   final version = ref.watch(currentVersionStringProvider);
-                  final displayVersion = '$version (Beta)';
+                  final displayVersion =
+                      'v${version.replaceFirst(RegExp(r'^v'), '')} (Beta)';
                   return ListTile(
                     leading: const Icon(Icons.tag_outlined),
                     title: const Text('版本号'),

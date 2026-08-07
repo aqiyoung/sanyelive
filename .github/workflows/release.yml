@@ -258,12 +258,15 @@ jobs:
             - Workflow: `.github/workflows/release.yml`
 
       - name: Publish version.json to meta branch
-        # v0.3.12+132: 应用内"检查更新"改为优先查 raw.githubusercontent.com 上的
-        # version.json (经 gh-proxy 等公共代理, 国内稳达). 这里每次发版把最新版本
-        # 信息写回 meta 分支, 保证设备端能可靠拉到.  meta 分支独立于 main
-        # (main 被 source-sync 机器人高频 force-push), 不会被覆盖.
-        # continue-on-error: APK 已在上一步发布, 此步失败不阻断发版 (设备端仍有
-        # GitHub API 兜底), 但正常情况下应成功.
+        # v0.3.12+132: 应用内"检查更新"优先查 meta 分支的 version.json (经代理国内稳达).
+        # 每次发版把最新版本信息写回 meta 分支.  meta 独立于 main (被机器人 force-push),
+        # 不会被覆盖.
+        # 关键修复 (v0.3.12+138 后): 旧实现用 `gh api PUT`, 在 CI 常因认证/权限
+        # 静默失败 (python 没 check=True + continue-on-error 吞错, 步骤显示 success
+        # 但 meta 实际没动), 导致 meta 卡在 v134 不更新 → 装了 v135~v137 的用户
+        # 误判"已最新"、永远不弹更新.  改用 git clone meta 分支 + 写文件 + push
+        # (GITHUB_TOKEN 对 git push 一定有权限, 比 gh api PUT 可靠).  失败仍可见
+        # (continue-on-error 让 step 在 run 里标红, 但不阻断 APK 发布).
         if: startsWith(github.ref, 'refs/tags/')
         continue-on-error: true
         env:
@@ -277,8 +280,12 @@ jobs:
           VERSION_NAME="${BASE}+${CODE}"
           RELEASE_URL="https://github.com/aqiyoung/sanyelive/releases/tag/${TAG}"
           DL_BASE="https://github.com/aqiyoung/sanyelive/releases/download/${TAG}/sanyelive-v${VERSION_NAME}"
+          WORK=/tmp/meta-publish
+          rm -rf "$WORK"
+          git clone --depth 1 --branch meta "https://x-access-token:${GH_TOKEN}@github.com/aqiyoung/sanyelive.git" "$WORK"
+          cd "$WORK"
           python3 - <<'PYEOF'
-          import base64, json, subprocess, os
+          import json, os, subprocess
           tag = os.environ['TAG']
           version_name = os.environ['VERSION_NAME']
           code = int(os.environ['CODE'])
@@ -302,22 +309,20 @@ jobs:
               "notes": f"视界 {tag} 已发布, 详情见 GitHub Releases",
               "updatedAt": subprocess.run(["date", "-u", "+%Y-%m-%d"], capture_output=True, text=True).stdout.strip(),
           }
-          raw = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
-          content = base64.b64encode(raw).decode()
-          sha = subprocess.run(
-              ["gh", "api", "repos/aqiyoung/sanyelive/contents/version.json?ref=meta", "--jq", ".sha"],
-              capture_output=True, text=True).stdout.strip()
-          r = subprocess.run(
-              ["gh", "api", "-X", "PUT", "repos/aqiyoung/sanyelive/contents/version.json",
-               "-f", "branch=meta",
-               "-f", f"message=chore: bump version.json to {tag}",
-               "-f", f"sha={sha}",
-               "-f", f"content={content}"],
-              capture_output=True, text=True)
-          print(r.stdout[:500])
-          print(r.stderr[:500])
+          with open("version.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, ensure_ascii=False, indent=2)
+          print("version.json written for", tag)
           PYEOF
-          echo "✅ version.json -> meta 已更新"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          if git diff --cached --quiet; then
+            echo "no change, skip push"
+          else
+            git commit -m "chore: bump version.json to ${TAG}"
+            git push
+            echo "✅ version.json -> meta 已更新 to ${TAG}"
+          fi
 
       - name: 推送新版本到 Telegram（私人）
         if: startsWith(github.ref, 'refs/tags/')

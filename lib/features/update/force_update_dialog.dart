@@ -80,21 +80,22 @@ class _ForceUpdateDialogContentState
     }
   }
 
-  /// 复制 APK 下载直链到剪贴板 (对齐飞牛音乐: 点下载不自动下, 而是复制链接,
-  /// 用户粘到浏览器 / 发给自己设备再下, 避开 TV 自动下载 APK 的权限坑).
-  Future<void> _copyApkLink(BuildContext context, String apkUrl) async {
+  /// 复制指定链接到剪贴板并弹 toast.  url 由调用方决定 (官方 release 页 或
+  /// 代理 APK 直链).  对齐飞牛音乐: 复制而非自动下载, 避开 TV 自动下 APK 权限坑.
+  Future<void> _copyLink(
+    BuildContext context,
+    String url,
+    String toastMsg,
+  ) async {
     try {
-      await Clipboard.setData(ClipboardData(text: apkUrl));
+      await Clipboard.setData(ClipboardData(text: url));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('已复制下载链接, 粘贴到浏览器即可下载 APK'),
-            duration: Duration(seconds: 2),
-          ),
+          SnackBar(content: Text(toastMsg), duration: const Duration(seconds: 2)),
         );
       }
     } catch (e) {
-      debugPrint('复制下载链接失败: $e');
+      debugPrint('复制链接失败: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('复制失败: $e')),
@@ -195,7 +196,8 @@ class _ForceUpdateDialogContentState
               ),
               const SizedBox(height: 12),
               Text(
-                '点"复制下载链接"把 APK 直链复制到剪贴板, 粘贴到浏览器即可下载',
+                '「复制下载链接」复制官方 Release 页 (跟飞牛一致); '
+                '国内 TV 直连下不动时, 用「代理下载」复制 gh-proxy APK 直链',
                 style: TextStyle(
                   fontSize: 12,
                   color: bodyColor.withValues(alpha: 0.6),
@@ -241,7 +243,7 @@ class _ForceUpdateDialogContentState
       );
     }
 
-    // 次要: 去浏览器打开 GitHub releases 页 (手动挑架构下载).
+    // 次要: 去浏览器打开 GitHub 官方 releases 页 (手动挑架构下载).
     actions.add(
       TextButton(
         onPressed: () => _openGitHub(context, s.latestVersion),
@@ -249,10 +251,26 @@ class _ForceUpdateDialogContentState
       ),
     );
 
-    // 主操作: 复制 APK 直链到剪贴板 (对齐飞牛音乐, TV 上最稳).
+    // 代理直链: 复制带 gh-proxy 前缀的 APK 文件直链 (国内 TV 可直下).
+    actions.add(
+      TextButton(
+        onPressed: () => _copyLink(
+          context,
+          s.apkDownloadUrl,
+          '已复制代理 APK 直链（国内可直下），粘贴到浏览器下载',
+        ),
+        child: const Text('代理下载'),
+      ),
+    );
+
+    // 主操作: 复制官方 GitHub Release 页链接 (对齐飞牛音乐, 链接永不失效).
     actions.add(
       FilledButton(
-        onPressed: () => _copyApkLink(context, s.apkDownloadUrl),
+        onPressed: () => _copyLink(
+          context,
+          _buildReleasesUrl(s.latestVersion),
+          '已复制官方下载页链接，粘贴到浏览器打开',
+        ),
         style: FilledButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,

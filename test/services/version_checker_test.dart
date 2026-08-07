@@ -221,6 +221,65 @@ void main() {
       expect(result!['releaseNotes'], '');
       expect(result['isCritical'], isFalse);
     });
+
+    // ─── meta 版本源 (version.json) 格式 ──────────────────────────────
+    test('meta: tag + versionCode + apk 映射 → 正确解析 arm64', () {
+      final result = VersionCheckerNotifier.debugParseRelease({
+        'tag': 'v0.3.12.131',
+        'versionName': '0.3.12+131',
+        'versionCode': 131,
+        'apk': {
+          'arm64-v8a':
+              'https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.131/sanyelive-v0.3.12+131-arm64-v8a.apk',
+          'armeabi-v7a':
+              'https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.131/sanyelive-v0.3.12+131-armeabi-v7a.apk',
+          'x86_64':
+              'https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.131/sanyelive-v0.3.12+131-x86_64.apk',
+        },
+        'releaseUrl': 'https://github.com/aqiyoung/sanyelive/releases/tag/v0.3.12.131',
+        'critical': false,
+        'notes': '台标离线化',
+      });
+      expect(result, isNotNull);
+      expect(result!['tagName'], 'v0.3.12.131');
+      expect(result['versionCode'], 131);
+      expect(result['apkAssetName'], 'sanyelive-v0.3.12+131-arm64-v8a.apk');
+      expect(
+        result['apkDownloadUrl'],
+        'https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.131/sanyelive-v0.3.12+131-arm64-v8a.apk',
+      );
+      expect(result['isCritical'], isFalse);
+      expect(result['releaseNotes'], '台标离线化');
+    });
+
+    test('meta: 带代理前缀 → apkDownloadUrl 也加前缀', () {
+      final result = VersionCheckerNotifier.debugParseRelease({
+        'tag': 'v0.3.12.131',
+        'versionCode': 131,
+        'apk': {
+          'arm64-v8a': 'https://github.com/x/sanyelive-v0.3.12+131-arm64-v8a.apk',
+        },
+      }, proxyPrefix: 'https://gh-proxy.com/');
+      expect(result!['apkDownloadUrl'],
+          'https://gh-proxy.com/https://github.com/x/sanyelive-v0.3.12+131-arm64-v8a.apk');
+    });
+
+    test('meta: 缺少 apk 字段 → return null', () {
+      final result = VersionCheckerNotifier.debugParseRelease({
+        'tag': 'v0.3.12.131',
+        'versionCode': 131,
+      });
+      expect(result, isNull);
+    });
+
+    test('meta: versionCode 非 int → return null', () {
+      final result = VersionCheckerNotifier.debugParseRelease({
+        'tag': 'v0.3.12.131',
+        'versionCode': '131',
+        'apk': {'arm64-v8a': 'https://x/y.apk'},
+      });
+      expect(result, isNull);
+    });
   });
 
   group('debugExtractVersionCode', () {

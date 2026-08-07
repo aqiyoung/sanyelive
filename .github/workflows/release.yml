@@ -257,6 +257,43 @@ jobs:
             - Target: android-arm + android-arm64 + android-x64, release, split-per-abi
             - Workflow: `.github/workflows/release.yml`
 
+      - name: Publish version.json to meta branch
+        # v0.3.12+132: 应用内"检查更新"改为优先查 raw.githubusercontent.com 上的
+        # version.json (经 gh-proxy 等公共代理, 国内稳达). 这里每次发版把最新版本
+        # 信息写回 meta 分支, 保证设备端能可靠拉到.  meta 分支独立于 main
+        # (main 被 source-sync 机器人高频 force-push), 不会被覆盖.
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="${{ github.ref_name }}"
+          VNO_V="${TAG#v}"
+          CODE="${VNO_V##*.}"
+          BASE="${VNO_V%.*}"
+          VERSION_NAME="${BASE}+${CODE}"
+          RELEASE_URL="https://github.com/aqiyoung/sanyelive/releases/tag/${TAG}"
+          DL_BASE="https://github.com/aqiyoung/sanyelive/releases/download/${TAG}/sanyelive-v${VERSION_NAME}"
+          VERSION_JSON=$(jq -n \
+            --arg tag "$TAG" \
+            --arg vn "$VERSION_NAME" \
+            --argjson code "$CODE" \
+            --arg ru "$RELEASE_URL" \
+            --arg a64 "${DL_BASE}-arm64-v8a.apk" \
+            --arg a72 "${DL_BASE}-armeabi-v7a.apk" \
+            --arg x86 "${DL_BASE}-x86_64.apk" \
+            --arg date "$(date -u +%Y-%m-%d)" \
+            '{tag:$tag, versionName:$vn, versionCode:$code, apk:{arm64-v8a:$a64, armeabi-v7a:$a72, x86_64:$x86}, releaseUrl:$ru, critical:false, notes:("视界 "+$tag+" 已发布, 详情见 GitHub Releases"), updatedAt:$date}')
+          CONTENT=$(echo -n "$VERSION_JSON" | base64 -w0)
+          SHA=$(gh api repos/aqiyoung/sanyelive/contents/version.json?ref=meta --jq .sha)
+          echo "Publishing version.json to meta: $VERSION_JSON"
+          gh api -X PUT repos/aqiyoung/sanyelive/contents/version.json \
+            -f branch=meta \
+            -f message="chore: bump version.json to $TAG" \
+            -f sha="$SHA" \
+            -f content="$CONTENT"
+          echo "✅ version.json -> meta 已更新"
+
       - name: 推送新版本到 Telegram（私人）
         if: startsWith(github.ref, 'refs/tags/')
         env:

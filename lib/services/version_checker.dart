@@ -47,6 +47,14 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
 const String _kGitHubApiBaseUrl =
     'https://api.github.com/repos/aqiyoung/sanyelive/releases/latest';
 
+/// 版本信息静态源 — 放在 `raw.githubusercontent.com` 的 `meta` 分支.
+/// 每次发版由 CI (release.yml) 自动刷新.  这个域名正是 gh-proxy 等公共代理
+/// 的"主业" (代理 raw.githubusercontent.com),  国内稳达;  而公共镜像几乎都
+/// **不代理 api.github.com** 这个 API 域名,  这正是旧版"检查不到更新"的根因
+/// (直连被墙 + 代理不支持 API → 5 个端点全挂).  所以优先查这个 raw 版本源.
+const String _kVersionMetaUrl =
+    'https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json';
+
 /// 国内 GitHub 镜像前缀列表.  当直连 `api.github.com` 失败时, 自动依次尝试.
 /// 用法: `$prefix$_kGitHubApiBaseUrl`, APK 下载链接同理由 `$prefix$originalUrl` 代理.
 /// 顺序: 直连优先 → 公共镜像.  这些镜像在国内移动网络通常可用.
@@ -244,7 +252,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     try {
       // 2. fetch GitHub API (带镜像 fallback)
       final (release, proxyPrefix) = await _fetchLatestRelease();
-      final parsed = _parseRelease(release, proxyPrefix);
+      final parsed = _parseAny(release, proxyPrefix);
       if (parsed == null) {
         state = const VersionCheckFailed('parse failed');
         await _prefs.setInt(_Keys.lastCheckTime, now);
@@ -293,12 +301,16 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       await _prefs.setInt(_Keys.lastCheckTime, now);
     } on DioException catch (e) {
       debugPrint('version_checker: network error → $e');
-      state = const VersionCheckFailed('网络连接失败，请检查网络或稍后重试');
+      state = const VersionCheckFailed(
+        '网络连接失败，请检查网络或稍后重试\n也可手动前往 GitHub Releases 查看更新',
+      );
       // 失败也写 last_check_time,  避免每启都重试刷流量.  下次 1h 后再试.
       await _prefs.setInt(_Keys.lastCheckTime, now);
     } catch (e) {
       debugPrint('version_checker: unexpected error → $e');
-      state = const VersionCheckFailed('检查更新时出错，请稍后重试');
+      state = const VersionCheckFailed(
+        '检查更新时出错，请稍后重试\n也可手动前往 GitHub Releases 查看更新',
+      );
       await _prefs.setInt(_Keys.lastCheckTime, now);
     }
   }
@@ -335,9 +347,50 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
 
   // -------- private: 网络 --------
 
-  /// 返回 (release JSON, 成功使用的镜像前缀).  前缀用于后续把 APK 下载链接
-  /// 也走同一镜像, 避免 API 通了但下载地址被墙.
+  /// 拉最新版本信息.
+  /// 策略: 优先查 `raw.githubusercontent.com` 上的 version.json (经 gh-proxy 等
+  /// 公共代理, 国内稳达 — 这些代理主业就是代理 raw.githubusercontent.com),
+  /// 这是根治"检查不到更新"的关键: 旧方案直连 api.github.com, 国内被墙,
+  /// 而公共镜像几乎都不代理 api.github.com 这个 API 域名, 导致 5 个端点全挂.
+  /// 兜底: GitHub API (走同一代理链, 适合已翻墙 / VPN 的用户).
+  /// 返回 (release JSON, 成功使用的镜像前缀). 前缀用于把 APK 下载链接也走
+  /// 同一镜像, 避免源通了但下载地址被墙.
   Future<(Map<String, dynamic>, String)> _fetchLatestRelease() async {
+    // 1) meta 版本源 (raw, 国内稳达) — 优先.
+    for (final prefix in _kGitHubProxyPrefixes) {
+      final url = prefix.isEmpty ? _kVersionMetaUrl : '$prefix$_kVersionMetaUrl';
+      try {
+        final resp = await _dio.get<dynamic>(
+          url,
+          options: Options(
+            receiveTimeout: const Duration(seconds: 8),
+            responseType: ResponseType.plain,
+            headers: kGitHubApiHeaders,
+          ),
+        );
+        if (resp.statusCode == 200 && resp.data is String) {
+          final s = (resp.data as String).trim();
+          // 拿到 HTML (如代理没干活 / 404 页) 直接跳过这个前缀.
+          if (s.startsWith('<')) continue;
+          try {
+            final decoded = jsonDecode(s);
+            if (decoded is Map<String, dynamic> &&
+                decoded.containsKey('tag') &&
+                decoded.containsKey('versionCode')) {
+              return (decoded, prefix);
+            }
+          } catch (_) {
+            debugPrint('version_checker: meta JSON parse fail from $url');
+          }
+        }
+      } on DioException catch (e) {
+        debugPrint('version_checker: meta $url → $e');
+      } catch (e) {
+        debugPrint('version_checker: meta $url → $e');
+      }
+    }
+
+    // 2) GitHub API 兜底 (已翻墙用户 / 代理恰好支持 API 时).
     String? lastError;
     for (final prefix in _kGitHubProxyPrefixes) {
       final url = prefix.isEmpty ? _kGitHubApiBaseUrl : '$prefix$_kGitHubApiBaseUrl';
@@ -391,13 +444,13 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
         }
       } on DioException catch (e) {
         lastError = '${e.type} from $url';
-        debugPrint('version_checker: $url → $e');
+        debugPrint('version_checker: api $url → $e');
       } catch (e) {
         lastError = '$e from $url';
-        debugPrint('version_checker: $url → $e');
+        debugPrint('version_checker: api $url → $e');
       }
     }
-    throw Exception('All endpoints failed: $lastError');
+    throw Exception('All update sources failed: $lastError');
   }
 
   _ParsedRelease? _parseRelease(Map<String, dynamic> json, String proxyPrefix) {
@@ -445,6 +498,57 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     );
   }
 
+
+  /// 按来源格式分流解析: meta 版本源 (含 versionCode/tag) 走 _parseMeta,
+  /// 其余 (GitHub API 格式, 含 assets/tag_name) 走 _parseRelease.
+  _ParsedRelease? _parseAny(Map<String, dynamic> json, String proxyPrefix) {
+    if (json.containsKey('versionCode') && json.containsKey('tag')) {
+      return _parseMeta(json, proxyPrefix);
+    }
+    return _parseRelease(json, proxyPrefix);
+  }
+
+  /// 解析 meta 版本源 (version.json) 格式.
+  _ParsedRelease? _parseMeta(Map<String, dynamic> json, String proxyPrefix) {
+    final tag = json['tag'] as String?;
+    if (tag == null || tag.isEmpty) return null;
+    final code = json['versionCode'];
+    if (code is! int) return null;
+
+    // apk 下载链接: 优先 arm64-v8a, 其次 armeabi-v7a / x86_64.
+    final apks = json['apk'];
+    String? apkUrl;
+    String? apkName;
+    if (apks is Map) {
+      final cand = <dynamic>[
+        apks['arm64-v8a'],
+        apks['armeabi-v7a'],
+        apks['x86_64'],
+      ];
+      for (final c in cand) {
+        if (c is String && c.isNotEmpty) {
+          apkUrl = (proxyPrefix.isNotEmpty) ? '$proxyPrefix$c' : c;
+          apkName = c.split('/').last;
+          break;
+        }
+      }
+    }
+    if (apkUrl == null || apkName == null) return null;
+
+    final releaseName = (json['releaseName'] as String?)?.trim() ?? tag;
+    final notes = (json['notes'] as String?) ?? '';
+    final critical = json['critical'] == true;
+
+    return _ParsedRelease(
+      tagName: tag,
+      releaseName: releaseName,
+      versionCode: code,
+      apkAssetName: apkName,
+      apkDownloadUrl: apkUrl,
+      releaseNotes: notes,
+      isCritical: critical,
+    );
+  }
 
   /// Semver + build 比较. 返 1 = a > b, 0 = a == b, -1 = a < b.
   /// 规则:
@@ -526,46 +630,22 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     Map<String, dynamic> json, {
     String proxyPrefix = '',
   }) {
-    final tagName = json['tag_name'] as String?;
-    if (tagName == null || tagName.isEmpty) return null;
-
-    final assets = json['assets'] as List<dynamic>?;
-    if (assets == null) return null;
-
-    String? apkName;
-    String? apkUrl;
-    for (final a in assets) {
-      if (a is! Map<String, dynamic>) continue;
-      final name = a['name'] as String? ?? '';
-      if (!name.endsWith('.apk')) continue;
-      if (name.contains('arm64-v8a') || apkName == null) {
-        apkName = name;
-        final originalUrl = a['browser_download_url'] as String?;
-        apkUrl = (originalUrl != null && proxyPrefix.isNotEmpty)
-            ? '$proxyPrefix$originalUrl'
-            : originalUrl;
-        if (name.contains('arm64-v8a')) break;
-      }
-    }
-    if (apkName == null || apkUrl == null) return null;
-
-    final versionCode = _extractVersionCode(apkName);
-    if (versionCode == null) return null;
-
-    final body = (json['body'] as String?) ?? '';
-    final releaseName = (json['name'] as String?)?.trim() ?? tagName;
-    final isCritical = _isCriticalRelease(body);
-
-    return {
-      'tagName': tagName,
-      'releaseName': releaseName,
-      'versionCode': versionCode,
-      'apkAssetName': apkName,
-      'apkDownloadUrl': apkUrl,
-      'releaseNotes': body,
-      'isCritical': isCritical,
-    };
+    // 走 _parseAny,  同时覆盖 meta 版本源 与 GitHub API 两种格式.
+    final parsed = _parseAny(json, proxyPrefix);
+    if (parsed == null) return null;
+    return _parsedToMap(parsed);
   }
+
+  /// 把 _ParsedRelease 转成 Map,  供测试断言.
+  static Map<String, dynamic> _parsedToMap(_ParsedRelease r) => {
+        'tagName': r.tagName,
+        'releaseName': r.releaseName,
+        'versionCode': r.versionCode,
+        'apkAssetName': r.apkAssetName,
+        'apkDownloadUrl': r.apkDownloadUrl,
+        'releaseNotes': r.releaseNotes,
+        'isCritical': r.isCritical,
+      };
 }
 
 class _ParsedRelease {

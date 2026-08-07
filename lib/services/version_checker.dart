@@ -453,7 +453,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     throw Exception('All update sources failed: $lastError');
   }
 
-  _ParsedRelease? _parseRelease(Map<String, dynamic> json, String proxyPrefix) {
+  static _ParsedRelease? _parseRelease(Map<String, dynamic> json, String proxyPrefix) {
     final tagName = json['tag_name'] as String?;
     if (tagName == null || tagName.isEmpty) return null;
 
@@ -501,7 +501,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
 
   /// 按来源格式分流解析: meta 版本源 (含 versionCode/tag) 走 _parseMeta,
   /// 其余 (GitHub API 格式, 含 assets/tag_name) 走 _parseRelease.
-  _ParsedRelease? _parseAny(Map<String, dynamic> json, String proxyPrefix) {
+  static _ParsedRelease? _parseAny(Map<String, dynamic> json, String proxyPrefix) {
     if (json.containsKey('versionCode') && json.containsKey('tag')) {
       return _parseMeta(json, proxyPrefix);
     }
@@ -509,7 +509,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   }
 
   /// 解析 meta 版本源 (version.json) 格式.
-  _ParsedRelease? _parseMeta(Map<String, dynamic> json, String proxyPrefix) {
+  static _ParsedRelease? _parseMeta(Map<String, dynamic> json, String proxyPrefix) {
     final tag = json['tag'] as String?;
     if (tag == null || tag.isEmpty) return null;
     final code = json['versionCode'];

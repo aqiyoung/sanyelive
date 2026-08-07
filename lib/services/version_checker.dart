@@ -62,69 +62,9 @@ const String kEndpointPrefsKey = 'version_checker.endpoint_url';
 /// 「启动时自动检查更新」开关持久化键 (默认开启).
 const String kAutoCheckUpdateKey = 'version_checker.auto_check_update';
 
-/// 老版本可能存了 gh-proxy.com,  build() 自动迁移到直连.
-/// 当前 endpoint URL — 默认 api.github.com 直连.
-/// 单元测试可 overrideWithValue.
-/// 用 Notifier 实现 (跟 themeMode 一样), 改 URL 时持久化.
-class EndpointNotifier extends Notifier<String> {
-  late final SharedPreferences _prefs;
-
-  @override
-  String build() {
-    _prefs = ref.read(sharedPreferencesProvider);
-    // 老版本 (+85~+92) 可能在 prefs 里存了 gh-proxy.com URL.
-    // 如果 prefs 里是 gh-proxy.com, 迁移到直连 api.github.com.
-    // 其他自定义 URL (cf-worker / 自建镜像 / NAS) 不动.
-    final stored = _prefs.getString(kEndpointPrefsKey);
-    if (stored == null) return kDefaultEndpointUrl;
-    // 迁移: gh-proxy.com → api.github.com 直连
-    if (stored.contains('gh-proxy.com/api.github.com')) {
-      final uri = Uri.tryParse(stored);
-      final migrated = uri != null
-          ? 'https://api.github.com${uri.path}'
-          : kDefaultEndpointUrl;
-      // ignore: discarded_futures
-      _prefs.setString(kEndpointPrefsKey, migrated);
-      debugPrint('EndpointNotifier: migrated gh-proxy -> direct: $migrated');
-      // ignore: discarded_futures
-      _prefs.remove(_Keys.lastCheckTime);
-      return migrated;
-    }
-    return stored;
-  }
-
-  /// 用户改 endpoint — 持久化 + state 更新.
-  /// (e.g. 拼写错, 缺 https://, 多余空格)  → fetch 失败 → 1h 内不重试.
-  /// validate 规则: 非空 + 是合法 http/https URL.
-  /// 返回 String? error message, null = 成功.
-  String? validateEndpoint(String url) {
-    final trimmed = url.trim();
-    if (trimmed.isEmpty) return 'URL 不能为空';
-    final uri = Uri.tryParse(trimmed);
-    if (uri == null) return 'URL 格式错误';
-    if (uri.scheme != 'http' && uri.scheme != 'https') {
-      return 'URL 必须以 http:// 或 https:// 开头';
-    }
-    if (uri.host.isEmpty) return 'URL 缺少域名';
-    return null;
-  }
-
-  Future<void> setEndpoint(String url) async {
-    final trimmed = url.trim();
-    if (validateEndpoint(trimmed) != null) return; // 验证失败, 不写
-    await _prefs.setString(kEndpointPrefsKey, trimmed);
-    state = trimmed;
-  }
-
-  /// 重置回默认 (api.github.com 直连).
-  Future<void> resetEndpoint() async {
-    await _prefs.remove(kEndpointPrefsKey);
-    state = kDefaultEndpointUrl;
-  }
-}
-
-final endpointProvider =
-    NotifierProvider<EndpointNotifier, String>(EndpointNotifier.new);
+/// 旧版支持自定义更新源 (gh-proxy / 自建镜像),  v0.3.12+128 起停止支持,
+/// 统一走 kDefaultEndpointUrls (api.github.com 直连).  残留的自定义 URL
+/// 在 VersionCheckerNotifier.build() 里清理, 防止死链导致检查失败.
 
 /// 「启动时自动检查更新」开关 — 默认开启.
 /// 关闭后 checkOnStartup() 直接 return (不 fetch);  手动 checkForce() 不受影响.
@@ -238,10 +178,15 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   VersionCheckState build() {
     _dio = ref.read(dioProvider);
     _prefs = ref.read(sharedPreferencesProvider);
+    // 清理旧版残留的自定义更新源 (已停止支持), 防止死链导致检查失败.
+    _prefs.remove(kEndpointPrefsKey);
     return const VersionCheckIdle();
   }
 
-  /// 跳过 1h cache. 1h cache 是为启动自动 check 设计, 不应该阻塞用户手动 retry.
+  /// 手动检查 — 设置页"检查更新"按钮调用.
+  /// 绕过 1h cache + 24h dismiss, 且**不受**「启动时自动检查更新」开关影响
+  /// (旧版错误地调用 checkOnStartup, 开关一关手动检查就直接 return,
+  ///  loading 弹窗永不关闭、什么也不显示 — 这正是"检查不到更新"的根因之一).
   Future<void> checkForce() async {
     if (_checking) return;
     _checking = true;
@@ -250,33 +195,39 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       await _prefs.remove(_Keys.lastCheckTime);
       await _prefs.remove(_Keys.dismissedVersion);
       await _prefs.remove(_Keys.dismissedAt);
-      state =
-          const VersionCheckIdle(); // 先清状态, 让 settings 弹个 loading / 直接 fetch
-      // 复用 checkOnStartup 逻辑 (清完 cache 就走 fetch path)
-      await checkOnStartup();
+      await _performCheck();
     } finally {
       _checking = false;
     }
   }
 
-  /// 启动时调 — 走 cache 策略 + 异步 fetch.
+  /// 启动时调 — 走 cache 策略 + 异步 fetch, 受「自动检查」开关控制.
   /// 立即返回 (microtask 里跑),  弹 dialog 由 main.dart listen state.
   Future<void> checkOnStartup() async {
     if (_checking) return;
     _checking = true;
     try {
-      // 0. 用户关闭了「启动时自动检查更新」→ 直接跳过 (手动 checkForce 不受影响).
+      // 用户关闭了「启动时自动检查更新」→ 直接跳过 (手动 checkForce 不受影响).
       if (!ref.read(autoCheckUpdateProvider)) return;
 
       // 1. cache 命中 (< 1h) → 直接跳过 fetch,  state 保持 idle
       final lastCheck = _prefs.getInt(_Keys.lastCheckTime);
       final now = DateTime.now().millisecondsSinceEpoch;
       if (lastCheck != null && (now - lastCheck) < _kCacheTtl.inMilliseconds) {
-        // 启动时 cache 路径不更新 state,  让 UI 不弹窗.  如果用户上次 dismiss
-        // 了一个版本,  这里也不重新触发,  因为还没 fetch.
+        // 启动时 cache 路径不更新 state,  让 UI 不弹窗.
         return;
       }
 
+      await _performCheck();
+    } finally {
+      _checking = false;
+    }
+  }
+
+  /// 实际执行一次检查 (fetch + 比较 + 写 state).  checkOnStartup / checkForce 共用.
+  Future<void> _performCheck() async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    try {
       // 2. fetch GitHub API
       final release = await _fetchLatestRelease();
       final parsed = _parseRelease(release);
@@ -292,14 +243,14 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       // 写 last_seen_version (无论 outdated / upToDate 都写,  方便诊断).
       await _prefs.setString(_Keys.lastSeenVersion, parsed.tagName);
 
-      // 修法: 先用 semver (major.minor.patch) 比,  一样再比 build.
-      //  _compareVersions 接受 'v' 前缀 + 可选 '+N',  容错.
+      // 先用 semver (major.minor.patch) 比,  一样再比 build (+N).
+      // sanyelive 固定 0.3.12 只涨 build,  必须比 build 才不误判"已最新".
       final cmp = _compareVersions(parsed.tagName, currentStr);
       final isOutdated =
           cmp > 0 || (cmp == 0 && parsed.versionCode > currentCode);
 
       if (isOutdated) {
-        // 3. outdated — 检查是否被用户 dismiss 过
+        // 检查是否被用户 dismiss 过 (24h 内同版本不再弹).
         final dismissedVer = _prefs.getString(_Keys.dismissedVersion);
         final dismissedAt = _prefs.getInt(_Keys.dismissedAt);
         if (dismissedVer == parsed.tagName &&
@@ -329,14 +280,10 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     } on DioException catch (e) {
       state = VersionCheckFailed('network: ${e.type}');
       // 失败也写 last_check_time,  避免每启都重试刷流量.  下次 1h 后再试.
-      await _prefs.setInt(
-          _Keys.lastCheckTime, DateTime.now().millisecondsSinceEpoch);
+      await _prefs.setInt(_Keys.lastCheckTime, now);
     } catch (e) {
       state = VersionCheckFailed('error: $e');
-      await _prefs.setInt(
-          _Keys.lastCheckTime, DateTime.now().millisecondsSinceEpoch);
-    } finally {
-      _checking = false;
+      await _prefs.setInt(_Keys.lastCheckTime, now);
     }
   }
 
@@ -373,17 +320,11 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   // -------- private: 网络 --------
 
   Future<Map<String, dynamic>> _fetchLatestRelease() async {
-    // 用户在设置页可能自定义 URL (prefs.endpoint), 优先用用户的; 用户没设置
-    // 或 fallback 全失败时才走 chain 默认值.
-    final custom = ref.read(endpointProvider);
-    final chain = <String>[
-      if (custom != kDefaultEndpointUrl) custom,
-      ...kDefaultEndpointUrls,
-    ];
-    // 去重 (用户 URL 可能在 chain 里)
+    // v0.3.12+128 起只走内置默认源 (api.github.com 直连), 不再支持自定义
+    // 镜像 — 旧版自定义死链正是"检查不到更新"的元凶之一.
     final seen = <String>{};
     final ordered = <String>[];
-    for (final url in chain) {
+    for (final url in kDefaultEndpointUrls) {
       if (seen.add(url)) ordered.add(url);
     }
 
@@ -430,10 +371,6 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
               } else {
                 lastError = 'non-Map/List JSON from $url';
                 continue;
-              }
-              if (url != custom) {
-                // ignore: discarded_futures
-                _prefs.setString(kEndpointPrefsKey, url);
               }
               return release;
             } catch (_) {

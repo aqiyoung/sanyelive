@@ -19,9 +19,7 @@ import '../../services/version_checker.dart'
         VersionCheckUpToDate,
         VersionCheckOutdated,
         VersionCheckFailed,
-        endpointProvider,
-        autoCheckUpdateProvider,
-        kDefaultEndpointUrl;
+        autoCheckUpdateProvider;
 import '../update/force_update_dialog.dart' show ForceUpdateDialog;
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
@@ -150,25 +148,6 @@ class SettingsPage extends ConsumerWidget {
                     value: auto,
                     onChanged: (v) =>
                         ref.read(autoCheckUpdateProvider.notifier).set(v),
-                  );
-                },
-              ),
-              // "所有容器分割不要线".  视觉上是空白,  不是线.
-              const _SettingsGap(),
-              Consumer(
-                builder: (context, ref, _) {
-                  final endpoint = ref.watch(endpointProvider);
-                  final isDefault = endpoint == kDefaultEndpointUrl;
-                  return ListTile(
-                    leading: const Icon(Icons.dns_outlined),
-                    title: const Text('更新源'),
-                    subtitle: Text(
-                      isDefault ? '默认 (api.github.com 直连)' : endpoint,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _editEndpoint(context, ref),
                   );
                 },
               ),
@@ -426,87 +405,6 @@ class SettingsPage extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  // 填完调 endpointProvider.notifier.setEndpoint() 持久化.
-  Future<void> _editEndpoint(BuildContext context, WidgetRef ref) async {
-    final current = ref.read(endpointProvider);
-    final controller = TextEditingController(text: current);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('更新源 URL'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '默认: api.github.com 直连',
-                style: TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '备选: 自建镜像 (NAS + nginx)',
-                style: TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  labelText: '更新源 URL',
-                  // 周边框线,  改 UnderlineInputBorder (只保留 focus 时的下
-                  // 划线).  iOS-style 极简风格.
-                  border: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                  ),
-                  isDense: true,
-                ),
-                autofocus: true,
-                maxLines: 2,
-                minLines: 1,
-                keyboardType: TextInputType.url,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              // 重置默认 (api.github.com 直连)
-              await ref.read(endpointProvider.notifier).resetEndpoint();
-              if (ctx.mounted) Navigator.of(ctx).pop('reset');
-            },
-            child: const Text('重置默认'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final url = controller.text.trim();
-              if (url.isEmpty) return;
-              await ref.read(endpointProvider.notifier).setEndpoint(url);
-              if (ctx.mounted) Navigator.of(ctx).pop(url);
-            },
-            child: const Text('保存'),
-          ),
-        ],
-      ),
-    );
-    if (result != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result == 'reset'
-              ? '已重置为默认 (api.github.com 直连)'
-              : '已保存: $result'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
   }
 }
 

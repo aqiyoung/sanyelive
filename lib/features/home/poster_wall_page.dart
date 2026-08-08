@@ -570,12 +570,16 @@ class _ChannelChips extends StatelessWidget {
               variant: LiquidGlassVariant.light,
               borderRadius: 20,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Icon(c.icon, color: context.fgAccent, size: 16),
-                  const SizedBox(width: 6),
-                  Text(c.label, style: TextStyle(color: context.fgMain, fontSize: 13, fontWeight: FontWeight.w700)),
-                ],
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(c.icon, color: context.fgAccent, size: 16),
+                    const SizedBox(width: 6),
+                    Text(c.label, style: TextStyle(color: context.fgMain, fontSize: 13, fontWeight: FontWeight.w700, height: 1)),
+                  ],
+                ),
               ),
             ),
           );

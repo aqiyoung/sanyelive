@@ -136,7 +136,7 @@ class SettingsPage extends ConsumerWidget {
                 title: const Text('检查更新'),
                 subtitle: const Text('当前版本 + 最新版本对比'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => _checkUpdate(context, ref),
+                onTap: () => _checkUpdate(context),
               ),
               const _SettingsGap(),
               Consumer(
@@ -166,7 +166,7 @@ class SettingsPage extends ConsumerWidget {
                 title: const Text('关于视界'),
                 subtitle: const Text('项目介绍 + GitHub 地址'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => _showAbout(context),
+                onTap: () => _showAbout(context, ref),
               ),
               const _SettingsGap(),
               Consumer(
@@ -211,82 +211,64 @@ class SettingsPage extends ConsumerWidget {
   }
 
   // ─── 关于对话框 ───────────────────────────────────────────────────────────
-  // 极简新中式设计,  直播 + 影视).  底部贴 GitHub 地址 + 复制按钮.
-  void _showAbout(BuildContext context) {
+  // 精简玻璃小窗: 一句话介绍 + 版本 + GitHub 地址复制, 避免像一整页.
+  void _showAbout(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final version = ref.watch(currentVersionStringProvider);
     showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => GlassDialog(
         title: const Text('关于视界'),
         content: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '视界是一款直播 + 影视综合平台, 面向家用电视 / 盒子 / 手机, 极简新中式设计。',
-                  style: TextStyle(color: scheme.onSurface, height: 1.6),
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '极简新中式 IPTV · 直播 + 影视综合平台',
+                style: TextStyle(color: scheme.onSurface, height: 1.6),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 16),
-                _AboutSection(
-                  label: '技术栈',
-                  child: Text(
-                    'Flutter (Dart) · media_kit (libmpv 内核) · Riverpod · GoRouter · '
-                    'GitHub Actions CI/CD · 自动源维护 (iptv-org 上游)。',
-                    style: TextStyle(color: scheme.onSurfaceVariant, height: 1.6),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _AboutSection(
-                  label: '特性',
-                  child: Text(
-                    '· 强制 IPv4 (修 wifi 加载不出来)\n'
-                    '· Source Failover 自动切源\n'
-                    '· 全屏沉浸 + 3s 自动隐控件\n'
-                    '· 浅色 / 深色 / 跟随系统三主题\n'
-                    '· 收藏本地持久化\n'
-                    '· 后台强制更新 (GitHub Releases)',
-                    style: TextStyle(color: scheme.onSurfaceVariant, height: 1.6),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _AboutSection(
-                  label: '项目地址',
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            kGitHubRepoUrl,
-                            style: TextStyle(
-                              color: scheme.primary,
-                              fontSize: 13,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        kGitHubRepoUrl,
+                        style: TextStyle(
+                          color: scheme.primary,
+                          fontSize: 13,
+                          fontFamily: 'monospace',
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.copy_outlined, size: 18),
-                          tooltip: '复制 GitHub 地址',
-                          onPressed: () => _copyRepoUrl(ctx),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.copy_outlined, size: 18),
+                      tooltip: '复制 GitHub 地址',
+                      onPressed: () => _copyRepoUrl(ctx),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'v$version (Beta) · Flutter · media_kit · Riverpod',
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
+                  fontSize: 12,
+                  height: 1.5,
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -310,108 +292,188 @@ class SettingsPage extends ConsumerWidget {
   }
 
   // ─── 检查更新 ─────────────────────────────────────────────────────────────
-  // 走跟启动时一样的逻辑 (cache 命中跳过, fetch GitHub API).
-  // state 变化时用 listenManual 监听弹 SnackBar / Dialog.
-  void _checkUpdate(BuildContext context, WidgetRef ref) {
-    // 1. 居中 loading 弹窗 (检查完成即关).
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.35),
-      builder: (ctx) => PopScope(
-        canPop: false,
-        child: GlassDialog(
-          content: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              SizedBox(width: 16),
-              Text('正在检查更新…'),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    // 2. 监听 state 变化 — 一次性, 弹居中结果弹窗后不持续触发.
-    // listenManual 在 widget dispose 时自动 cancel, 不会泄漏.
-    bool isFirst = true;
-    ref.listenManual<VersionCheckState>(
-      versionCheckerProvider,
-      (prev, next) {
-        // fireImmediately 的首次 (旧 state) 跳过, 不关 loading / 不弹.
-        if (isFirst) {
-          isFirst = false;
-          return;
-        }
-        // 关闭 loading 弹窗 (非根 Navigator 栈顶即它).
-        Navigator.of(context).pop();
-        if (next is VersionCheckUpToDate) {
-          _showResultDialog(
-            context,
-            '已是最新版本',
-            next.latestVersion,
-            Icons.check_circle_outline_rounded,
-            Colors.green.shade600,
-          );
-        } else if (next is VersionCheckOutdated) {
-          // outdated 走 ForceUpdateDialog.show() (跟启动时一致, barrierDismissible=false
-          ForceUpdateDialog.show(context);
-        } else if (next is VersionCheckFailed) {
-          _showResultDialog(
-            context,
-            '检查更新失败',
-            next.reason,
-            Icons.error_outline_rounded,
-            Colors.red.shade600,
-          );
-        }
-      },
-      fireImmediately: true,
-    );
-
-    // 3. 触发 fetch (走 checkForce 强制, 绕过 cache).
-    // ⚠️ 必须用 .read(provider.notifier) 而不是 .read(provider),
-    // .notifier 拿 Notifier 实例,  才能调 checkForce() 方法.
-    ref.read(versionCheckerProvider.notifier).checkForce();
-  }
-
-  /// 居中结果弹窗 (替代底部 SnackBar), 用于"已是最新" / "检查失败".
-  void _showResultDialog(
-    BuildContext context,
-    String title,
-    String msg,
-    IconData icon,
-    Color color,
-  ) {
+  // 单个玻璃小窗, 内部用 Consumer 订阅 versionCheckerProvider, state 一变
+  // 小窗自动刷新: 检查中 → 已是最新 / 发现新版本 / 失败. 单 dialog 实例,
+  // 避免旧版"先弹 loading 再弹结果"两段式弹窗关闭错乱的隐患.
+  void _checkUpdate(BuildContext context) {
     showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => GlassDialog(
-        title: Row(
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: _CheckUpdateDialogBody(rootContext: context),
+        ),
+      ),
+    );
+  }
+
+}
+
+/// 检查更新小窗内容 — Consumer 订阅 state, 自动在 检查中/结果 间切换.
+class _CheckUpdateDialogBody extends ConsumerStatefulWidget {
+  const _CheckUpdateDialogBody({required this.rootContext});
+  final BuildContext rootContext;
+
+  @override
+  ConsumerState<_CheckUpdateDialogBody> createState() =>
+      _CheckUpdateDialogBodyState();
+}
+
+class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(versionCheckerProvider.notifier).checkForce();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext ctx) {
+    final scheme = Theme.of(ctx).colorScheme;
+    final state = ref.watch(versionCheckerProvider);
+    final current = ref.watch(currentVersionStringProvider);
+
+    if (state is VersionCheckUpToDate) {
+      return _CheckResultView(
+        icon: Icons.check_circle_outline_rounded,
+        iconColor: Colors.green.shade600,
+        title: '已是最新版本',
+        desc: '当前 v$current 即为最新版本',
+      );
+    } else if (state is VersionCheckOutdated) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.system_update_alt_rounded,
+                  color: scheme.primary, size: 26),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('发现新版本',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text('v$current → ${state.latestVersion}',
+              style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant)),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: const Text('前往更新'),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                ForceUpdateDialog.show(widget.rootContext);
+              },
+            ),
+          ),
+        ],
+      );
+    } else if (state is VersionCheckFailed) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.error_outline_rounded,
+                  color: Colors.red.shade600, size: 26),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text('检查更新失败',
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(state.reason,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: scheme.onSurfaceVariant,
+                  height: 1.5)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('关闭'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: () =>
+                    ref.read(versionCheckerProvider.notifier).checkForce(),
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    // idle / 检查中.
+    return const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        SizedBox(width: 16),
+        Text('正在检查更新…'),
+      ],
+    );
+  }
+}
+
+/// 居中结果视图 (已是最新 / 通用成功).
+class _CheckResultView extends StatelessWidget {
+  const _CheckResultView({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.desc,
+  });
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String desc;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Icon(icon, color: color, size: 26),
+            Icon(icon, color: iconColor, size: 26),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
+              child: Text(title,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
-        content: Text(msg, style: const TextStyle(fontSize: 14)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('知道了'),
-          ),
-        ],
-      ),
+        const SizedBox(height: 10),
+        Text(desc,
+            style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5)),
+      ],
     );
   }
 }
@@ -485,31 +547,6 @@ class _SettingsGroupLabel extends StatelessWidget {
   }
 }
 
-class _AboutSection extends StatelessWidget {
-  const _AboutSection({required this.label, required this.child});
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: scheme.onSurface,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 6),
-        child,
-      ],
-    );
-  }
-}
 
 // ─── 主题模式辅助 ───
 

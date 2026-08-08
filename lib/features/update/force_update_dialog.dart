@@ -214,7 +214,9 @@ class _ForceUpdateDialogContentState
           children: _buildActions(s, theme),
         ),
       ],
-    );
+      ),
+    ),
+  );
   }
 
   List<Widget> _buildActions(VersionCheckOutdated s, ThemeData theme) {

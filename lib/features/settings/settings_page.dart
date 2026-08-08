@@ -16,6 +16,7 @@ import '../../services/version_checker.dart'
     show
         currentVersionStringProvider,
         versionCheckerProvider,
+        VersionCheckState,
         VersionCheckUpToDate,
         VersionCheckOutdated,
         VersionCheckFailed,

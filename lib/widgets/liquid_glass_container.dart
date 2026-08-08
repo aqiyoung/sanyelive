@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -270,15 +271,24 @@ class GlassDialog extends StatelessWidget {
         ),
       );
     }
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      child: LiquidGlassContainer(
-        variant: variant,
-        borderRadius: borderRadius,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: children,
+    // 关键: 给玻璃面板一个「紧宽度」(tight width), 而不是宽松的 maxWidth.
+    // LiquidGlassContainer 内部有 BackdropFilter, 在宽松约束下会向父级撑满可用
+    // 空间, 把弹窗拉成全屏. 这里用 SizedBox 强制一个明确的宽度 (≤ maxWidth,
+    // 且始终留 24px 边距), 让 BackdropFilter 无处可撑, 弹窗必为小窗.
+    final double screenW = MediaQuery.of(context).size.width;
+    final double dialogW = min(maxWidth, screenW - 48);
+    return Align(
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: dialogW,
+        child: LiquidGlassContainer(
+          variant: variant,
+          borderRadius: borderRadius,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
         ),
       ),
     );

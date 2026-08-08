@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:sanyelive/widgets/channel_logo.dart';
 import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/typography.dart';
-// 主题联动).  theme_tokens_test.dart 严格 grep 不许硬编颜色常量.
-import '../../../data/category_zh.dart';
 import '../../../data/models/channel.dart';
 
 /// "下一频道" 横滑条
@@ -61,14 +59,12 @@ class NextChannelsStrip extends StatelessWidget {
             ),
           ),
         ),
-        // 6/17 修容器超出: 包一层 ClipRect + Material 防止 InkWell ripple
-        // 漏到 strip 外面 / chip 内部文字被截断时闪出 container 边界.
-        //  高度从 78 → 84 防止双行文字+padding 在某些字号下被压到.
+        // 纯台标卡片: 高度与卡片高度一致 (88), 包 ClipRect + Material 防 ripple 漏出.
         ClipRect(
           child: Material(
             color: Colors.transparent,
             child: SizedBox(
-              height: 84,
+              height: 88,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 // physics: BouncingScrollPhysics 让横滑手感跟 iOS 一致,
@@ -109,68 +105,20 @@ class _ChannelChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(16),
       child: LiquidGlassContainer(
         variant: LiquidGlassVariant.light,
-        borderRadius: 10,
-        width: 118,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        borderRadius: 16,
+        width: 88,
+        padding: const EdgeInsets.all(14),
         tint: isNext ? Theme.of(context).colorScheme.primary : null,
-        child: Row(
-          children: [
-            // 频道台标：带形状投影，与首页卡片风格一致
-            ChannelLogo(
-              channel: channel,
-              size: 28,
-              shadow: true,
-              bright: false,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    channel.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: IptvTypography.body.copyWith(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: channel.sources.isNotEmpty
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          categoryZh(channel.primaryCategory),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: IptvTypography.caption.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+        child: Center(
+          child: ChannelLogo(
+            channel: channel,
+            size: 52,
+            shadow: true,
+            bright: false,
+          ),
         ),
       ),
     );

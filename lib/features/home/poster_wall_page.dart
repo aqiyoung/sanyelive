@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -639,6 +640,7 @@ class _ChannelLogo extends StatelessWidget {
   final Channel? channel;
   final double size;
   final bool bright;
+  final bool shadow;
 
   @override
   Widget build(BuildContext context) {

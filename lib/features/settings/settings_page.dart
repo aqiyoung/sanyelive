@@ -220,56 +220,53 @@ class SettingsPage extends ConsumerWidget {
       builder: (ctx) => GlassDialog(
         title: const Text('关于视界',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 320),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '极简新中式 IPTV · 直播 + 影视综合平台',
-                style: TextStyle(color: scheme.onSurface, height: 1.6),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '极简新中式 IPTV · 直播 + 影视综合平台',
+              style: TextStyle(color: scheme.onSurface, height: 1.6),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        kGitHubRepoUrl,
-                        style: TextStyle(
-                          color: scheme.primary,
-                          fontSize: 13,
-                          fontFamily: 'monospace',
-                        ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      kGitHubRepoUrl,
+                      style: TextStyle(
+                        color: scheme.primary,
+                        fontSize: 13,
+                        fontFamily: 'monospace',
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.copy_outlined, size: 18),
-                      tooltip: '复制 GitHub 地址',
-                      onPressed: () => _copyRepoUrl(ctx),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.copy_outlined, size: 18),
+                    tooltip: '复制 GitHub 地址',
+                    onPressed: () => _copyRepoUrl(ctx),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                'v$version (Beta) · Flutter · media_kit · Riverpod',
-                style: TextStyle(
-                  color: scheme.onSurfaceVariant,
-                  fontSize: 12,
-                  height: 1.5,
-                ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'v$version (Beta) · Flutter · media_kit · Riverpod',
+              style: TextStyle(
+                color: scheme.onSurfaceVariant,
+                fontSize: 12,
+                height: 1.5,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -300,10 +297,7 @@ class SettingsPage extends ConsumerWidget {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => GlassDialog(
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 320),
-          child: _CheckUpdateDialogBody(rootContext: context),
-        ),
+        content: _CheckUpdateDialogBody(rootContext: context),
       ),
     );
   }

@@ -218,6 +218,7 @@ class GlassDialog extends StatelessWidget {
   final LiquidGlassVariant variant;
   final double borderRadius;
   final bool scrollable;
+  final double maxWidth;
 
   const GlassDialog({
     super.key,
@@ -230,6 +231,7 @@ class GlassDialog extends StatelessWidget {
     this.variant = LiquidGlassVariant.light,
     this.borderRadius = 24,
     this.scrollable = false,
+    this.maxWidth = 320,
   });
 
   @override
@@ -250,7 +252,10 @@ class GlassDialog extends StatelessWidget {
       children.add(
         Padding(
           padding: contentPadding ?? const EdgeInsets.fromLTRB(24, 16, 24, 0),
-          child: scrollable ? SingleChildScrollView(child: content!) : content!,
+          child: DefaultTextStyle(
+            style: Theme.of(context).textTheme.bodyMedium!,
+            child: scrollable ? SingleChildScrollView(child: content!) : content!,
+          ),
         ),
       );
     }
@@ -265,13 +270,16 @@ class GlassDialog extends StatelessWidget {
         ),
       );
     }
-    return LiquidGlassContainer(
-      variant: variant,
-      borderRadius: borderRadius,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: LiquidGlassContainer(
+        variant: variant,
+        borderRadius: borderRadius,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
     );
   }

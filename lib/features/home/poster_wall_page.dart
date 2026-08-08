@@ -917,16 +917,17 @@ class _CategoryShortcutBar extends StatelessWidget {
             child: SizedBox(
               width: 58,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   LiquidGlassContainer(
                     variant: LiquidGlassVariant.light,
                     borderRadius: 18,
                     width: 52,
                     height: 52,
-                    child: Icon(item.icon, color: item.color, size: 27),
+                    child: Center(child: Icon(item.icon, color: item.color, size: 27)),
                   ),
                   const SizedBox(height: 7),
-                  Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: context.fgMain, fontSize: 12, fontWeight: FontWeight.w500, height: 1)),
                 ],
               ),
             ),
@@ -988,7 +989,7 @@ class _LiveTvModule extends StatelessWidget {
                                     borderRadius: 19,
                                     width: 38,
                                     height: 38,
-                                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22),
+                                    child: const Center(child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22)),
                                   ),
                                 ),
                               ],

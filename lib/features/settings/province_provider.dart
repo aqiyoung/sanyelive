@@ -48,13 +48,16 @@ class ProvinceNotifier extends Notifier<String?> {
   /// 依次尝试多个国内 IP 库, 解析出省份简称后写入设置并返回;
   /// 全部失败 (网络/被墙/无字段) 返回 null, 由调用方回退手动选择.
   /// 不抛异常.
+  ///
+  /// 源优先级 (实测可达性 + 稳定性):
+  ///   1. whois.pconline.com.cn/ipJson.jsp — 太平洋电脑网 IP 库, 常年稳定,
+  ///      返回 IPCallBack({"pro":"陕西省",...}), 国内网络 100% 可达.
+  ///   2. myip.ipip.net/json — ipip.net, 返回 {"data":{"location":[...]}}.
+  ///   3. www.ip.cn/api/index — 备用, 偶发 302 跳转, 仅兜底.
   Future<String?> autoDetect() async {
     const endpoints = <String>[
-      // {"code":200,"province":"广东省","city":"深圳市",...}
-      'https://ip.useragentinfo.com/json',
-      // {"ret":"ok","data":{"ip":"..","location":["中国","广东","深圳","","电信"]}}
+      'https://whois.pconline.com.cn/ipJson.jsp',
       'https://myip.ipip.net/json',
-      // {"rs":1,"code":0,"address":"中国 广东省 深圳市 电信",...}
       'https://www.ip.cn/api/index?ip=&type=0',
     ];
     for (final url in endpoints) {
@@ -76,47 +79,70 @@ class ProvinceNotifier extends Notifier<String?> {
   }
 }
 
-/// 从 IP 库响应体解析省份简称, 兼容三种真实返回格式:
-///   - ip.useragentinfo.com: {"province":"广东省","city":"深圳市",...}
-///   - myip.ipip.net/json:   {"data":{"location":["中国","广东","深圳","","电信"]}}
-///   - www.ip.cn:            {"address":"中国 广东省 深圳市 电信",...}
+/// 从 IP 库响应体解析省份简称, 兼容以下真实返回格式:
+///   - whois.pconline.com.cn: IPCallBack({"pro":"陕西省","city":"西安市",...})
+///       (注意: 整体不是 JSON, 而是 JS 函数调用包裹, 需先剥离外层)
+///   - myip.ipip.net/json:     {"ret":"ok","data":{"location":["中国","陕西","西安","","联通"]}}
+///   - www.ip.cn:              {"address":"中国 广东省 深圳市 电信",...}
 ///
 /// 结果必须能归一化成 [kProvinces] 中的简称才返回, 否则 null —— 避免把
 /// "深圳市"/"中国" 这类匹配不上的字符串存进设置, 导致排序静默失效.
 String? _parseProvince(String body) {
-  final candidates = <String>[];
+  Map<String, dynamic>? decoded;
   try {
-    final decoded = jsonDecode(body);
-    if (decoded is Map<String, dynamic>) {
-      // 1) 顶层 province 字段.
-      final p = decoded['province'];
-      if (p is String) candidates.add(p);
-
-      // 2) ipip 的 data.location 数组: [国家, 省, 市, 区, 运营商].
-      final data = decoded['data'];
-      if (data is Map<String, dynamic>) {
-        final loc = data['location'];
-        if (loc is List) {
-          candidates.addAll(loc.whereType<String>());
-        }
-        final dp = data['province'];
-        if (dp is String) candidates.add(dp);
+    // 纯 JSON (ipip.net / ip.cn).
+    decoded = jsonDecode(body) as Map<String, dynamic>;
+  } on FormatException {
+    // 兼容 pconline 的 IPCallBack({...}) 包裹: 截取最外层 {...} 再解析.
+    final s = body.indexOf('{');
+    final e = body.lastIndexOf('}');
+    if (s >= 0 && e > s) {
+      try {
+        decoded = jsonDecode(body.substring(s, e + 1)) as Map<String, dynamic>;
+      } on FormatException {
+        decoded = null;
       }
-
-      // 3) ip.cn 的 address: "中国 广东省 深圳市 电信".
-      final addr = decoded['address'];
-      if (addr is String) candidates.addAll(addr.split(RegExp(r'\s+')));
     }
-  } catch (_) {
-    // 非 JSON, 退化为正则抓 province 字段.
-    final m = RegExp(r'"province"\s*:\s*"([^"]+)"').firstMatch(body);
-    if (m != null) candidates.add(m.group(1)!);
   }
 
+  final candidates = <String>[];
+  if (decoded != null) {
+    // 1) 顶层 province / pconline 的 pro 字段.
+    final p = decoded['province'];
+    if (p is String) candidates.add(p);
+    final pro = decoded['pro'];
+    if (pro is String) candidates.add(pro);
+
+    // 2) ipip 的 data.location 数组: [国家, 省, 市, 区, 运营商].
+    final data = decoded['data'];
+    if (data is Map<String, dynamic>) {
+      final loc = data['location'];
+      if (loc is List) candidates.addAll(loc.whereType<String>());
+      final dp = data['province'];
+      if (dp is String) candidates.add(dp);
+    }
+
+    // 3) ip.cn 的 address: "中国 广东省 深圳市 电信".
+    final addr = decoded['address'];
+    if (addr is String) candidates.addAll(addr.split(RegExp(r'\s+')));
+  }
+
+  // 结构化候选优先.
   for (final raw in candidates) {
     final p = _normalizeProvince(raw);
     if (p != null) return p;
   }
+
+  // 兜底: 在原始文本里找 "X省"/"X市"/"X自治区" 形式.
+  // 必须紧跟 省/市/自治区, 避免 "青海省" 误命中 "海南" 等子串问题.
+  final m = RegExp(
+    r'(?:北京|天津|上海|重庆|河北|山西|辽宁|吉林|黑龙江|江苏|浙江|安徽|福建|'
+    r'江西|山东|河南|湖北|湖南|广东|海南|四川|贵州|云南|陕西|甘肃|青海|台湾|'
+    r'内蒙古|广西|西藏|宁夏|新疆|香港|澳门)'
+    r'(?:省|市|自治区|特别行政区)',
+  ).firstMatch(body);
+  if (m != null) return _normalizeProvince(m.group(0)!);
+
   return null;
 }
 

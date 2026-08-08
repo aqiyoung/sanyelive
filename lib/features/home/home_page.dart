@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'dart:async';
+
 import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/colors.dart';
 import '../settings/app_mode_provider.dart';
+import '../settings/province_provider.dart' show provinceProvider;
 import 'poster_wall_page.dart';
 
 /// 视界主页 — 外层统一管理底部导航
@@ -19,6 +22,17 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // 首次进入且用户未手动设置省份时, 后台自动定位一次 (best-effort).
+    // 不 await: 不阻塞首屏; autoDetect 内部已 try/catch, 失败静默回退默认顺序.
+    // 成功后 provinceProvider 状态变化 → 首页/卫视分类页自动把本省卫视置顶.
+    if (ref.read(provinceProvider) == null) {
+      unawaited(ref.read(provinceProvider.notifier).autoDetect());
+    }
+  }
 
   /// 根据模式构建底部导航项 + 对应页面.
   /// 电视直播模式 (默认): 仅 [首页, 我的].

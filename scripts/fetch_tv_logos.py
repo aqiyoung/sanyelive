@@ -38,6 +38,50 @@ DEFAULT_DATA = "assets/data/channels_cn.json"
 DEFAULT_OUT = "assets/logos"
 DEFAULT_MANIFEST = "assets/logos/manifest.json"
 
+# 英文/拼音省份 -> 中文省份. 用于把 LiaoningTV/HebeiTV 这类英文 id/name
+# 翻成中文, 再去台标源 (按中文命名的 辽宁卫视.png 等) 里匹配.
+# 注: 山西=shanxi / 陕西=shaanxi 拼音区分; 内蒙古=neimenggu; 西藏=xizang/tibet.
+PINYIN_PROVINCE = {
+    "beijing": "北京", "tianjin": "天津", "shanghai": "上海", "chongqing": "重庆",
+    "hebei": "河北", "shanxi": "山西", "liaoning": "辽宁", "jilin": "吉林",
+    "heilongjiang": "黑龙江", "jiangsu": "江苏", "zhejiang": "浙江", "anhui": "安徽",
+    "fujian": "福建", "jiangxi": "江西", "shandong": "山东", "henan": "河南",
+    "hubei": "湖北", "hunan": "湖南", "guangdong": "广东", "hainan": "海南",
+    "sichuan": "四川", "guizhou": "贵州", "yunnan": "云南", "shaanxi": "陕西",
+    "gansu": "甘肃", "qinghai": "青海", "taiwan": "台湾",
+    "neimenggu": "内蒙古", "neimeng": "内蒙古",
+    "guangxi": "广西",
+    "xizang": "西藏", "tibet": "西藏",
+    "ningxia": "宁夏",
+    "xinjiang": "新疆",
+    "xianggang": "香港", "hongkong": "香港",
+    "aomen": "澳门", "macau": "澳门",
+}
+
+
+def pinyin_province_candidates(*raws) -> list:
+    """从英文/拼音 id/name 推出中文省份候选 (卫视/电视台/纯省名).
+
+    例如 "LiaoningTV.cn" / "Liaoning TV" -> ["辽宁卫视","辽宁电视台","辽宁"].
+    中文名 (如 "湖南卫视") 经 [^a-z] 清洗后为空, 不产生候选 (本就按中文匹配).
+    """
+    out = []
+    for raw in raws:
+        if not raw:
+            continue
+        py = re.sub(r"[^a-z]", "", str(raw).lower())
+        # 去掉可叠加后缀: henanTVSatellite -> henan
+        py = re.sub(
+            r"(tv|satellite|channel|radio|station|live|hd|sd|4k|8k|cn|com|net|org)+$",
+            "",
+            py,
+        )
+        cn = PINYIN_PROVINCE.get(py)
+        if cn:
+            out += [f"{cn}卫视", f"{cn}电视台", cn]
+    return out
+
+
 
 _IMG_EXT = re.compile(r"\.(png|jpe?g|svg|webp)$", re.I)
 
@@ -205,6 +249,10 @@ def main() -> int:
             [name]
             + list(ch.get("alt_names") or [])
             + [str(cid).replace(".cn", ""), str(cid)]
+            # 英文/拼音 id/name -> 中文省份 -> 合成候选 (辽宁卫视 等)
+            + pinyin_province_candidates(
+                cid, name, *(ch.get("alt_names") or [])
+            )
         )
         logo = ch.get("logo")
         url = None

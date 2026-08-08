@@ -117,7 +117,6 @@ class _ChannelChip extends StatelessWidget {
             channel: channel,
             size: 52,
             shadow: true,
-            bright: false,
           ),
         ),
       ),

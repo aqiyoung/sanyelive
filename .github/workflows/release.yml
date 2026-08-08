@@ -150,6 +150,16 @@ jobs:
           python3 scripts/check_sources.py --require-cctv --allow-empty-cctv
           echo "✅ --require-cctv --allow-empty-cctv 闸通过 (v0.3.8+108, 7 个 CCTV 主频道有源 + 11 个故意空)"
 
+      - name: Fetch TV logos (bundle offline 台标)
+        # v0.3.12+166: 把缺失台标也打包进 assets/logos, 不再依赖运行时远程回填
+        # (移动宽带/IPv6 下远程拉取常失败 -> 频道退化成文字图标).
+        # 脚本从 fanmingming/gitee 按频道名匹配下载 PNG + 生成 manifest.json,
+        # flutter build 随后将其打进 APK. continue-on-error: 拉取失败(网络/被墙)
+        # 不阻塞出包, 退化为已提交的基线台标.
+        continue-on-error: true
+        run: |
+          python3 scripts/fetch_tv_logos.py || echo "::warning::台标拉取失败, 退化为已提交基线台标"
+
       - name: Build APK (release, signed)
         # v0.3.10.26: 3 个 ABI 分开构建 — armeabi-v7a 关闭 Impeller (老盒子兼容),
         # arm64/x64 保持 Impeller 默认开启 (现代设备性能更好).

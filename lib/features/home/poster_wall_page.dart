@@ -519,7 +519,7 @@ class _HeroBackdrop extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (channel != null)
-                  ChannelLogo(channel: channel, size: 76, bright: true)
+                  ChannelLogo(channel: channel, size: 76)
                 else
                   Icon(
                     isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
@@ -660,7 +660,6 @@ class _ChannelCard extends StatelessWidget {
               child: ChannelLogo(
                 channel: channel,
                 size: 48,
-                bright: false,
                 shadow: true,
               ),
             ),
@@ -987,7 +986,7 @@ class _LiveTvModule extends StatelessWidget {
                               children: [
                                 isLoading
                                     ? Icon(Icons.hourglass_empty_rounded, color: context.fgSub, size: 34)
-                                    : ChannelLogo(channel: primary, size: 54, bright: true),
+                                    : ChannelLogo(channel: primary, size: 54),
                                 const SizedBox(height: 9),
                                 ClipOval(
                                   child: LiquidGlassContainer(

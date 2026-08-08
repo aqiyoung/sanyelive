@@ -219,8 +219,8 @@
   ],
   "XinjiangTV3.cn": [
     "http://110.153.180.106:55555/out_2/index.m3u8",
-    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
-    "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8"
+    "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
+    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1"
   ],
   "XinjiangTV8.cn": [
     "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1"
@@ -363,8 +363,8 @@
     "http://183.207.249.12/PLTV/4/224/3221225935/index.m3u8"
   ],
   "JiangsuPublicNewsChannel.cn": [
-    "http://183.207.248.71/gitv/live1/G_JSGG/G_JSGG",
-    "https://jiangning-tv-playing-t.cm.jstv.com/jiangning-tv/jnxwzh.m3u8"
+    "https://jiangning-tv-playing-t.cm.jstv.com/jiangning-tv/jnxwzh.m3u8",
+    "http://183.207.248.71/gitv/live1/G_JSGG/G_JSGG"
   ],
   "JiangsuSatelliteTV.cn": [
     "http://183.207.248.71/cntv/live1/HD-2500k-1080P-jiangsustv/HD-2500k-1080P-jiangsustv",

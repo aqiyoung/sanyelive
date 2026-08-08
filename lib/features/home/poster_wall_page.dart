@@ -634,7 +634,7 @@ class _ChannelRow extends StatelessWidget {
 /// [bright] = true 用于深色背景 (Hero / 频道卡片 logo 牌), 文字/白色台标清晰;
 /// false 用于浅色玻璃底, 文字用深色.
 class _ChannelLogo extends StatelessWidget {
-  const _ChannelLogo({required this.channel, this.size = 48, this.bright = false});
+  const _ChannelLogo({required this.channel, this.size = 48, this.bright = false, this.shadow = false});
 
   final Channel? channel;
   final double size;
@@ -643,27 +643,30 @@ class _ChannelLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 优先离线台标 (assets/logos, CI 构建前打包): 命中即本地渲染,
-    // 不依赖设备端网络. 在浅色液态玻璃卡片上, logo 牌使用深色渐变衬底,
-    // 白色台标/文字才能清晰显现.
+    // 不依赖设备端网络. 白色台标 PNG 直接浮在浅色玻璃上, shadow=true 时
+    // 用一层"形状投影"(模糊黑色剪影) 把 logo 从背景里托出, 不套实体黑块.
+    // 无台标兜底显示频道首字 (卡片用深色文字, 黑底用白色).
     final local = tvLogoManifest[channel?.id];
     if (local != null && local.isNotEmpty) {
-      return Image.asset(
-        'assets/logos/$local',
-        fit: BoxFit.contain,
-        height: size,
-        errorBuilder: (_, __, ___) => _fallback(context),
-      );
+      Widget buildImg() => Image.asset(
+            'assets/logos/$local',
+            fit: BoxFit.contain,
+            height: size,
+            errorBuilder: (_, __, ___) => _fallback(context),
+          );
+      return shadow ? _logoWithShadow(buildImg) : buildImg();
     }
     final logo = channel?.logoUrl;
     if (logo != null && logo.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: logo,
-        cacheManager: IPv4CacheManager(),
-        fit: BoxFit.contain,
-        height: size,
-        placeholder: (_, __) => SizedBox(height: size),
-        errorWidget: (_, __, ___) => _fallback(context),
-      );
+      Widget buildImg() => CachedNetworkImage(
+            imageUrl: logo,
+            cacheManager: IPv4CacheManager(),
+            fit: BoxFit.contain,
+            height: size,
+            placeholder: (_, __) => SizedBox(height: size),
+            errorWidget: (_, __, ___) => _fallback(context),
+          );
+      return shadow ? _logoWithShadow(buildImg) : buildImg();
     }
     return _fallback(context);
   }
@@ -687,6 +690,34 @@ class _ChannelLogo extends StatelessWidget {
   }
 }
 
+/// 给白色透明台标加一层"形状投影": 背后叠一个模糊的黑色剪影, 让 logo 在
+/// 浅色玻璃上也能看清轮廓, 而无需实体深色底牌. 深色背景下投影不可见 (无害),
+/// 故仅 shadow=true 的浅色卡片场景启用. 用 buildImage 闭包各建两份实例,
+/// 避免同一 widget 对象在 Stack 里复用.
+Widget _logoWithShadow(Widget Function() buildImage) {
+  final shadowImg = buildImage();
+  final frontImg = buildImage();
+  return Stack(
+    alignment: Alignment.center,
+    children: <Widget>[
+      Transform.translate(
+        offset: const Offset(0, 2.5),
+        child: Opacity(
+          opacity: 0.5,
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 4),
+            child: ColorFiltered(
+              colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+              child: shadowImg,
+            ),
+          ),
+        ),
+      ),
+      frontImg,
+    ],
+  );
+}
+
 /// 单个频道卡片: 台标 + LIVE 徽标 + 频道名.
 class _ChannelCard extends StatelessWidget {
   const _ChannelCard({required this.channel});
@@ -695,8 +726,8 @@ class _ChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 浅色 parchment 背景上卡片用 light 玻璃, 但中间 logo 牌必须用深色渐变
-    // 衬底 —— 白色台标 PNG 落在深底上才清晰, 否则融进浅玻璃里显灰.
+    // 浅色 parchment 背景上卡片用 light 玻璃; 中间白色台标直接浮在玻璃上,
+    // 由 _ChannelLogo(shadow:true) 用形状投影把 logo 托出, 不再套深色底牌.
     return GestureDetector(
       onTap: () => context.go('/player/${channel.id}'),
       child: LiquidGlassContainer(
@@ -707,30 +738,11 @@ class _ChannelCard extends StatelessWidget {
         child: Stack(
           children: [
             Center(
-              child: Container(
-                width: 58,
-                height: 58,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF1F2937), Color(0xFF111827)],
-                  ),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    width: 1,
-                  ),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: _ChannelLogo(channel: channel, size: 40, bright: true),
+              child: _ChannelLogo(
+                channel: channel,
+                size: 48,
+                bright: false,
+                shadow: true,
               ),
             ),
             Positioned(

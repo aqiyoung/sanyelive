@@ -37,6 +37,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sanyelive/features/settings/theme_provider.dart'
     show sharedPreferencesProvider;
+import 'package:sanyelive/utils/crash_logger.dart';
 
 ///   FeiNiuMusic 标准做法 (已验证可用): 用 `/releases/latest` 单请求拿最新
 ///   stable release, 并带 `User-Agent` + `Accept` 头.  GitHub API 对**没有
@@ -57,9 +58,14 @@ const List<String> _kVersionMetaUrls = [
   'https://cdn.jsdelivr.net/gh/aqiyoung/sanyelive@meta/version.json',
   // gh-proxy 系列: 公共代理, 主业就是代理 raw.githubusercontent.com.
   'https://gh-proxy.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  'https://ghproxy.net/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  'https://mirror.ghproxy.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
   'https://ghps.cc/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
   'https://github.moeyy.xyz/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
   'https://gh.api.99988866.xyz/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  'https://gh.idayer.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  'https://ghproxy.cc/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
+  'https://hub.gitmirror.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
   // 直连 raw (翻墙用户 / 兜底).
   'https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
 ];
@@ -81,6 +87,13 @@ const List<String> kDefaultEndpointUrls = [_kGitHubApiBaseUrl];
 const Map<String, String> kGitHubApiHeaders = {
   'User-Agent': 'sanyelive',
   'Accept': 'application/vnd.github.v3+json',
+};
+
+/// meta 版本源请求头 — 用通用 Accept, 避免某些代理对 GitHub API 专用 Accept
+/// 返回 406/403.
+const Map<String, String> kMetaHeaders = {
+  'User-Agent': 'sanyelive',
+  'Accept': 'application/json',
 };
 
 /// 兼容老代码 — 取基础 URL. 单元测试可 overrideWithValue.
@@ -309,6 +322,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       await _prefs.setInt(_Keys.lastCheckTime, now);
     } on DioException catch (e) {
       debugPrint('version_checker: network error → $e');
+      await CrashLogger.log('version_checker network: $e');
       state = const VersionCheckFailed(
         '网络连接失败，请检查网络或稍后重试\n也可手动前往 GitHub Releases 查看更新',
       );
@@ -316,8 +330,12 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       await _prefs.setInt(_Keys.lastCheckTime, now);
     } catch (e) {
       debugPrint('version_checker: unexpected error → $e');
-      state = const VersionCheckFailed(
-        '检查更新时出错，请稍后重试\n也可手动前往 GitHub Releases 查看更新',
+      await CrashLogger.log('version_checker error: $e');
+      // 把具体错误简短附在提示里, 方便用户截图反馈; 太长截断.
+      var detail = e.toString();
+      if (detail.length > 120) detail = '${detail.substring(0, 120)}…';
+      state = VersionCheckFailed(
+        '检查更新时出错，请稍后重试\n也可手动前往 GitHub Releases 查看更新\n($detail)',
       );
       await _prefs.setInt(_Keys.lastCheckTime, now);
     }
@@ -367,20 +385,24 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     // 1) meta 版本源 (raw, 多镜像兜底, 国内稳达) — 优先.
     //    这些 URL 已是完整地址 (代理烤进路径),  prefix='' 表示 APK 下载链接
     //    不再二次拼前缀.
+    final metaErrors = <String>[];
     for (final url in _kVersionMetaUrls) {
       try {
         final resp = await _dio.get<dynamic>(
           url,
           options: Options(
-            receiveTimeout: const Duration(seconds: 8),
+            receiveTimeout: const Duration(seconds: 10),
             responseType: ResponseType.plain,
-            headers: kGitHubApiHeaders,
+            headers: kMetaHeaders,
           ),
         );
         if (resp.statusCode == 200 && resp.data is String) {
           final s = (resp.data as String).trim();
           // 拿到 HTML (如代理没干活 / 404 页) 直接跳过这个源.
-          if (s.startsWith('<')) continue;
+          if (s.startsWith('<')) {
+            metaErrors.add('$url → HTML');
+            continue;
+          }
           try {
             final decoded = jsonDecode(s);
             if (decoded is Map<String, dynamic> &&
@@ -388,19 +410,25 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
                 decoded.containsKey('versionCode')) {
               return (decoded, '');
             }
+            metaErrors.add('$url → missing fields');
           } catch (_) {
+            metaErrors.add('$url → JSON parse fail');
             debugPrint('version_checker: meta JSON parse fail from $url');
           }
+        } else {
+          metaErrors.add('$url → HTTP ${resp.statusCode}');
         }
       } on DioException catch (e) {
+        metaErrors.add('$url → ${e.type}');
         debugPrint('version_checker: meta $url → $e');
       } catch (e) {
+        metaErrors.add('$url → $e');
         debugPrint('version_checker: meta $url → $e');
       }
     }
 
     // 2) GitHub API 兜底 (已翻墙用户 / 代理恰好支持 API 时).
-    String? lastError;
+    final apiErrors = <String>[];
     for (final prefix in _kGitHubProxyPrefixes) {
       final url = prefix.isEmpty ? _kGitHubApiBaseUrl : '$prefix$_kGitHubApiBaseUrl';
       try {
@@ -417,7 +445,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
           if (data is String) {
             final s = data.replaceFirst(RegExp(r'^\s+'), '');
             if (s.startsWith('<') || s.startsWith('<!DOCTYPE')) {
-              lastError = 'HTML response from $url';
+              apiErrors.add('$url → HTML');
               continue;
             }
             try {
@@ -425,41 +453,41 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
               Map<String, dynamic> release;
               if (decoded is List<dynamic>) {
                 if (decoded.isEmpty) {
-                  lastError = 'empty releases list from $url';
+                  apiErrors.add('$url → empty releases list');
                   continue;
                 }
                 final first = decoded.first;
                 if (first is! Map<String, dynamic>) {
-                  lastError = 'first release not a Map from $url';
+                  apiErrors.add('$url → first release not a Map');
                   continue;
                 }
                 release = first;
               } else if (decoded is Map<String, dynamic>) {
                 release = decoded;
               } else {
-                lastError = 'non-Map/List JSON from $url';
+                apiErrors.add('$url → non-Map/List JSON');
                 continue;
               }
               return (release, prefix);
             } catch (_) {
-              lastError =
-                  'invalid JSON from $url: ${s.substring(0, s.length.clamp(0, 80))}';
+              apiErrors.add(
+                  '$url → invalid JSON: ${s.substring(0, s.length.clamp(0, 80))}');
             }
           } else {
-            lastError = 'unexpected data type from $url (${data.runtimeType})';
+            apiErrors.add('$url → unexpected type ${data.runtimeType}');
           }
         } else {
-          lastError = 'HTTP ${resp.statusCode} from $url';
+          apiErrors.add('$url → HTTP ${resp.statusCode}');
         }
       } on DioException catch (e) {
-        lastError = '${e.type} from $url';
+        apiErrors.add('$url → ${e.type}');
         debugPrint('version_checker: api $url → $e');
       } catch (e) {
-        lastError = '$e from $url';
+        apiErrors.add('$url → $e');
         debugPrint('version_checker: api $url → $e');
       }
     }
-    throw Exception('All update sources failed: $lastError');
+    throw Exception('meta: $metaErrors; api: $apiErrors');
   }
 
   static _ParsedRelease? _parseRelease(Map<String, dynamic> json, String proxyPrefix) {

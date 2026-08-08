@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/services.dart';
 
 import 'package:flutter/material.dart';
@@ -148,39 +147,32 @@ class _StreamingBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: context.bgBase.withValues(alpha: 0.94),
-        border: Border(top: BorderSide(color: context.fgBorder)),
-      ),
-      child: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: SafeArea(
-            top: false,
-            child: BottomNavigationBar(
-              currentIndex: currentIndex,
-              onTap: onTap,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              // 选中=强调色 (赤陶, 主题主色), 未选中=次文字色 (比硬编码灰色深, 看得清)
-              // 两套颜色都走 Theme, 深浅色自动适配.
-              selectedItemColor: context.fgAccent,
-              unselectedItemColor: context.fgSub,
-              showSelectedLabels: true,
-              showUnselectedLabels: true,
-              type: BottomNavigationBarType.fixed,
-              selectedFontSize: 12,
-              unselectedFontSize: 12,
-              items: items
-                  .map((e) => BottomNavigationBarItem(
-                        icon: Icon(e.icon, size: 24),
-                        activeIcon: e.activeIcon,
-                        label: e.label,
-                      ))
-                  .toList(),
-            ),
-          ),
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 0,
+      child: SafeArea(
+        top: false,
+        child: BottomNavigationBar(
+          currentIndex: currentIndex,
+          onTap: onTap,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          // 选中=强调色 (赤陶, 主题主色), 未选中=次文字色 (比硬编码灰色深, 看得清)
+          // 两套颜色都走 Theme, 深浅色自动适配.
+          selectedItemColor: context.fgAccent,
+          unselectedItemColor: context.fgSub,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          items: items
+              .map((e) => BottomNavigationBarItem(
+                    icon: Icon(e.icon, size: 24),
+                    activeIcon: e.activeIcon,
+                    label: e.label,
+                  ))
+              .toList(),
         ),
       ),
     );

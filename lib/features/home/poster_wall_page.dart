@@ -923,7 +923,6 @@ class _CategoryShortcutBar extends StatelessWidget {
                     borderRadius: 18,
                     width: 52,
                     height: 52,
-                    specular: false,
                     child: Icon(item.icon, color: item.color, size: 27),
                   ),
                   const SizedBox(height: 7),
@@ -957,7 +956,6 @@ class _LiveTvModule extends StatelessWidget {
         child: LiquidGlassContainer(
           variant: LiquidGlassVariant.light,
           borderRadius: 22,
-          specular: false,
           padding: const EdgeInsets.all(12),
           child: SizedBox(
             height: 116,
@@ -984,15 +982,14 @@ class _LiveTvModule extends StatelessWidget {
                                     ? Icon(Icons.hourglass_empty_rounded, color: context.fgSub, size: 34)
                                     : ChannelLogo(channel: primary, size: 54, bright: true),
                                 const SizedBox(height: 9),
-                                Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.14),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white.withOpacity(0.28)),
+                                ClipOval(
+                                  child: LiquidGlassContainer(
+                                    variant: LiquidGlassVariant.dark,
+                                    borderRadius: 19,
+                                    width: 38,
+                                    height: 38,
+                                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22),
                                   ),
-                                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22),
                                 ),
                               ],
                             ),

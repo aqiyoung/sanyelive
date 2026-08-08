@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../core/http/ipv4_cache_manager.dart';
-import '../core/theme/colors.dart';
 import '../data/models/channel.dart';
 import '../data/tv_logo_manifest.dart';
 

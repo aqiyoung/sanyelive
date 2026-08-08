@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:sanyelive/widgets/channel_logo.dart';
 import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/typography.dart';
 // 主题联动).  theme_tokens_test.dart 严格 grep 不许硬编颜色常量.
@@ -80,7 +81,6 @@ class NextChannelsStrip extends StatelessWidget {
                   final ch = visible[i];
                   return _ChannelChip(
                     channel: ch,
-                    index: i,
                     isNext: i == 0,
                     onTap: () => onChannelTap(ch),
                   );
@@ -97,13 +97,11 @@ class NextChannelsStrip extends StatelessWidget {
 class _ChannelChip extends StatelessWidget {
   const _ChannelChip({
     required this.channel,
-    required this.index,
     required this.isNext,
     required this.onTap,
   });
 
   final Channel channel;
-  final int index;
   final bool isNext;
   final VoidCallback onTap;
 
@@ -112,79 +110,65 @@ class _ChannelChip extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
-        child: LiquidGlassContainer(
-          variant: LiquidGlassVariant.light,
-          borderRadius: 10,
-          width: 108,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          tint: isNext ? Theme.of(context).colorScheme.primary : null,
-          child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+      child: LiquidGlassContainer(
+        variant: LiquidGlassVariant.light,
+        borderRadius: 10,
+        width: 118,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        tint: isNext ? Theme.of(context).colorScheme.primary : null,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Text(
-                  (index + 1).toString().padLeft(2, '0'),
-                  // 6/17 修: 软包禁 + maxLines=1, 防止 01 在某些字体下被
-                  // 截到 chip 边缘外造成"超出容器"错觉
-                  maxLines: 1,
-                  softWrap: false,
-                  // 区分.  选中态靠 chip bg (accent 0.12α) 区分.
-                  style: IptvTypography.caption.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
+            // 频道台标：带形状投影，与首页卡片风格一致
+            ChannelLogo(
+              channel: channel,
+              size: 28,
+              shadow: true,
+              bright: false,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
                     channel.displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    // 之前 13 字号 108 宽 chip 装不下 "CCTV-1 综合" (5 汉字).
                     style: IptvTypography.body.copyWith(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                if (channel.sources.isNotEmpty)
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  )
-                else
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      shape: BoxShape.circle,
-                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: channel.sources.isNotEmpty
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          categoryZh(channel.primaryCategory),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: IptvTypography.caption.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    categoryZh(channel.primaryCategory),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: IptvTypography.caption.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

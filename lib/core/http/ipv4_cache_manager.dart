@@ -5,6 +5,8 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
+import 'ipv4_client.dart';
+
 class IPv4CacheManager extends CacheManager with ImageCacheManager {
   static const key = 'ipv4CachedImage';
 
@@ -35,25 +37,9 @@ class _Ipv4FileService extends HttpFileService {
     HttpClient client;
     try {
       client = HttpClient();
-      client.connectionFactory = (Uri uri, String? proxyHost, int? proxyPort) async {
-        if (proxyHost == null || proxyHost.isEmpty) {
-          final addrs = await InternetAddress.lookup(
-            uri.host,
-            type: InternetAddressType.IPv4,
-          );
-          if (addrs.isEmpty) {
-            throw SocketException('No IPv4 address for ${uri.host}');
-          }
-          return ConnectionTask.fromSocket(
-            Socket.connect(addrs.first, uri.port),
-            () {},
-          );
-        }
-        return ConnectionTask.fromSocket(
-          Future<Socket>.error(const SocketException('Proxy not supported')),
-          () {},
-        );
-      };
+      // 复用 IPv4Client 的"优先 IPv4 + IPv6 兜底"连接工厂,
+      // 与全局 HttpOverrides 行为一致 (修复移动宽带图片加载不出来).
+      client.connectionFactory = IPv4Client.preferIpv4ConnectionFactory;
     } finally {
       HttpOverrides.global = prev;
     }

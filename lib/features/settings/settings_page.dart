@@ -28,6 +28,10 @@ import '../../../services/tvbox_config_parser.dart';
 import '../../../services/vod_source_registry.dart';
 import 'theme_provider.dart';
 import 'app_mode_provider.dart';
+import 'network_mode_provider.dart' show NetworkMode, networkModeProvider;
+import 'province_provider.dart' show provinceProvider;
+// 省份列表 (定位选择器).
+import '../../data/province_util.dart' show kProvinces;
 // 保留文件 (兼容老 prefs), 但 settings_page 不再 import, 也不暴露 UI.
 
 //   / textSecondary) 都改走 colorScheme.onSurface / onSurfaceVariant,  跟
@@ -136,6 +140,34 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: const Text('当前版本 + 最新版本对比'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context),
+              ),
+              const _SettingsGap(),
+              Consumer(
+                builder: (context, ref, _) {
+                  final mode = ref.watch(networkModeProvider);
+                  return ListTile(
+                    leading: const Icon(Icons.wifi_tethering_outlined),
+                    title: const Text('网络模式'),
+                    subtitle: Text('${mode.label} · ${mode.hint}（重启生效）'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showNetworkModeDialog(context, ref),
+                  );
+                },
+              ),
+              const _SettingsGap(),
+              Consumer(
+                builder: (context, ref, _) {
+                  final province = ref.watch(provinceProvider);
+                  return ListTile(
+                    leading: const Icon(Icons.location_on_outlined),
+                    title: const Text('当前省份'),
+                    subtitle: Text(province == null
+                        ? '未设置（卫视按默认顺序）'
+                        : '当前：$province'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showProvinceDialog(context, ref),
+                  );
+                },
               ),
               const _SettingsGap(),
               Consumer(
@@ -302,6 +334,141 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  // ─── 网络模式 ───────────────────────────────────────────────────────────
+  // 自动(优先IPv4+IPv6兜底, 默认) / 强制IPv4 / 系统默认. 切换后重启生效
+  // (HttpOverrides 在 main() 启动时安装一次).
+  void _showNetworkModeDialog(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (ctx) => Consumer(
+        builder: (ctx, ref, _) {
+          final current = ref.watch(networkModeProvider);
+          return GlassDialog(
+            title: const Text('网络模式'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: NetworkMode.values.map((m) {
+                return RadioListTile<NetworkMode>(
+                  title: Text(m.label),
+                  subtitle: Text(m.hint),
+                  value: m,
+                  groupValue: current,
+                  onChanged: (v) {
+                    if (v != null) {
+                      ref.read(networkModeProvider.notifier).setMode(v);
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('完成'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // ─── 当前省份 (定位) ──────────────────────────────────────────────────────
+  // 自动定位 (IP 地理, best-effort) + 手动选择. 选择后卫视列表把该省排最前.
+  void _showProvinceDialog(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(provinceProvider.notifier);
+    // detecting 必须声明在 showDialog 之外 —— 放进 StatefulBuilder 的 builder
+    // 里会在每次 setLocal 重建时被重置回 false, "定位中" 状态永远显示不出来.
+    var detecting = false;
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      // Consumer 提供 dialog 自己的 ref: 在 dialog 回调里用外层页面的 ref.watch
+      // 会被 Riverpod 断言拦下 (watch 只能在 build 中调用).
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => Consumer(
+          builder: (ctx, dRef, _) {
+            final current = dRef.watch(provinceProvider);
+            return GlassDialog(
+            title: const Text('定位当前省份'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 380,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  FilledButton.icon(
+                    icon: detecting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.my_location, size: 18),
+                    label: Text(detecting ? '定位中…' : '自动定位'),
+                    onPressed: detecting
+                        ? null
+                        : () async {
+                            setLocal(() => detecting = true);
+                            final p = await notifier.autoDetect();
+                            setLocal(() => detecting = false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(p == null
+                                      ? '自动定位失败，请手动选择'
+                                      : '已定位到：$p'),
+                                ),
+                              );
+                            }
+                          },
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        ...kProvinces.map(
+                          (p) => RadioListTile<String?>(
+                            title: Text(p),
+                            value: p,
+                            groupValue: current,
+                            onChanged: (v) {
+                              notifier.setProvince(v);
+                              setLocal(() {});
+                            },
+                          ),
+                        ),
+                        RadioListTile<String?>(
+                          title: const Text('不设置（默认顺序）'),
+                          value: null,
+                          groupValue: current,
+                          onChanged: (v) {
+                            notifier.setProvince(v);
+                            setLocal(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('完成'),
+              ),
+            ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 /// 检查更新小窗内容 — Consumer 订阅 state, 自动在 检查中/结果 间切换.

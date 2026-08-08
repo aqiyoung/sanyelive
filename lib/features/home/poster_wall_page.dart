@@ -14,6 +14,9 @@ import '../../../data/providers/vod_provider.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/models/content.dart';
 import '../../../data/channel_filter.dart';
+import '../../../data/province_util.dart' show sortSatelliteByProvince;
+import '../../../features/settings/province_provider.dart'
+    show provinceProvider;
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
 import '../../../services/player_service.dart';
@@ -211,19 +214,22 @@ class _ClockText extends StatelessWidget {
 
 /// TV 模式首页 (Leanback 风格):
 /// 精选 Hero (主推直播) → 横向分类 chips → 多行「正在直播 / 央视 / 卫视 / 体育」频道墙.
-class _TvLeanbackHome extends StatelessWidget {
+class _TvLeanbackHome extends ConsumerWidget {
   const _TvLeanbackHome({required this.isLoading, required this.channels});
 
   final bool isLoading;
   final List<Channel> channels;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final featured = channels.isNotEmpty ? channels.first : null;
     // 复用 ChannelFilter (与分类页 / chips 路由一致), 避免 categories 派生
     // 与分类页过滤逻辑不一致导致首页分类行缺失.
     final cctv = ChannelFilter.cctv(channels);
-    final satellite = ChannelFilter.satellite(channels);
+    final satelliteAll = ChannelFilter.satellite(channels);
+    // 定位: 当前省份的卫视排到最前.
+    final province = ref.watch(provinceProvider);
+    final satellite = sortSatelliteByProvince(satelliteAll, province);
     final local = ChannelFilter.local(channels);
     final sports = ChannelFilter.byCategory(channels, '体育');
     final movie = ChannelFilter.byCategory(channels, '影视');

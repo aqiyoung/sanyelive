@@ -6,6 +6,8 @@ import '../../core/responsive/breakpoints.dart';
 import '../../core/theme/typography.dart';
 import '../../core/tv/tv_focus.dart';
 import '../../data/channel_filter.dart';
+import '../../data/province_util.dart' show sortSatelliteByProvince;
+import '../../features/settings/province_provider.dart' show provinceProvider;
 import '../../data/models/channel.dart';
 import '../../data/repositories/channel_repository.dart';
 import '../../widgets/channel_tile.dart';
@@ -31,14 +33,15 @@ class CategoryPage extends ConsumerWidget {
         child: asyncChannels.when(
           loading: () => const _LoadingState(),
           error: (e, _) => _ErrorState(message: e.toString()),
-          data: (channels) => _buildContent(context, channels),
+          data: (channels) => _buildContent(context, ref, channels),
         ),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, List<Channel> all) {
-    final filtered = _filter(all);
+  Widget _buildContent(BuildContext context, WidgetRef ref, List<Channel> all) {
+    final province = ref.watch(provinceProvider);
+    final filtered = _filter(all, province);
     final displayTitle = title ?? _defaultTitle();
 
     return CustomScrollView(
@@ -174,7 +177,7 @@ class CategoryPage extends ConsumerWidget {
     return slivers;
   }
 
-  List<Channel> _filter(List<Channel> all) {
+  List<Channel> _filter(List<Channel> all, String? province) {
     switch (categoryId) {
       case 'live':
         return all
@@ -191,7 +194,8 @@ class CategoryPage extends ConsumerWidget {
       case 'cctv':
         return ChannelFilter.cctv(all);
       case 'satellite':
-        return ChannelFilter.satellite(all);
+        // 定位: 当前省份的卫视排到最前.
+        return sortSatelliteByProvince(ChannelFilter.satellite(all), province);
       case 'local':
         return ChannelFilter.local(all);
       case 'international':

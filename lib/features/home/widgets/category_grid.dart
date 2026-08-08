@@ -5,6 +5,7 @@ import '../../../core/responsive/breakpoints.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/tv/tv_focus.dart';
 import '../../../widgets/category_card.dart';
+import '../../../widgets/liquid_glass_container.dart';
 
 /// 主页 3 大分类卡片的自适应网格
 ///   - 手机 (≤600dp)  : 2 列 (1 张独占 + 2 列布局) — 实际上 3 卡 → 顶部 1 张 + 下方 2 列
@@ -158,9 +159,10 @@ class ContinueWatchingCard extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.primary,
-      borderRadius: BorderRadius.circular(14),
+    return LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 14,
+      tint: Theme.of(context).colorScheme.primary,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,

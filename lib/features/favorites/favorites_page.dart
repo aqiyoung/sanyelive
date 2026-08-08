@@ -8,6 +8,7 @@ import '../../core/tv/tv_focus.dart';
 import '../../data/models/channel.dart';
 import '../../data/repositories/channel_repository.dart';
 import '../../features/favorites/favorites_service.dart';
+import '../../widgets/liquid_glass_container.dart';
 import '../../widgets/channel_tile.dart';
 
 /// - 读 favoritesProvider (List<String> ids)
@@ -113,44 +114,46 @@ class FavoritesPage extends ConsumerWidget {
     final svc = ref.read(favoritesServiceProvider);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      // 暗色下用 darkSurface (暖深灰) 而不是浅米色.
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    '取消收藏「${ch.displayName}」?',
-                    style: IptvTypography.serifTitle,
+        return LiquidGlassContainer(
+          variant: LiquidGlassVariant.light,
+          borderRadius: 28,
+          margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 8),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      '取消收藏「${ch.displayName}」?',
+                      style: IptvTypography.serifTitle,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  leading: Icon(
-                    Icons.delete_outline,
-                    color: Theme.of(ctx).colorScheme.error,
+                  const SizedBox(height: 12),
+                  ListTile(
+                    leading: Icon(
+                      Icons.delete_outline,
+                      color: Theme.of(ctx).colorScheme.error,
+                    ),
+                    title: Text(
+                      '从收藏移除',
+                      style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+                    ),
+                    onTap: () => Navigator.of(ctx).pop(true),
                   ),
-                  title: Text(
-                    '从收藏移除',
-                    style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+                  ListTile(
+                    leading: const Icon(Icons.close),
+                    title: const Text('取消'),
+                    onTap: () => Navigator.of(ctx).pop(false),
                   ),
-                  onTap: () => Navigator.of(ctx).pop(true),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.close),
-                  title: const Text('取消'),
-                  onTap: () => Navigator.of(ctx).pop(false),
-                ),
-                const SizedBox(height: 8),
-              ],
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
           ),
         );

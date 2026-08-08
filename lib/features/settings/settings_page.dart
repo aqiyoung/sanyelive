@@ -216,71 +216,77 @@ class SettingsPage extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (ctx) => GlassDialog(
         title: const Text('关于视界'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '视界是一款直播 + 影视综合平台, 面向家用电视 / 盒子 / 手机, 极简新中式设计。',
-                style: TextStyle(color: scheme.onSurface, height: 1.6),
-              ),
-              const SizedBox(height: 16),
-              _AboutSection(
-                label: '技术栈',
-                child: Text(
-                  'Flutter (Dart) · media_kit (libmpv 内核) · Riverpod · GoRouter · '
-                  'GitHub Actions CI/CD · 自动源维护 (iptv-org 上游)。',
-                  style: TextStyle(color: scheme.onSurfaceVariant, height: 1.6),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '视界是一款直播 + 影视综合平台, 面向家用电视 / 盒子 / 手机, 极简新中式设计。',
+                  style: TextStyle(color: scheme.onSurface, height: 1.6),
                 ),
-              ),
-              const SizedBox(height: 12),
-              _AboutSection(
-                label: '特性',
-                child: Text(
-                  '· 强制 IPv4 (修 wifi 加载不出来)\n'
-                  '· Source Failover 自动切源\n'
-                  '· 全屏沉浸 + 3s 自动隐控件\n'
-                  '· 浅色 / 深色 / 跟随系统三主题\n'
-                  '· 收藏本地持久化\n'
-                  '· 后台强制更新 (GitHub Releases)',
-                  style: TextStyle(color: scheme.onSurfaceVariant, height: 1.6),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _AboutSection(
-                label: '项目地址',
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(6),
+                const SizedBox(height: 16),
+                _AboutSection(
+                  label: '技术栈',
+                  child: Text(
+                    'Flutter (Dart) · media_kit (libmpv 内核) · Riverpod · GoRouter · '
+                    'GitHub Actions CI/CD · 自动源维护 (iptv-org 上游)。',
+                    style: TextStyle(color: scheme.onSurfaceVariant, height: 1.6),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          kGitHubRepoUrl,
-                          style: TextStyle(
-                            color: scheme.primary,
-                            fontSize: 13,
-                            fontFamily: 'monospace',
+                ),
+                const SizedBox(height: 12),
+                _AboutSection(
+                  label: '特性',
+                  child: Text(
+                    '· 强制 IPv4 (修 wifi 加载不出来)\n'
+                    '· Source Failover 自动切源\n'
+                    '· 全屏沉浸 + 3s 自动隐控件\n'
+                    '· 浅色 / 深色 / 跟随系统三主题\n'
+                    '· 收藏本地持久化\n'
+                    '· 后台强制更新 (GitHub Releases)',
+                    style: TextStyle(color: scheme.onSurfaceVariant, height: 1.6),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _AboutSection(
+                  label: '项目地址',
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            kGitHubRepoUrl,
+                            style: TextStyle(
+                              color: scheme.primary,
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.copy_outlined, size: 18),
-                        tooltip: '复制 GitHub 地址',
-                        onPressed: () => _copyRepoUrl(ctx),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.copy_outlined, size: 18),
+                          tooltip: '复制 GitHub 地址',
+                          onPressed: () => _copyRepoUrl(ctx),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -311,10 +317,10 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => PopScope(
         canPop: false,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: GlassDialog(
           content: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -384,8 +390,8 @@ class SettingsPage extends ConsumerWidget {
   ) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (ctx) => GlassDialog(
         title: Row(
           children: [
             Icon(icon, color: color, size: 26),
@@ -523,38 +529,39 @@ bool _autoDarkMode = false;
 Future<void> _showThemeDialog(BuildContext context, WidgetRef ref) async {
   final current = ref.read(themeModeProvider);
   var selected = current;
-  await showDialog<void>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setLocal) => AlertDialog(
-      title: const Text('主题模式'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: ThemeMode.values.map((mode) {
-          return RadioListTile<ThemeMode>(
-            title: Text(_modeLabel(mode)),
-            value: mode,
-            groupValue: selected,
-            onChanged: (v) => setLocal(() => selected = v!),
-          );
-        }).toList(),
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => GlassDialog(
+          title: const Text('主题模式'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: ThemeMode.values.map((mode) {
+              return RadioListTile<ThemeMode>(
+                title: Text(_modeLabel(mode)),
+                value: mode,
+                groupValue: selected,
+                onChanged: (v) => setLocal(() => selected = v!),
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () {
+                ref.read(themeModeProvider.notifier).setMode(selected);
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('确定'),
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: () {
-            ref.read(themeModeProvider.notifier).setMode(selected);
-            Navigator.of(ctx).pop();
-          },
-          child: const Text('确定'),
-        ),
-      ],
-    ),
-    ),
-  );
+    );
 }
 
 Future<void> _setAutoDark(BuildContext context, WidgetRef ref, bool value) async {
@@ -641,35 +648,42 @@ class _VodSourceManagementCard extends ConsumerWidget {
       BuildContext context, WidgetRef ref, VodSourceRegistry registry) {
     showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('选择影视源', style: TextStyle(fontSize: 16)),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: registry.sources.map((s) {
-                  final active = s.id == registry.activeSourceId;
-                  return ListTile(
-                    leading: Icon(
-                      active ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: active ? Theme.of(ctx).colorScheme.primary : null,
-                    ),
-                    title: Text(s.name),
-                    subtitle: Text(s.host),
-                    onTap: () {
-                      registry.setActiveSource(s.id);
-                      Navigator.pop(ctx);
-                    },
-                  );
-                }).toList(),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      builder: (ctx) => LiquidGlassContainer(
+        variant: LiquidGlassVariant.light,
+        borderRadius: 28,
+        margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 8),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('选择影视源', style: TextStyle(fontSize: 16)),
               ),
-            ),
-          ],
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: registry.sources.map((s) {
+                    final active = s.id == registry.activeSourceId;
+                    return ListTile(
+                      leading: Icon(
+                        active ? Icons.radio_button_checked : Icons.radio_button_off,
+                        color: active ? Theme.of(ctx).colorScheme.primary : null,
+                      ),
+                      title: Text(s.name),
+                      subtitle: Text(s.host),
+                      onTap: () {
+                        registry.setActiveSource(s.id);
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -683,7 +697,7 @@ class _VodSourceManagementCard extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
+        builder: (ctx, setLocal) => GlassDialog(
           title: const Text('添加影视源'),
           content: SingleChildScrollView(
             child: Column(
@@ -809,7 +823,7 @@ class _VodSourceManagementCard extends ConsumerWidget {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
+        builder: (ctx, setLocal) => GlassDialog(
           title: Text('发现 ${newOnes.length} 个新源'),
           content: SizedBox(
             width: double.maxFinite,

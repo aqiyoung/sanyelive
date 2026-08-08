@@ -21,6 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:sanyelive/services/version_checker.dart';
+import 'package:sanyelive/widgets/liquid_glass_container.dart';
 
 /// 公开入口:  main.dart 在 VersionCheckOutdated 时调.
 /// 用 ProviderScope.containerOf(context) 拿 ref,  避免外部传 ref.
@@ -109,9 +110,6 @@ class _ForceUpdateDialogContentState
     final s = widget.state;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final dialogBg = isDark
-        ? theme.colorScheme.surfaceContainerHighest
-        : theme.colorScheme.surface;
     final titleColor =
         isDark ? theme.colorScheme.onSurface : theme.colorScheme.onSurface;
     final bodyColor = isDark
@@ -121,15 +119,17 @@ class _ForceUpdateDialogContentState
     // barrierDismissible: false 只阻止点击外部,  不阻止返回键.
     return PopScope(
       canPop: false,
-      child: AlertDialog(
-        backgroundColor: dialogBg,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        title: Row(
+      child: LiquidGlassContainer(
+        variant: isDark ? LiquidGlassVariant.dark : LiquidGlassVariant.light,
+        borderRadius: 24,
+        margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
             Icon(
               s.isCritical ? Icons.priority_high : Icons.system_update_alt,
               color: s.isCritical
@@ -150,65 +150,70 @@ class _ForceUpdateDialogContentState
             ),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (s.releaseName.isNotEmpty && s.releaseName != s.latestVersion)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
+        const SizedBox(height: 16),
+        Flexible(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (s.releaseName.isNotEmpty && s.releaseName != s.latestVersion)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      s.releaseName,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: titleColor,
+                      ),
+                    ),
+                  ),
+                Text(
+                  '${s.currentVersion} → ${s.latestVersion}',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: bodyColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.maxFinite,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Text(
-                    s.releaseName,
+                    s.releaseNotes.isEmpty ? '(无变更日志)' : s.releaseNotes,
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: titleColor,
+                      fontSize: 13,
+                      height: 1.5,
+                      color: bodyColor,
                     ),
                   ),
                 ),
-              Text(
-                '${s.currentVersion} → ${s.latestVersion}',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: bodyColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.maxFinite,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? theme.colorScheme.surfaceContainerHighest
-                      : theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  s.releaseNotes.isEmpty ? '(无变更日志)' : s.releaseNotes,
+                const SizedBox(height: 12),
+                Text(
+                  '「复制下载链接」复制官方 Release 页 (跟飞牛一致); '
+                  '国内 TV 直连下不动时, 用「代理下载」复制 gh-proxy APK 直链',
                   style: TextStyle(
-                    fontSize: 13,
-                    height: 1.5,
-                    color: bodyColor,
+                    fontSize: 12,
+                    color: bodyColor.withValues(alpha: 0.6),
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '「复制下载链接」复制官方 Release 页 (跟飞牛一致); '
-                '国内 TV 直连下不动时, 用「代理下载」复制 gh-proxy APK 直链',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: bodyColor.withValues(alpha: 0.6),
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        actions: _buildActions(s, theme),
-      ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: _buildActions(s, theme),
+        ),
+      ],
     );
   }
 

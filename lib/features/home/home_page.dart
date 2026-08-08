@@ -433,14 +433,19 @@ class _PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
+      child: LiquidGlassContainer(
+        variant: LiquidGlassVariant.light,
+        borderRadius: 16,
+        tint: context.fgAccent,
         padding: const EdgeInsets.symmetric(vertical: 13),
-        decoration: BoxDecoration(
-          color: context.fgAccent,
-          borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          width: double.infinity,
+          child: Center(
+            child: Text(label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800)),
+          ),
         ),
-        child: Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800)),
       ),
     );
   }
@@ -456,15 +461,18 @@ class _SecondaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
+      child: LiquidGlassContainer(
+        variant: LiquidGlassVariant.light,
+        borderRadius: 16,
         padding: const EdgeInsets.symmetric(vertical: 13),
-        decoration: BoxDecoration(
-          color: context.bgCardHigh,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.fgBorder),
+        child: SizedBox(
+          width: double.infinity,
+          child: Center(
+            child: Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: context.fgMain, fontSize: 14, fontWeight: FontWeight.w800)),
+          ),
         ),
-        child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: context.fgMain, fontSize: 14, fontWeight: FontWeight.w800)),
       ),
     );
   }

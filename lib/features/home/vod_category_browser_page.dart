@@ -260,7 +260,7 @@ class _VodSourceChipBar extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
+        builder: (ctx, setLocal) => GlassDialog(
           title: const Text('添加影视源'),
           content: SingleChildScrollView(
             child: Column(

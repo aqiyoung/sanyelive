@@ -127,26 +127,22 @@ class _HomeTopBar extends StatelessWidget {
           if (showSearch) ...[
             const SizedBox(width: 14),
             Expanded(
-              child: GestureDetector(
-                onTap: () => context.go('/search'),
-                child: Container(
-                  height: 38,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: context.bgCardHigh,
-                    borderRadius: BorderRadius.circular(19),
-                    border: Border.all(color: context.fgBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search_rounded, color: context.fgSub, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '庆余年 第二季',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: context.fgSub, fontSize: 13),
+                child: GestureDetector(
+                  onTap: () => context.go('/search'),
+                  child: LiquidGlassContainer(
+                    variant: LiquidGlassVariant.light,
+                    borderRadius: 19,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search_rounded, color: context.fgSub, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '庆余年 第二季',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: context.fgSub, fontSize: 13),
                         ),
                       ),
                     ],
@@ -633,12 +629,10 @@ class _ChannelRow extends StatelessWidget {
   }
 }
 
-/// 频道台标: 优先网络 logo (logoUrl), 失败 / 为 null 时降级为文字台标
-/// (频道首字 + 主题色块). 解决 70% 频道 logo 为 null 导致首页卡片"无台标"
-/// 的问题 —— 文字台标必现,  保证每个卡片都有清晰标识.
+/// 频道台标: 优先离线台标 (assets/logos), 失败 / 为 null 时降级为文字台标.
 ///
-/// [bright] = true 用于 Hero 深色兜底背景 (白色文字块),  false 用于卡片
-/// (主题 accent 色块).
+/// [bright] = true 用于深色背景 (Hero / 频道卡片 logo 牌), 文字/白色台标清晰;
+/// false 用于浅色玻璃底, 文字用深色.
 class _ChannelLogo extends StatelessWidget {
   const _ChannelLogo({required this.channel, this.size = 48, this.bright = false});
 
@@ -649,9 +643,8 @@ class _ChannelLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 优先离线台标 (assets/logos, CI 构建前打包): 命中即本地渲染,
-    // 不依赖设备端网络, 根治 70% 频道 logo 为 null 显示字母的问题.
-    // 容器 (_ChannelCard) 已统一为浅色液态玻璃, logo 牌本身也采用同风格
-    // 玻璃方块, 这里直接渲染台标即可, 不再单独套深色托盘.
+    // 不依赖设备端网络. 在浅色液态玻璃卡片上, logo 牌使用深色渐变衬底,
+    // 白色台标/文字才能清晰显现.
     final local = tvLogoManifest[channel?.id];
     if (local != null && local.isNotEmpty) {
       return Image.asset(
@@ -676,7 +669,7 @@ class _ChannelLogo extends StatelessWidget {
   }
 
   /// 兜底: 无台标时显示频道名首字.
-  /// 卡片里 logo 牌是浅玻璃底, 文字用深色; Hero 深色兜底用白色.
+  /// 频道卡片 logo 牌是深色底, 文字用白色; Hero 深色兜底同样用白色.
   Widget _fallback(BuildContext context) {
     final name = (channel?.displayName ?? '').trim();
     final ch = name.isNotEmpty ? name[0] : '?';
@@ -702,9 +695,8 @@ class _ChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 浅色 parchment 背景上用纯白玻璃 (light) 才通透发亮, 不用深灰 dark
-    // 变体 (之前 dark 在浅背景上叠出灰塑料感). 中间 logo 牌也做成浅色磨砂
-    // 玻璃小方块, 与卡片风格统一, 不再用深色底破坏整体通透感.
+    // 浅色 parchment 背景上卡片用 light 玻璃, 但中间 logo 牌必须用深色渐变
+    // 衬底 —— 白色台标 PNG 落在深底上才清晰, 否则融进浅玻璃里显灰.
     return GestureDetector(
       onTap: () => context.go('/player/${channel.id}'),
       child: LiquidGlassContainer(
@@ -721,20 +713,24 @@ class _ChannelCard extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  color: Colors.white.withValues(alpha: 0.38),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF1F2937), Color(0xFF111827)],
+                  ),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.65),
+                    color: Colors.white.withValues(alpha: 0.22),
                     width: 1,
                   ),
                   boxShadow: <BoxShadow>[
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: Colors.black.withValues(alpha: 0.12),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: _ChannelLogo(channel: channel, size: 40),
+                child: _ChannelLogo(channel: channel, size: 40, bright: true),
               ),
             ),
             Positioned(
@@ -1445,18 +1441,11 @@ class _VodSectionWithTabsState extends ConsumerState<_VodSectionWithTabs> {
                     final isSelected = _selectedTab == index;
                     return GestureDetector(
                       onTap: () => setState(() => _selectedTab = index),
-                      child: Container(
+                      child: LiquidGlassContainer(
+                        variant: LiquidGlassVariant.light,
+                        borderRadius: 14,
+                        tint: isSelected ? context.fgAccent : null,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? context.fgAccent.withValues(alpha: 0.12)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isSelected ? context.fgAccent : context.fgBorder,
-                            width: isSelected ? 1.2 : 1,
-                          ),
-                        ),
                         child: Text(
                           widget.tabs[index],
                           style: TextStyle(

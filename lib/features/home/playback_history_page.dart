@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/colors.dart';
+import '../../widgets/liquid_glass_container.dart';
 import '../../services/playback_history_service.dart';
 
 /// 播放历史记录页
@@ -54,14 +55,29 @@ class _PlaybackHistoryPageState extends State<PlaybackHistoryPage> {
                   onPressed: () {
                     showDialog(
                       context: context,
-                      builder: (ctx) => AlertDialog(
-                        backgroundColor: context.bgCard,
-                        title: Text('清空记录', style: TextStyle(color: context.fgMain)),
-                        content: Text('确定清空所有播放记录？', style: TextStyle(color: context.fgSub)),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('取消', style: TextStyle(color: context.fgSub))),
-                          TextButton(onPressed: () { Navigator.pop(ctx); _clear(); }, child: Text('清空', style: TextStyle(color: context.fgAccent))),
-                        ],
+                      barrierColor: Colors.black.withValues(alpha: 0.35),
+                      builder: (ctx) => LiquidGlassContainer(
+                        variant: LiquidGlassVariant.light,
+                        borderRadius: 24,
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('清空记录', style: TextStyle(color: context.fgMain, fontSize: 18, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 12),
+                            Text('确定清空所有播放记录？', style: TextStyle(color: context.fgSub)),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(onPressed: () => Navigator.pop(ctx), child: Text('取消', style: TextStyle(color: context.fgSub))),
+                                const SizedBox(width: 8),
+                                TextButton(onPressed: () { Navigator.pop(ctx); _clear(); }, child: Text('清空', style: TextStyle(color: context.fgAccent))),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

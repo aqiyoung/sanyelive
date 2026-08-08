@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/typography.dart';
 import '../../../data/models/channel.dart';
 import '../../../data/source_dispatcher.dart';
+import '../../../widgets/liquid_glass_container.dart';
 
 /// 列出 channel 的所有 source URL,  选完返回该 URL (null = 取消).
 ///
@@ -11,11 +12,14 @@ import '../../../data/source_dispatcher.dart';
 Future<String?> pickSourceUrl(BuildContext context, Channel channel) async {
   return showModalBottomSheet<String>(
     context: context,
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    builder: (ctx) => LiquidGlassContainer(
+      variant: LiquidGlassVariant.light,
+      borderRadius: 28,
+      margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 8),
+      child: _SourcePickerContent(channel: channel),
     ),
-    builder: (ctx) => _SourcePickerContent(channel: channel),
   );
 }
 

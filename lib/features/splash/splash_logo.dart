@@ -52,41 +52,44 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     if (_hidden) return widget.child;
     final scheme = Theme.of(context).colorScheme;
-    return Stack(
-      children: [
-        widget.child,
-        Positioned.fill(
-          child: Material(
-            color: scheme.surface,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) {
-                final t = _controller.value;
-                double scale;
-                if (t < 0.25) {
-                  final p = t / 0.25;
-                  scale = 0.5 + 0.5 * (1.0 + 0.2 * (1.0 - p) * (1.0 - p));
-                } else {
-                  scale = 1.0;
-                }
-                double opacity;
-                if (t < 0.75) {
-                  opacity = 1.0;
-                } else {
-                  opacity = 1.0 - (t - 0.75) / 0.25;
-                }
-                return Opacity(
-                  opacity: opacity.clamp(0.0, 1.0),
-                  child: Transform.scale(
-                    scale: scale,
-                    child: const _SplashLogo(),
-                  ),
-                );
-              },
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: [
+          widget.child,
+          Positioned.fill(
+            child: Material(
+              color: scheme.surface,
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, _) {
+                  final t = _controller.value;
+                  double scale;
+                  if (t < 0.25) {
+                    final p = t / 0.25;
+                    scale = 0.5 + 0.5 * (1.0 + 0.2 * (1.0 - p) * (1.0 - p));
+                  } else {
+                    scale = 1.0;
+                  }
+                  double opacity;
+                  if (t < 0.75) {
+                    opacity = 1.0;
+                  } else {
+                    opacity = 1.0 - (t - 0.75) / 0.25;
+                  }
+                  return Opacity(
+                    opacity: opacity.clamp(0.0, 1.0),
+                    child: Transform.scale(
+                      scale: scale,
+                      child: const _SplashLogo(),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -328,8 +328,8 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.35),
-      builder: (ctx) => GlassDialog(
-        content: _CheckUpdateDialogBody(rootContext: context),
+      builder: (ctx) => const GlassDialog(
+        content: _CheckUpdateDialogBody(),
       ),
     );
   }
@@ -472,9 +472,9 @@ class SettingsPage extends ConsumerWidget {
 }
 
 /// 检查更新小窗内容 — Consumer 订阅 state, 自动在 检查中/结果 间切换.
+/// 新版设计: 统一标题栏 + 状态图标 + 内容区 + 底部操作, 避免旧版"横条药丸"感.
 class _CheckUpdateDialogBody extends ConsumerStatefulWidget {
-  const _CheckUpdateDialogBody({required this.rootContext});
-  final BuildContext rootContext;
+  const _CheckUpdateDialogBody();
 
   @override
   ConsumerState<_CheckUpdateDialogBody> createState() =>
@@ -498,142 +498,219 @@ class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> 
     final state = ref.watch(versionCheckerProvider);
     final current = ref.watch(currentVersionStringProvider);
 
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildHeader(scheme, state),
+        const SizedBox(height: 16),
+        _buildBody(scheme, state, current),
+        const SizedBox(height: 20),
+        _buildActions(ctx, scheme, state),
+      ],
+    );
+  }
+
+  Widget _buildHeader(ColorScheme scheme, VersionCheckState state) {
     if (state is VersionCheckUpToDate) {
-      return _CheckResultView(
+      return _StatusHeader(
         icon: Icons.check_circle_outline_rounded,
         iconColor: Colors.green.shade600,
         title: '已是最新版本',
-        desc: '当前 v$current 即为最新版本',
       );
-    } else if (state is VersionCheckOutdated) {
+    }
+    if (state is VersionCheckOutdated) {
+      return _StatusHeader(
+        icon: Icons.system_update_alt_rounded,
+        iconColor: scheme.primary,
+        title: '发现新版本',
+      );
+    }
+    if (state is VersionCheckFailed) {
+      return _StatusHeader(
+        icon: Icons.error_outline_rounded,
+        iconColor: Colors.red.shade600,
+        title: '检查更新失败',
+      );
+    }
+    return Row(
+      children: [
+        SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Text(
+            '正在检查更新',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBody(ColorScheme scheme, VersionCheckState state, String current) {
+    if (state is VersionCheckUpToDate) {
+      return Text(
+        '当前 v$current 已为最新版本',
+        style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.5),
+      );
+    }
+    if (state is VersionCheckOutdated) {
+      return _OutdatedInfo(state: state, current: current);
+    }
+    if (state is VersionCheckFailed) {
+      return Text(
+        state.reason,
+        style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.5),
+      );
+    }
+    return Text(
+      '正在连接 GitHub 获取最新版本信息，请稍候…',
+      style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.5),
+    );
+  }
+
+  Widget _buildActions(BuildContext ctx, ColorScheme scheme, VersionCheckState state) {
+    if (state is VersionCheckUpToDate) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('确定'),
+        ),
+      );
+    }
+    if (state is VersionCheckOutdated) {
       return Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Icon(Icons.system_update_alt_rounded,
-                  color: scheme.primary, size: 26),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text('发现新版本',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600)),
-              ),
-            ],
+          FilledButton.icon(
+            icon: const Icon(Icons.open_in_new, size: 18),
+            label: const Text('前往更新'),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ForceUpdateDialog.show(ctx);
+            },
           ),
-          const SizedBox(height: 12),
-          Text('v$current → ${state.latestVersion}',
-              style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant)),
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.icon(
-              icon: const Icon(Icons.open_in_new, size: 18),
-              label: const Text('前往更新'),
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                ForceUpdateDialog.show(widget.rootContext);
-              },
-            ),
-          ),
-        ],
-      );
-    } else if (state is VersionCheckFailed) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.error_outline_rounded,
-                  color: Colors.red.shade600, size: 26),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text('检查更新失败',
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(state.reason,
-              style: TextStyle(
-                  fontSize: 13,
-                  color: scheme.onSurfaceVariant,
-                  height: 1.5)),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('关闭'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: () =>
-                    ref.read(versionCheckerProvider.notifier).checkForce(),
-                child: const Text('重试'),
-              ),
-            ],
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('稍后再说'),
           ),
         ],
       );
     }
+    if (state is VersionCheckFailed) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('关闭'),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: () => ref.read(versionCheckerProvider.notifier).checkForce(),
+            child: const Text('重试'),
+          ),
+        ],
+      );
+    }
+    // 检查中: 不显示操作按钮, 避免用户误点.
+    return const SizedBox.shrink();
+  }
+}
 
-    // idle / 检查中.
-    return const Row(
-      mainAxisSize: MainAxisSize.min,
+class _StatusHeader extends StatelessWidget {
+  const _StatusHeader({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+  });
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
-        SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+        Icon(icon, color: iconColor, size: 28),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
         ),
-        SizedBox(width: 16),
-        Text('正在检查更新…'),
       ],
     );
   }
 }
 
-/// 居中结果视图 (已是最新 / 通用成功).
-class _CheckResultView extends StatelessWidget {
-  const _CheckResultView({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.desc,
-  });
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String desc;
+class _OutdatedInfo extends StatelessWidget {
+  const _OutdatedInfo({required this.state, required this.current});
+  final VersionCheckOutdated state;
+  final String current;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Icon(icon, color: iconColor, size: 26),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(title,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(desc,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: scheme.primaryContainer.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'v$current → ${state.latestVersion}',
             style: TextStyle(
-                fontSize: 13,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.5)),
+              fontSize: 15,
+              color: scheme.onPrimaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        if (state.releaseName.isNotEmpty && state.releaseName != state.latestVersion) ...[
+          const SizedBox(height: 10),
+          Text(
+            state.releaseName,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface,
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 180),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SingleChildScrollView(
+              child: Text(
+                state.releaseNotes.isEmpty ? '(暂无变更日志)' : state.releaseNotes,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: scheme.onSurfaceVariant,
+                  height: 1.6,
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

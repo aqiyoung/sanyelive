@@ -403,14 +403,16 @@ class _CrashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: ColoredBox(
-        color: const Color(0xFFFFEBEE),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ListView(
-            children: [
+    return Material(
+      type: MaterialType.transparency,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: ColoredBox(
+          color: const Color(0xFFFFEBEE),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ListView(
+              children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 64),
               const SizedBox(height: 12),
               const Text(
@@ -446,7 +448,8 @@ class _CrashScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

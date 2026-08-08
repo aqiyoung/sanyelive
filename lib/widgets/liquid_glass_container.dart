@@ -281,13 +281,16 @@ class GlassDialog extends StatelessWidget {
       alignment: Alignment.center,
       child: SizedBox(
         width: dialogW,
-        child: LiquidGlassContainer(
-          variant: variant,
-          borderRadius: borderRadius,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
+        child: Material(
+          type: MaterialType.transparency,
+          child: LiquidGlassContainer(
+            variant: variant,
+            borderRadius: borderRadius,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
           ),
         ),
       ),

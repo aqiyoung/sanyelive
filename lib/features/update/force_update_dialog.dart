@@ -119,12 +119,14 @@ class _ForceUpdateDialogContentState
     // barrierDismissible: false 只阻止点击外部,  不阻止返回键.
     return PopScope(
       canPop: false,
-      child: LiquidGlassContainer(
-        variant: isDark ? LiquidGlassVariant.dark : LiquidGlassVariant.light,
-        borderRadius: 24,
-        margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        padding: const EdgeInsets.all(24),
-        child: Column(
+      child: Material(
+        type: MaterialType.transparency,
+        child: LiquidGlassContainer(
+          variant: isDark ? LiquidGlassVariant.dark : LiquidGlassVariant.light,
+          borderRadius: 24,
+          margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          padding: const EdgeInsets.all(24),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -216,6 +218,7 @@ class _ForceUpdateDialogContentState
       ],
       ),
     ),
+  ),
   );
   }
 

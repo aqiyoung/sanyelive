@@ -16,7 +16,6 @@ import '../../services/version_checker.dart'
     show
         currentVersionStringProvider,
         versionCheckerProvider,
-        VersionCheckState,
         VersionCheckUpToDate,
         VersionCheckOutdated,
         VersionCheckFailed,
@@ -219,7 +218,8 @@ class SettingsPage extends ConsumerWidget {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => GlassDialog(
-        title: const Text('关于视界'),
+        title: const Text('关于视界',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         content: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 320),
           child: Column(

@@ -12,6 +12,7 @@ import '../settings/app_mode_provider.dart';
 import '../settings/province_provider.dart' show provinceProvider;
 import '../../services/version_checker.dart' show versionCheckerProvider;
 import 'poster_wall_page.dart';
+import '../settings/widgets/recent_history.dart';
 
 /// 视界主页 — 外层统一管理底部导航
 class HomePage extends ConsumerStatefulWidget {
@@ -268,70 +269,9 @@ class _MinePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: fullMode ? 8 : 4,
-                itemBuilder: (context, index) {
-                  // TV 模式只展示直播卡片, 隐藏视频占位.
-                  final isLive = fullMode ? (index % 2 == 0) : true;
-                  return LiquidGlassContainer(
-                    variant: LiquidGlassVariant.light,
-                    borderRadius: 14,
-                    width: 110,
-                    margin: const EdgeInsets.only(right: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: context.bgCardHigh,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              isLive ? Icons.live_tv_rounded : Icons.movie_rounded,
-                              color: context.fgSub,
-                              size: 28,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: context.fgAccent.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                                child: Text(
-                                  isLive ? '直播' : '视频',
-                                  style: TextStyle(color: context.fgAccent, fontSize: 9, fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 3, 8, 6),
-                          child: Text(
-                            isLive ? '频道名称' : '视频标题',
-                            style: TextStyle(color: context.fgMain, fontSize: 11, fontWeight: FontWeight.w600),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
+            // 真实浏览历史 (来自 PlaybackHistoryService / SharedPreferences).
+            // 空时显示「暂无浏览记录」, 有数据时按 playedAt 倒序展示真实标题/缩略图.
+            const RecentHistory(cardWidth: 110),
           ],
         ),
       ),

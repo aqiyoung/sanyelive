@@ -12,7 +12,10 @@ import '../../../services/playback_history_service.dart';
 
 /// 最近浏览记录: 横向滚动卡片列表.
 class RecentHistory extends ConsumerWidget {
-  const RecentHistory({super.key});
+  const RecentHistory({super.key, this.cardWidth = 80});
+
+  /// 单张卡片宽度 (首页「我的」页用 110, 与周边卡片一致).
+  final double cardWidth;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,12 +33,13 @@ class RecentHistory extends ConsumerWidget {
           height: 130,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: display.length,
             itemBuilder: (context, index) {
               final entry = display[index];
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: _HistoryCard(entry: entry),
+                child: _HistoryCard(entry: entry, cardWidth: cardWidth),
               );
             },
           ),
@@ -63,9 +67,10 @@ class RecentHistory extends ConsumerWidget {
 
 /// 单张历史记录卡片.
 class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.entry});
+  const _HistoryCard({required this.entry, this.cardWidth = 80});
 
   final PlaybackHistoryEntry entry;
+  final double cardWidth;
 
   /// 判断记录类型: URL 含直播相关关键词则视为直播, 否则视频.
   bool _isLive(String url) {
@@ -88,7 +93,7 @@ class _HistoryCard extends StatelessWidget {
     return LiquidGlassContainer(
       variant: LiquidGlassVariant.light,
       borderRadius: 8,
-      width: 80,
+      width: cardWidth,
       specular: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,7 +101,7 @@ class _HistoryCard extends StatelessWidget {
         children: [
           // 缩略图.
           Container(
-            width: 80,
+            width: cardWidth,
             height: 64,
             color: context.bgBase.withValues(alpha: 0.3),
             child: entry.posterUrl != null && entry.posterUrl!.isNotEmpty
@@ -112,7 +117,7 @@ class _HistoryCard extends StatelessWidget {
           ),
           // 标题文字.
           Container(
-            width: 80,
+            width: cardWidth,
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             child: Text(
               entry.title,
@@ -127,7 +132,7 @@ class _HistoryCard extends StatelessWidget {
           ),
           // 类型标签.
           Container(
-            width: 80,
+            width: cardWidth,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Container(

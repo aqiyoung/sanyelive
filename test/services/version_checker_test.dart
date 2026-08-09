@@ -537,24 +537,23 @@ void main() {
       expect(prefs.getInt('version_checker.dismissed_at'), isNull);
     });
 
-    test('反向升级保护: 服务端 versionCode 152 < 本地 2168 时不弹 outdated', () async {
-      // 模拟用户截图场景: 当前版本字符串异常 0.3.12.168+2168,
-      // 服务端返回更低版本 v0.3.12.152 / build 152.
+    test('反向升级保护: 服务端 .167 < 本地 .168 时不弹 outdated', () async {
+      // 异常测试包 0.3.12.168+2171 的 .168 大于服务端 .167 → 不应升级.
       final container = await buildContainer(
         adapter: _MockAdapter((opts) async {
           return _jsonBody({
-            'tag_name': 'v0.3.12.152',
+            'tag_name': 'v0.3.12.167',
             'body': '旧版本',
             'assets': [
               {
-                'name': 'sanyelive-v0.3.12+152-arm64-v8a.apk',
+                'name': 'sanyelive-v0.3.12+167-arm64-v8a.apk',
                 'browser_download_url': 'https://example.com/apk.apk',
               },
             ],
           });
         }),
-        currentVersionCode: 2168,
-        currentVersionString: '0.3.12.168+2168',
+        currentVersionCode: 2171,
+        currentVersionString: '0.3.12.168+2171',
       );
       addTearDown(container.dispose);
 
@@ -562,35 +561,39 @@ void main() {
 
       final state = container.read(versionCheckerProvider);
       expect(state, isA<VersionCheckUpToDate>(),
-          reason: '服务端 versionCode 更低时绝不能反向提示升级');
+          reason: '服务端 versionName 更旧时绝不能反向提示升级');
     });
 
-    test('异常版本字符串解析: 0.3.12.168+2168 识别为 build 2168', () async {
-      // 通过集成测试间接验证 _parseVersion 对 0.3.12.168+2168 的解析:
-      // 服务端 tag v0.3.12.2168 / build 2168 与本地相等 → upToDate.
+    test('v0.3.12.172 应大于 0.3.12.171+2171 (用户反馈漏检场景)', () async {
+      // 用户当前版本字符串异常: 0.3.12.171+2171, GitHub 最新 v0.3.12.172,
+      // 必须识别 .172 > .171 并弹 outdated.
       final container = await buildContainer(
         adapter: _MockAdapter((opts) async {
           return _jsonBody({
-            'tag_name': 'v0.3.12.2168',
-            'body': '同版本',
+            'tag_name': 'v0.3.12.172',
+            'body': '修复若干问题',
             'assets': [
               {
-                'name': 'sanyelive-v0.3.12+2168-arm64-v8a.apk',
+                'name': 'sanyelive-v0.3.12+172-arm64-v8a.apk',
                 'browser_download_url': 'https://example.com/apk.apk',
               },
             ],
           });
         }),
-        currentVersionCode: 2168,
-        currentVersionString: '0.3.12.168+2168',
+        currentVersionCode: 2171,
+        currentVersionString: '0.3.12.171+2171',
       );
       addTearDown(container.dispose);
 
-      await container.read(versionCheckerProvider.notifier).checkOnStartup();
+      await container.read(versionCheckerProvider.notifier).checkForce();
 
       final state = container.read(versionCheckerProvider);
-      expect(state, isA<VersionCheckUpToDate>(),
-          reason: '应把 0.3.12.168+2168 里的 +2168 当 build 而不是 .168');
+      expect(state, isA<VersionCheckOutdated>(),
+          reason: 'v0.3.12.172 必须大于本地 0.3.12.171+2171');
+      final outdated = state as VersionCheckOutdated;
+      expect(outdated.latestVersion, 'v0.3.12.172');
+      expect(outdated.latestVersionCode, 172);
+      expect(outdated.currentVersion, '0.3.12.171+2171');
     });
   });
 }

@@ -295,27 +295,14 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       // 写 last_seen_version (无论 outdated / upToDate 都写,  方便诊断).
       await _prefs.setString(_Keys.lastSeenVersion, parsed.tagName);
 
-      // 先用 semver (major.minor.patch) 比,  一样再比 build (+N).
-      // sanyelive 固定 0.3.12 只涨 build,  必须比 build 才不误判"已最新".
+      // 对齐 FeiNiuMusic: 提取所有数字段逐位比较.
+      // sanyelive 固定 0.3.12 只涨 build, 因此 .N 与 +N 都参与比较,
+      // 像 0.3.12.171+2171 这种异常测试包也能正确识别 v0.3.12.172 比它新.
       final cmp = _compareVersions(parsed.tagName, currentStr);
+
+      // versionName 完全相同时, 再以 APK versionCode 兜底 (极少数场景).
       final isOutdated =
           cmp > 0 || (cmp == 0 && parsed.versionCode > currentCode);
-
-      // Sanity guard: 服务端 versionCode 不比本地大时, 绝不能反向提示升级.
-      // 拦截一切异常版本字符串 / 代理缓存旧数据 / 测试包高 build 导致的误判.
-      if (isOutdated &&
-          parsed.versionCode > 0 &&
-          currentCode > 0 &&
-          parsed.versionCode <= currentCode) {
-        debugPrint(
-          'version_checker: reverse update guard: '
-          'latestCode=${parsed.versionCode} <= currentCode=$currentCode, '
-          'treat as upToDate',
-        );
-        state = VersionCheckUpToDate(currentStr, parsed.tagName);
-        await _prefs.setInt(_Keys.lastCheckTime, now);
-        return;
-      }
 
       if (isOutdated) {
         // 检查是否被用户 dismiss 过 (24h 内同版本不再弹).
@@ -612,83 +599,56 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     );
   }
 
-  /// Semver + build 比较. 返 1 = a > b, 0 = a == b, -1 = a < b.
-  /// 规则:
-  ///   1. 先比 major.minor.patch (semver 主版本)
-  ///   2. 一样再比 build number (Flutter pubspec 的 +N)
-  ///   3. 任一更大 → 算 newer
-  /// 解析失败 → fallback 到归一化字符串字典序比较.
-  int _compareVersions(String a, String b) {
-    final aParts = _parseVersion(a);
-    final bParts = _parseVersion(b);
-    if (aParts == null || bParts == null) {
-      // fallback: 去掉 v/V 前缀、转小写后再比较, 避免 'v0.3.12.152' 字典序
-      // 反而大于 '0.3.12.168+2168' 这种误判.
-      return _normalizeForFallback(a)
-          .compareTo(_normalizeForFallback(b));
-    }
-    for (var i = 0; i < 3; i++) {
-      if (aParts.$1[i] != bParts.$1[i]) {
-        return aParts.$1[i] > bParts.$1[i] ? 1 : -1;
-      }
-    }
-    // major.minor.patch 一样 → 比 build.  build 缺省 = 0.
-    if (aParts.$2 != bParts.$2) {
-      return aParts.$2 > bParts.$2 ? 1 : -1;
-    }
-    return 0;
+/// 版本号比较. 返 1 = a > b, 0 = a == b, -1 = a < b.
+///
+/// 对齐 FeiNiuMusic 思路: 提取版本字符串中所有连续数字段, 逐位比较.
+/// sanyelive 固定 0.3.12 只涨 build 号, 因此 `.N` 和 `+N` 都要参与比较,
+/// 避免 `0.3.12.171+2171` 这种异常格式被误判.
+///
+/// 示例:
+///   v0.3.12.172      → [0, 3, 12, 172]
+///   0.3.12.171+2171  → [0, 3, 12, 171, 2171]
+///   0.3.12+168       → [0, 3, 12, 168]
+///
+/// 位数不够补 0; 解析失败 → 归一化字符串字典序 fallback.
+int _compareVersions(String a, String b) {
+  final pa = _parseVersion(a);
+  final pb = _parseVersion(b);
+  if (pa == null || pb == null) {
+    return _normalizeForFallback(a).compareTo(_normalizeForFallback(b));
   }
-
-  static String _normalizeForFallback(String v) {
-    return v
-        .trim()
-        .toLowerCase()
-        .replaceFirst(RegExp(r'^v'), '');
+  final len = pa.length > pb.length ? pa.length : pb.length;
+  for (var i = 0; i < len; i++) {
+    final av = i < pa.length ? pa[i] : 0;
+    final bv = i < pb.length ? pb[i] : 0;
+    if (av != bv) return av > bv ? 1 : -1;
   }
+  return 0;
+}
 
-  /// 解析版本字符串 → ((major, minor, patch), build).
-  /// 兼容 Flutter 标准格式, 也兼容异常格式:
-  ///   - 0.3.12+168            → (0,3,12), 168
-  ///   - 0.3.12.168            → (0,3,12), 168  (某些测试包把 build 写进 versionName)
-  ///   - 0.3.12.168+2168       → (0,3,12), 2168 (显式 +build 优先于 .build)
-  ///   - v0.3.12.152           → (0,3,12), 152
-  /// 返回 null = 解析失败.
-  (List<int>, int)? _parseVersion(String v) {
-    var cleaned = v.trim();
-    if (cleaned.startsWith('v') || cleaned.startsWith('V')) {
-      cleaned = cleaned.substring(1);
-    }
+static String _normalizeForFallback(String v) {
+  return v.trim().toLowerCase().replaceFirst(RegExp(r'^v'), '');
+}
 
-    // 分离显式 build (最后一个 '+' 之后).
-    var build = 0;
-    final plusIdx = cleaned.lastIndexOf('+');
-    if (plusIdx >= 0) {
-      final buildStr = cleaned.substring(plusIdx + 1).trim();
-      final parsedBuild = int.tryParse(buildStr);
-      if (parsedBuild == null) return null;
-      build = parsedBuild;
-      cleaned = cleaned.substring(0, plusIdx);
-    }
-
-    // versionName 可能是 3 段 (0.3.12) 或 4 段 (0.3.12.168).
-    final parts = cleaned.split('.').where((s) => s.isNotEmpty).toList();
-    if (parts.length < 3 || parts.length > 4) return null;
-
-    // 4 段且无显式 +build 时, 把第 4 段当 build.
-    if (parts.length == 4 && plusIdx < 0) {
-      final parsedBuild = int.tryParse(parts[3]);
-      if (parsedBuild == null) return null;
-      build = parsedBuild;
-    }
-
-    final nums = parts.take(3).map(int.tryParse).toList();
-    if (nums.any((n) => n == null)) return null;
-
-    return (
-      [nums[0]!, nums[1]!, nums[2]!],
-      build,
-    );
-  }
+/// 解析版本字符串 → 所有连续数字段组成的 List<int>.
+///
+/// 兼容:
+///   - 0.3.12+168        → [0, 3, 12, 168]
+///   - 0.3.12.168        → [0, 3, 12, 168]
+///   - 0.3.12.168+2168   → [0, 3, 12, 168, 2168]
+///   - v0.3.12.152       → [0, 3, 12, 152]
+///
+/// 数字段少于 3 视为无法判断主版本, 返回 null.
+static List<int>? _parseVersion(String v) {
+  var cleaned = v.trim().toLowerCase();
+  if (cleaned.startsWith('v')) cleaned = cleaned.substring(1);
+  final nums = RegExp(r'\d+')
+      .allMatches(cleaned)
+      .map((m) => int.parse(m.group(0)!))
+      .toList();
+  if (nums.length < 3) return null;
+  return nums;
+}
 
   static int? _extractVersionCode(String apkName) {
     final match = RegExp(r'\+(\d+)').firstMatch(apkName);

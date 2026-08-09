@@ -23,7 +23,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:sanyelive/services/version_checker.dart';
-import 'package:sanyelive/widgets/liquid_glass_container.dart';
 
 /// 更新流程专用强调色 — 青玉 teal, 与设置页「检查更新」弹窗保持一致.
 const Color _kUpdateAccent = Color(0xFF2A9D8F);
@@ -107,16 +106,15 @@ class _ForceUpdateDialogContentState
     final s = widget.state;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return PopScope(
       canPop: false,
-      child: Material(
-        type: MaterialType.transparency,
-        child: LiquidGlassContainer(
-          variant: isDark ? LiquidGlassVariant.dark : LiquidGlassVariant.light,
-          borderRadius: 24,
-          margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+      child: Dialog(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,

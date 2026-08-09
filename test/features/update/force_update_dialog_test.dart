@@ -24,7 +24,6 @@ import 'package:sanyelive/core/theme/theme.dart';
 import 'package:sanyelive/features/settings/theme_provider.dart';
 import 'package:sanyelive/features/update/force_update_dialog.dart';
 import 'package:sanyelive/services/version_checker.dart';
-import 'package:sanyelive/widgets/liquid_glass_container.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -262,9 +261,9 @@ Widget buildTestDialog({
       await tester.pump(); // 一帧
       await tester.pump(const Duration(milliseconds: 500)); // 弹窗动画结束
 
-      // 找到玻璃面板 (ForceUpdateDialog 用 LiquidGlassContainer,  非 AlertDialog).
-      expect(find.byType(LiquidGlassContainer), findsOneWidget,
-          reason: 'show() 后 LiquidGlassContainer 应在树中');
+      // 找到面板 (ForceUpdateDialog 用实心 Dialog,  非玻璃).
+      expect(find.byType(Dialog), findsOneWidget,
+          reason: 'show() 后 Dialog 应在树中');
 
       // 点 (20, 20) — 屏幕左上角,  在 barrier 但不在 dialog 内容里.
       await tester.tapAt(const Offset(20, 20));
@@ -272,7 +271,7 @@ Widget buildTestDialog({
       await tester.pump(const Duration(milliseconds: 500));
 
       // barrierDismissible: false → dialog 应该还在.
-      expect(find.byType(LiquidGlassContainer), findsOneWidget,
+      expect(find.byType(Dialog), findsOneWidget,
           reason: 'barrierDismissible:false 应阻止外部点击关闭');
     });
   });

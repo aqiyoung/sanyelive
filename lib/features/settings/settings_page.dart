@@ -236,7 +236,7 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.35),
-      builder: (ctx) => GlassDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('关于视界',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         content: Column(
@@ -315,7 +315,7 @@ class SettingsPage extends ConsumerWidget {
     showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.35),
-      builder: (ctx) => const GlassDialog(
+      builder: (ctx) => const AlertDialog(
         content: _CheckUpdateDialogBody(),
       ),
     );

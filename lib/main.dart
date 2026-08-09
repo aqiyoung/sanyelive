@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'data/cctv_source.dart';
 import 'core/http/dns_warmup.dart';
 import 'core/http/ipv4_client.dart';
-import 'features/settings/network_mode_provider.dart';
 import 'core/router/router.dart';
 import 'core/theme/colors.dart';
 import 'core/theme/theme.dart';
@@ -117,18 +116,9 @@ void main() async {
       await CrashLogger.log('step4b: CctvSourceRegistry load FAILED: $e');
     }
     _applySystemUiOverlay(prefs);
-    // 网络模式: auto=优先IPv4+IPv6兜底(默认), ipv4=强制IPv4, system=不覆盖.
-    // 详见 lib/features/settings/network_mode_provider.dart. 切换需重启生效.
-    final netMode =
-        NetworkMode.parse(prefs.getString(NetworkModeNotifier.kNetworkModeKey));
-    switch (netMode) {
-      case NetworkMode.ipv4:
-        HttpOverrides.global = ForceIpv4HttpOverrides();
-      case NetworkMode.system:
-        HttpOverrides.global = null;
-      case NetworkMode.auto:
-        HttpOverrides.global = Ipv4HttpOverrides();
-    }
+    // 连接策略固定为"优先 IPv4 + IPv6 兜底": 兼顾跨运营商可达性与纯 AAAA 站点.
+    // (原设置项「网络模式」已移除 — 手动切换对加载失败无实际帮助, 反而误导用户.)
+    HttpOverrides.global = Ipv4HttpOverrides();
     unawaited(DnsWarmup.warmup(_warmupHostnames()));
     unawaited(_prewarmRemoteChannels());
     unawaited(_prewarmRemoteSources());

@@ -29,7 +29,6 @@ import '../../../services/tvbox_config_parser.dart';
 import '../../../services/vod_source_registry.dart';
 import 'theme_provider.dart';
 import 'app_mode_provider.dart';
-import 'network_mode_provider.dart' show NetworkMode, networkModeProvider;
 import 'province_provider.dart' show provinceProvider;
 // 省份列表 (定位选择器).
 import '../../data/province_util.dart' show kProvinces;
@@ -141,19 +140,6 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: const Text('当前版本 + 最新版本对比'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _checkUpdate(context),
-              ),
-              const _SettingsGap(),
-              Consumer(
-                builder: (context, ref, _) {
-                  final mode = ref.watch(networkModeProvider);
-                  return ListTile(
-                    leading: const Icon(Icons.wifi_tethering_outlined),
-                    title: const Text('网络模式'),
-                    subtitle: Text('${mode.label} · ${mode.hint}（重启生效）'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _showNetworkModeDialog(context, ref),
-                  );
-                },
               ),
               const _SettingsGap(),
               Consumer(
@@ -331,46 +317,6 @@ class SettingsPage extends ConsumerWidget {
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => const GlassDialog(
         content: _CheckUpdateDialogBody(),
-      ),
-    );
-  }
-
-  // ─── 网络模式 ───────────────────────────────────────────────────────────
-  // 自动(优先IPv4+IPv6兜底, 默认) / 强制IPv4 / 系统默认. 切换后重启生效
-  // (HttpOverrides 在 main() 启动时安装一次).
-  void _showNetworkModeDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.35),
-      builder: (ctx) => Consumer(
-        builder: (ctx, ref, _) {
-          final current = ref.watch(networkModeProvider);
-          return GlassDialog(
-            title: const Text('网络模式'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: NetworkMode.values.map((m) {
-                return RadioListTile<NetworkMode>(
-                  title: Text(m.label),
-                  subtitle: Text(m.hint),
-                  value: m,
-                  groupValue: current,
-                  onChanged: (v) {
-                    if (v != null) {
-                      ref.read(networkModeProvider.notifier).setMode(v);
-                    }
-                  },
-                );
-              }).toList(),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('完成'),
-              ),
-            ],
-          );
-        },
       ),
     );
   }

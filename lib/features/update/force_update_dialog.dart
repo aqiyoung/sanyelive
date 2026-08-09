@@ -1,8 +1,10 @@
 //
 // 设计要点:
 //   - barrierDismissible: false  → 用户无法通过点击外部 / 返回键关闭.
-//   - 内容: 大标题 (新版本号) + 副标题 (当前版本 → 新版本) +
-//     变更日志 (release body) + 2 按钮 "去下载"(主) + "稍后"(次, 24h 内不弹).
+//   - 结构参考 FeiNiuMusic 的 app_update_dialog.dart: 满幅渐变头部
+//     (primary→tertiary) + 火箭图标 + 标题 + releaseName, 下方「当前→最新」
+//     版本 chip + 可滚动变更日志.  外壳仍用 sanyelive 的液态玻璃面板
+//     (LiquidGlassContainer), 保持全 app 一致的玻璃质感.
 //   - P0/critical: release body 含 "**P0**" / "**critical**" 标记时,  dialog
 //     不显示"稍后"按钮,  必须更新.  维持安全门.
 //   - 下载流程: 点"去下载" → url_launcher 打开 GitHub releases 页, 用户手动下载 APK.
@@ -109,12 +111,8 @@ class _ForceUpdateDialogContentState
   Widget build(BuildContext context) {
     final s = widget.state;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    final titleColor =
-        isDark ? theme.colorScheme.onSurface : theme.colorScheme.onSurface;
-    final bodyColor = isDark
-        ? theme.colorScheme.onSurfaceVariant
-        : theme.colorScheme.onSurfaceVariant;
 
     // barrierDismissible: false 只阻止点击外部,  不阻止返回键.
     return PopScope(
@@ -125,101 +123,135 @@ class _ForceUpdateDialogContentState
           variant: isDark ? LiquidGlassVariant.dark : LiquidGlassVariant.light,
           borderRadius: 24,
           margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          padding: const EdgeInsets.all(24),
+          // padding 设 0: 头部满幅铺到卡片上沿 (外层 ClipRRect 自动把上角收圆),
+          // 下方内容区单独用 Padding 留白.
+          padding: EdgeInsets.zero,
           child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-            Icon(
-              s.isCritical ? Icons.priority_high : Icons.system_update_alt,
-              color: s.isCritical
-                  ? Colors.red.shade700
-                  : theme.colorScheme.primary,
-              size: 28,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                s.isCritical ? '重要更新' : '发现新版本',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor,
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── 渐变头部 (参考 FeiNiuMusic: primary→tertiary + 火箭图标) ──
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [scheme.primary, scheme.tertiary],
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Flexible(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (s.releaseName.isNotEmpty && s.releaseName != s.latestVersion)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(
-                      s.releaseName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: titleColor,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.22),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        s.isCritical ? Icons.priority_high : Icons.rocket_launch_rounded,
+                        color: Colors.white,
+                        size: 24,
                       ),
                     ),
-                  ),
-                Text(
-                  '${s.currentVersion} → ${s.latestVersion}',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: bodyColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.maxFinite,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    s.releaseNotes.isEmpty ? '(无变更日志)' : s.releaseNotes,
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: bodyColor,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            s.isCritical ? '重要更新' : '发现新版本',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (s.releaseName.isNotEmpty &&
+                              s.releaseName != s.latestVersion) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              s.releaseName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  '「复制下载链接」复制官方 Release 页 (跟飞牛一致); '
-                  '国内 TV 直连下不动时, 用「代理下载」复制 gh-proxy APK 直链',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: bodyColor.withValues(alpha: 0.6),
-                    fontStyle: FontStyle.italic,
-                  ),
+              ),
+              // ── 内容区 (单独留白) ──
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 版本 chip: 当前 → 最新 (参考 FeiNiuMusic 的 _VersionChip)
+                    Row(
+                      children: [
+                        _VersionChip(label: s.currentVersion, dim: true),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 18,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        _VersionChip(label: s.latestVersion, dim: false),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.maxFinite,
+                      constraints: const BoxConstraints(maxHeight: 240),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: scheme.onSurface.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          s.releaseNotes.isEmpty ? '(无变更日志)' : s.releaseNotes,
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '「复制下载链接」复制官方 Release 页 (跟飞牛一致); '
+                      '国内 TV 直连下不动时, 用「代理下载」复制 gh-proxy APK 直链',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: _buildActions(s, theme),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: _buildActions(s, theme),
-        ),
-      ],
       ),
-    ),
-  ),
-  );
+    );
   }
 
   List<Widget> _buildActions(VersionCheckOutdated s, ThemeData theme) {
@@ -290,5 +322,38 @@ class _ForceUpdateDialogContentState
     );
 
     return actions;
+  }
+}
+
+/// 版本 chip — 当前版本(暗)/最新版本(高亮) 两个药丸.  参考 FeiNiuMusic.
+class _VersionChip extends StatelessWidget {
+  final String label;
+  final bool dim;
+
+  const _VersionChip({required this.label, required this.dim});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: dim
+            ? scheme.surfaceContainerHighest.withValues(alpha: 0.6)
+            : scheme.primary.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: dim
+            ? null
+            : Border.all(color: scheme.primary.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: dim ? scheme.onSurfaceVariant : scheme.primary,
+        ),
+      ),
+    );
   }
 }

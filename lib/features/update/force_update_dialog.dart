@@ -240,8 +240,11 @@ class _ForceUpdateDialogContentState
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 10,
                       children: _buildActions(s, theme),
                     ),
                   ],
@@ -289,7 +292,7 @@ class _ForceUpdateDialogContentState
     actions.add(
       TextButton(
         onPressed: () => _openGitHub(context, s.latestVersion),
-        child: const Text('去浏览器下载'),
+        child: const Text('浏览器'),
       ),
     );
 
@@ -301,7 +304,7 @@ class _ForceUpdateDialogContentState
           s.apkDownloadUrl,
           '已复制代理 APK 直链（国内可直下），粘贴到浏览器下载',
         ),
-        child: const Text('代理下载'),
+        child: const Text('代理'),
       ),
     );
 
@@ -317,7 +320,7 @@ class _ForceUpdateDialogContentState
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,
         ),
-        child: const Text('复制下载链接'),
+        child: const Text('复制链接'),
       ),
     );
 

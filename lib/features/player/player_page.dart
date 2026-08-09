@@ -59,6 +59,14 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
 
   bool _isFullscreen = false;
 
+  /// 当前实际播放的频道 id.  默认 = widget.channelId,  播放器内切台时更新为
+  /// 新频道.  用内部状态驱动换台 (而非 push 新页面),  避免导航栈累积导致
+  /// 返回要按多次.  返回列表只需 pop 一次.
+  String? _activeChannelId;
+
+  /// 当前播放频道 id — 内部状态优先,  退化回 widget.channelId.
+  String get _currentChannelId => _activeChannelId ?? widget.channelId;
+
   /// Stack 全屏覆盖.  mounted 检查避免 dispose 后访问 context.
   bool get _isMobile {
     if (!mounted) return true;
@@ -68,6 +76,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   @override
   void initState() {
     super.initState();
+    // 初始化当前播放频道 = 入口频道.  后续切台只改 _activeChannelId (不导航).
+    _activeChannelId = widget.channelId;
     // 全屏时 (toggleFullscreen) 才用 immersiveSticky.
     // 状态栏颜色 (透明 + 白图标) 走 _applySystemUiOverlayForPlayer 跟主题.
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -258,7 +268,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
     }
     final channels = await ref.read(channelsProvider.future);
     if (!mounted) return;
-    final ch = _findChannel(channels, widget.channelId);
+    final ch = _findChannel(channels, _currentChannelId);
     if (ch == null) {
       // 频道 id 找不到, 不动 player
       return;
@@ -282,8 +292,15 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
   }
 
   Future<void> _switchTo(Channel ch) async {
-    // 用 go_router 切 URL (同时触发 initState 重新 autoPlay)
-    context.push('/player/${ch.id}');
+    if (!mounted) return;
+    // 播放器内直接换台: 只更新内部状态 + 重新播放,  不 push 新页面.
+    // 之前用 context.push 每切一台压入一个新 PlayerPage,  导航栈累积
+    // [A→B→C→D],  返回要按多次.  现在原地换台,  返回一次即回列表.
+    if (ch.id == _currentChannelId) return; // 点当前频道不重复换台
+    setState(() => _activeChannelId = ch.id);
+    // 重新播放新频道 (复用同一个 PlayerService 实例,  不重建页面).
+    await _tryAutoPlay();
+    _resetHideTimer();
   }
 
   @override
@@ -322,7 +339,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                 data: (channels) {
                   final channel = widget.channelId == 'vod'
                       ? state.channel
-                      : _findChannel(channels, widget.channelId);
+                      : _findChannel(channels, _currentChannelId);
                   return Column(
                     children: [
                       // 视频区 (16:9) — 直角, 与下方界面硬切 (用户要求不要圆角)
@@ -352,7 +369,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                                 NowNextProgram(channel: channel),
                               if (channel != null)
                                 NextChannelsStrip(
-                                  currentChannelId: channel.id,
+                                  currentChannelId: _currentChannelId,
                                   allChannels: channels,
                                   onChannelTap: _switchTo,
                                 ),
@@ -407,7 +424,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                 ),
               ),
               data: (channels) {
-                final channel = _findChannel(channels, widget.channelId);
+                final channel = _findChannel(channels, _currentChannelId);
                 return Stack(
                   children: [
                     // 视频区填满全屏 (控件盖在上面, 隐身时露出视频)
@@ -534,7 +551,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                                   NowNextProgram(channel: channel),
                                 if (channel != null)
                                   NextChannelsStrip(
-                                    currentChannelId: channel.id,
+                                    currentChannelId: _currentChannelId,
                                     allChannels: channels,
                                     onChannelTap: _switchTo,
                                   ),

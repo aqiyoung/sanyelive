@@ -55,55 +55,48 @@ class _ForceUpdateDialogContentState
     extends ConsumerState<_ForceUpdateDialogContent> {
   bool _launching = false;
 
-  /// 构建 GitHub releases 页面 URL.
+  /// 构建 GitHub releases 页面 URL (直接跳转 GitHub).
   String _buildReleasesUrl(String tagName) {
     return 'https://github.com/aqiyoung/sanyelive/releases/tag/$tagName';
   }
 
-  Future<void> _openGitHub(BuildContext context, String tagName) async {
+  /// 构建 gh-proxy 代理跳转的 releases 页面 URL (国内/电视用户直连 GitHub
+  /// 失败时兜底).  与 version_checker 的 _kGitHubProxyPrefixes 首选项一致.
+  String _buildProxyReleasesUrl(String tagName) {
+    return 'https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/tag/$tagName';
+  }
+
+  /// 唤起外部浏览器打开链接;  打不开则复制链接并提示 (对齐飞牛音乐 _openUrl).
+  /// 这是「前往下载」的跳转逻辑:  先跳到 GitHub Release 页面 (另一个页面),
+  /// 用户在那个页面点下载.
+  Future<void> _openUrl(BuildContext context, String url) async {
     setState(() => _launching = true);
     try {
-      final url = Uri.parse(_buildReleasesUrl(tagName));
-      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+      if (mounted) {
+        await Clipboard.setData(ClipboardData(text: url));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('无法打开浏览器, 请手动访问 GitHub')),
+            const SnackBar(content: Text('无法打开浏览器, 下载链接已复制到剪贴板')),
           );
         }
       }
     } catch (e) {
-      debugPrint('打开 GitHub 失败: $e');
+      debugPrint('打开链接失败: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('打开失败: $e')),
-        );
+        await Clipboard.setData(ClipboardData(text: url));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('无法打开浏览器, 下载链接已复制到剪贴板')),
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => _launching = false);
-    }
-  }
-
-  /// 复制指定链接到剪贴板并弹 toast.  url 由调用方决定 (官方 release 页 或
-  /// 代理 APK 直链).  对齐飞牛音乐: 复制而非自动下载, 避开 TV 自动下 APK 权限坑.
-  Future<void> _copyLink(
-    BuildContext context,
-    String url,
-    String toastMsg,
-  ) async {
-    try {
-      await Clipboard.setData(ClipboardData(text: url));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(toastMsg), duration: const Duration(seconds: 2)),
-        );
-      }
-    } catch (e) {
-      debugPrint('复制链接失败: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('复制失败: $e')),
-        );
-      }
     }
   }
 
@@ -231,8 +224,8 @@ class _ForceUpdateDialogContentState
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      '「复制下载链接」复制官方 Release 页 (跟飞牛一致); '
-                      '国内 TV 直连下不动时, 用「代理下载」复制 gh-proxy APK 直链',
+                      '「前往下载」直接跳转 GitHub Release 页 (跟飞牛一致), '
+                      '在页面里点下载; 国内访问不畅时点「代理下载」走 gh-proxy 打开同一页面',
                       style: TextStyle(
                         fontSize: 12,
                         color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -288,39 +281,25 @@ class _ForceUpdateDialogContentState
       );
     }
 
-    // 次要: 去浏览器打开 GitHub 官方 releases 页 (手动挑架构下载).
+    // 代理跳转: 国内/电视用户直连 GitHub 失败时, 走 gh-proxy 打开 Release 页.
     actions.add(
       TextButton(
-        onPressed: () => _openGitHub(context, s.latestVersion),
-        child: const Text('浏览器'),
+        onPressed: () => _openUrl(context, _buildProxyReleasesUrl(s.latestVersion)),
+        child: const Text('代理下载'),
       ),
     );
 
-    // 代理直链: 复制带 gh-proxy 前缀的 APK 文件直链 (国内 TV 可直下).
+    // 主操作: 「前往下载」→ 直接唤起浏览器跳到 GitHub Release 页面 (另一个页面),
+    // 用户在页面上点下载.  对齐飞牛音乐 app_update_dialog 的「前往下载」.
     actions.add(
-      TextButton(
-        onPressed: () => _copyLink(
-          context,
-          s.apkDownloadUrl,
-          '已复制代理 APK 直链（国内可直下），粘贴到浏览器下载',
-        ),
-        child: const Text('代理'),
-      ),
-    );
-
-    // 主操作: 复制官方 GitHub Release 页链接 (对齐飞牛音乐, 链接永不失效).
-    actions.add(
-      FilledButton(
-        onPressed: () => _copyLink(
-          context,
-          _buildReleasesUrl(s.latestVersion),
-          '已复制官方下载页链接，粘贴到浏览器打开',
-        ),
+      FilledButton.icon(
+        onPressed: () => _openUrl(context, _buildReleasesUrl(s.latestVersion)),
+        icon: const Icon(Icons.download_rounded, size: 18),
+        label: const Text('前往下载'),
         style: FilledButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,
         ),
-        child: const Text('复制链接'),
       ),
     );
 

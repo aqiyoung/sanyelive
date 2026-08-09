@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sanyelive/widgets/liquid_glass_container.dart';
-
 
 import '../../services/version_checker.dart'
     show
@@ -337,79 +335,81 @@ class SettingsPage extends ConsumerWidget {
         builder: (ctx, setLocal) => Consumer(
           builder: (ctx, dRef, _) {
             final current = dRef.watch(provinceProvider);
-            return GlassDialog(
-            title: const Text('定位当前省份'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 380,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  FilledButton.icon(
-                    icon: detecting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+            final scheme = Theme.of(ctx).colorScheme;
+            return AlertDialog(
+              title: const Text('定位当前省份',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 380,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FilledButton.icon(
+                      icon: detecting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.my_location, size: 18),
+                      label: Text(detecting ? '定位中…' : '自动定位'),
+                      onPressed: detecting
+                          ? null
+                          : () async {
+                              setLocal(() => detecting = true);
+                              final p = await notifier.autoDetect();
+                              setLocal(() => detecting = false);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(p == null
+                                        ? '自动定位失败，请手动选择'
+                                        : '已定位到：$p'),
+                                  ),
+                                );
+                              }
+                            },
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          ...kProvinces.map(
+                            (p) => RadioListTile<String?>(
+                              title: Text(p),
+                              value: p,
+                              groupValue: current,
+                              onChanged: (v) {
+                                notifier.setProvince(v);
+                                setLocal(() {});
+                              },
                             ),
-                          )
-                        : const Icon(Icons.my_location, size: 18),
-                    label: Text(detecting ? '定位中…' : '自动定位'),
-                    onPressed: detecting
-                        ? null
-                        : () async {
-                            setLocal(() => detecting = true);
-                            final p = await notifier.autoDetect();
-                            setLocal(() => detecting = false);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(p == null
-                                      ? '自动定位失败，请手动选择'
-                                      : '已定位到：$p'),
-                                ),
-                              );
-                            }
-                          },
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        ...kProvinces.map(
-                          (p) => RadioListTile<String?>(
-                            title: Text(p),
-                            value: p,
+                          ),
+                          RadioListTile<String?>(
+                            title: const Text('不设置（默认顺序）'),
+                            value: null,
                             groupValue: current,
                             onChanged: (v) {
                               notifier.setProvince(v);
                               setLocal(() {});
                             },
                           ),
-                        ),
-                        RadioListTile<String?>(
-                          title: const Text('不设置（默认顺序）'),
-                          value: null,
-                          groupValue: current,
-                          onChanged: (v) {
-                            notifier.setProvince(v);
-                            setLocal(() {});
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('完成'),
-              ),
-            ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text('完成', style: TextStyle(color: scheme.primary)),
+                ),
+              ],
             );
           },
         ),
@@ -853,9 +853,13 @@ class _SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LiquidGlassContainer(
-      variant: LiquidGlassVariant.light,
-      borderRadius: 12,
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.15)),
+      ),
       // 设置页和我的页 UI 字体保持一致). DefaultTextStyle 让内部所有 ListTile
       // title 自动继承, 不再用 ListTile 默认的 16sp/w500 Material 样式.
       child: DefaultTextStyle(
@@ -913,12 +917,14 @@ bool _autoDarkMode = false;
 Future<void> _showThemeDialog(BuildContext context, WidgetRef ref) async {
   final current = ref.read(themeModeProvider);
   var selected = current;
+    final scheme = Theme.of(context).colorScheme;
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => GlassDialog(
-          title: const Text('主题模式'),
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('主题模式',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: ThemeMode.values.map((mode) {
@@ -933,7 +939,7 @@ Future<void> _showThemeDialog(BuildContext context, WidgetRef ref) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
+              child: Text('取消', style: TextStyle(color: scheme.onSurfaceVariant)),
             ),
             FilledButton(
               onPressed: () {
@@ -1030,14 +1036,17 @@ class _VodSourceManagementCard extends ConsumerWidget {
   /// 选源 bottom sheet.
   void _showSourcePicker(
       BuildContext context, WidgetRef ref, VodSourceRegistry registry) {
+    final scheme = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       elevation: 0,
-      builder: (ctx) => LiquidGlassContainer(
-        variant: LiquidGlassVariant.light,
-        borderRadius: 28,
+      builder: (ctx) => Container(
         margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 8),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(28),
+        ),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1054,7 +1063,7 @@ class _VodSourceManagementCard extends ConsumerWidget {
                     return ListTile(
                       leading: Icon(
                         active ? Icons.radio_button_checked : Icons.radio_button_off,
-                        color: active ? Theme.of(ctx).colorScheme.primary : null,
+                        color: active ? scheme.primary : null,
                       ),
                       title: Text(s.name),
                       subtitle: Text(s.host),
@@ -1078,11 +1087,13 @@ class _VodSourceManagementCard extends ConsumerWidget {
     final nameCtrl = TextEditingController();
     final urlCtrl = TextEditingController();
     var scheme = VodTypeIdScheme.bfzyapi;
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => GlassDialog(
-          title: const Text('添加影视源'),
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('添加影视源',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1123,7 +1134,7 @@ class _VodSourceManagementCard extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('取消'),
+              child: Text('取消', style: TextStyle(color: colorScheme.onSurfaceVariant)),
             ),
             FilledButton(
               onPressed: _doAdd(context, ref, nameCtrl, urlCtrl, scheme, ctx),
@@ -1204,11 +1215,13 @@ class _VodSourceManagementCard extends ConsumerWidget {
 
     // 确认导入对话框.
     final selected = List<bool>.filled(newOnes.length, true);
+    final scheme = Theme.of(context).colorScheme;
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => GlassDialog(
-          title: Text('发现 ${newOnes.length} 个新源'),
+        builder: (ctx, setLocal) => AlertDialog(
+          title: Text('发现 ${newOnes.length} 个新源',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -1225,7 +1238,7 @@ class _VodSourceManagementCard extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('取消'),
+              child: Text('取消', style: TextStyle(color: scheme.onSurfaceVariant)),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),

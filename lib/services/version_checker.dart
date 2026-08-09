@@ -46,18 +46,23 @@ const String _kGitHubApiBaseUrl =
 
 /// API 代理前缀列表 —— 国内/弱网环境直连 api.github.com 会被墙,
 /// 依次尝试这些代理;  空串 '' 表示直连 (VPN/海外用户).
-/// 顺序: gh.llkk.cc 已实测可穿透到 GitHub API, 直连兜底给翻墙用户.
+///
+/// 2026-08-10 实测:
+///   - gh-proxy.com 可稳定转发 GitHub API 并返回 JSON (200).
+///   - gh.llkk.cc / ghproxy.com / mirror.ghproxy.com 已失效 (403/530/HTML).
+/// 因此优先走 gh-proxy.com,  直连兜底给翻墙/VPN 用户.
 const List<String> _kApiProxyPrefixes = [
-  'https://gh.llkk.cc/',
+  'https://gh-proxy.com/',
   '',
 ];
 
 /// 兜底版本源 —— 放在 `raw.githubusercontent.com` 的 `meta` 分支 (经 jsDelivr CDN).
 /// 每次发版由 CI (release.yml) 自动刷新;  作为 API 全部失败时的最后防线.
 /// 注意: 这些都是**完整 URL**,  循环时不再拼前缀,  prefix=''.
-const List<String> _kVersionMetaUrls = [
-  'https://cdn.jsdelivr.net/gh/aqiyoung/sanyelive@meta/version.json',
-];
+///
+/// jsDelivr 有缓存, 可能滞后数个版本; 请求时带 ?_t= 时间戳 bust 缓存.
+const String _kVersionMetaBaseUrl =
+    'https://cdn.jsdelivr.net/gh/aqiyoung/sanyelive@meta/version.json';
 
 /// FeiNiuMusic 同款请求头 —— GitHub API 必须有 User-Agent, 否则 403.
 const Map<String, String> kGitHubApiHeaders = {
@@ -334,13 +339,17 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   // -------- private: 网络 --------
 
   /// 拉最新版本信息.
-  /// 策略 (对齐 FeiNiuMusic):
+  /// 策略:
   ///   1) GitHub API `releases/latest` 为主源 (权威, 发版即更新, 永不过期),
-  ///      经代理前缀链穿透 GFW; 任一代理成功即用.
+  ///      经代理前缀链穿透 GFW; 任一代理成功即用.  当前首选 gh-proxy.com,
+  ///      与 FeiNiuMusic 下载代理保持一致 (2026-08-10 实测可用).
   ///   2) jsDelivr 上的 meta/version.json 为兜底 (国内 CDN, 通常可用,
-  ///      仅在 API 全失败时启用, 可能滞后一个版本).
+  ///      仅在 API 全失败时启用; 带 ?_t= 时间戳 bust 缓存).
   /// 返回 (_ParsedRelease) 或 null (全部失败).
   Future<_ParsedRelease?> _fetchLatestRelease() async {
+    final cacheBuster = DateTime.now().millisecondsSinceEpoch;
+    final failures = <String>[];
+
     // 1) GitHub API (经代理链) —— 权威主源
     for (final prefix in _kApiProxyPrefixes) {
       final url =
@@ -362,38 +371,47 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
           }
         }
       } on DioException catch (e) {
-        debugPrint('version_checker: api $url → $e');
+        final msg = 'api $url → ${e.type}: ${e.message}';
+        debugPrint('version_checker: $msg');
+        failures.add(msg);
       } catch (e) {
-        debugPrint('version_checker: api $url → $e');
+        final msg = 'api $url → $e';
+        debugPrint('version_checker: $msg');
+        failures.add(msg);
       }
     }
 
     // 2) jsDelivr meta 兜底 (国内 CDN)
-    for (final url in _kVersionMetaUrls) {
-      try {
-        final resp = await _dio.get<dynamic>(
-          url,
-          options: Options(
-            receiveTimeout: const Duration(seconds: 10),
-            responseType: ResponseType.plain,
-            headers: kMetaHeaders,
-          ),
-        );
-        if (resp.statusCode == 200) {
-          final data = _decodeJson(resp.data);
-          if (data is Map<String, dynamic> &&
-              data.containsKey('tag') &&
-              data.containsKey('versionCode')) {
-            final parsed = _parseMeta(data, '');
-            if (parsed != null) return parsed;
-          }
+    final metaUrl = '$_kVersionMetaBaseUrl?_t=$cacheBuster';
+    try {
+      final resp = await _dio.get<dynamic>(
+        metaUrl,
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          responseType: ResponseType.plain,
+          headers: kMetaHeaders,
+        ),
+      );
+      if (resp.statusCode == 200) {
+        final data = _decodeJson(resp.data);
+        if (data is Map<String, dynamic> &&
+            data.containsKey('tag') &&
+            data.containsKey('versionCode')) {
+          final parsed = _parseMeta(data, '');
+          if (parsed != null) return parsed;
         }
-      } on DioException catch (e) {
-        debugPrint('version_checker: meta $url → $e');
-      } catch (e) {
-        debugPrint('version_checker: meta $url → $e');
       }
+    } on DioException catch (e) {
+      final msg = 'meta $metaUrl → ${e.type}: ${e.message}';
+      debugPrint('version_checker: $msg');
+      failures.add(msg);
+    } catch (e) {
+      final msg = 'meta $metaUrl → $e';
+      debugPrint('version_checker: $msg');
+      failures.add(msg);
     }
+    // 全部失败: 写崩溃日志汇总, 方便用户 adb pull 后定位具体哪一层网络挂了.
+    await CrashLogger.log('version_checker all endpoints failed:\n${failures.join('\n')}');
     return null;
   }
 

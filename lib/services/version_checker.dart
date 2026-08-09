@@ -7,31 +7,32 @@
 // ─────────────────────────────────────────────────────────────────────────
 // v0.3.12.175 重构 (对齐 FeiNiuMusic 已验证可用实现):
 //
-// 1) 数据源顺序反转 —— 以 GitHub API `releases/latest` 为权威主源,
+// 1) 数据源顺序 —— 以 GitHub API `releases/latest` 为权威主源,
 //    jsDelivr 上的 meta/version.json 仅作兜底.
-//    旧版反过来 (meta 为主源), 而 meta 由 release.yml 异步写回,
-//    一旦那步被 `continue-on-error` 吞掉 → meta 永远落后一个版本 →
-//    所有用户误判"已最新", 这正是"更新功能一次都没成功过"的根因.
-//    GitHub API `releases/latest` 在发版瞬间原子更新, 永不过期,
-//    与 FeiNiuMusic 完全一致.
+//    GitHub API 在发版瞬间原子更新, 永不过期, 与 FeiNiuMusic 完全一致.
 //
 // 2) 比较逻辑对齐 FeiNiuMusic:
 //    - 当前版本只取 PackageInfo.version (干净的 versionName, 如 "0.3.12.173"),
 //      不再自作主张拼上 +versionCode (那会多出一个第 5 段数字, 造成误判).
 //    - 远端 tag (如 "v0.3.12.174") 去掉前导 v, 在首个 + / - 处截断,
 //      按 "." 切出数字段逐位比较.  major.minor.patch 比完再比 build.
-//    这能正确识别 0.3.12.174 > 0.3.12.173, 也正确处理
-//    0.3.12.171+2171 这类历史异常包 (截断 + 后只剩 0.3.12.171).
 //
-// 3) 网络容错: API 走多个代理前缀 (gh.llkk.cc 已验证可直连 GitHub,
-//    直连留给 VPN/海外用户), 全部失败才退回 jsDelivr (国内 CDN, 通常可用).
-//    每层都带 User-Agent + Accept 头 —— 缺 User-Agent 时 GitHub API 直接 403.
+// 3) 网络策略 (v0.3.12.182 修正):
+//    - 不再走任何第三方代理前缀. 代理前缀 (gh.llkk.cc / gh-proxy.com 等)
+//      在部分网络/运营商下会被墙/返回 403/504, 反而导致检查失败.
+//    - Dio 使用"干净"的 HttpClient, 临时绕过 main.dart 安装的
+//      Ipv4HttpOverrides, 恢复系统默认 happy-eyeballs DNS + 连接行为,
+//      与 FeiNiuMusic 的 _SslOverride + 默认 HttpClient 行为一致.
+//    - 仅保留 jsDelivr meta 作为单一 CDN 兜底, 不带任何代理前缀.
+//    - 每层都带 User-Agent + Accept 头 —— 缺 User-Agent 时 GitHub API 直接 403.
 // ─────────────────────────────────────────────────────────────────────────
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,27 +41,13 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
     show sharedPreferencesProvider;
 import 'package:sanyelive/utils/crash_logger.dart';
 
-/// GitHub API 基础 URL (直连).  镜像 fallback 会在前面加前缀.
+/// GitHub API 权威主源 (直连, 不再加任何代理前缀).
 const String _kGitHubApiBaseUrl =
     'https://api.github.com/repos/aqiyoung/sanyelive/releases/latest';
 
-/// API 代理前缀列表 —— 国内/弱网环境直连 api.github.com 会被墙,
-/// 依次尝试这些代理;  空串 '' 表示直连 (VPN/海外用户).
-///
-/// 2026-08-10 实测:
-///   - gh-proxy.com 可稳定转发 GitHub API 并返回 JSON (200).
-///   - gh.llkk.cc / ghproxy.com / mirror.ghproxy.com 已失效 (403/530/HTML).
-/// 因此优先走 gh-proxy.com,  直连兜底给翻墙/VPN 用户.
-const List<String> _kApiProxyPrefixes = [
-  'https://gh-proxy.com/',
-  '',
-];
-
-/// 兜底版本源 —— 放在 `raw.githubusercontent.com` 的 `meta` 分支 (经 jsDelivr CDN).
-/// 每次发版由 CI (release.yml) 自动刷新;  作为 API 全部失败时的最后防线.
-/// 注意: 这些都是**完整 URL**,  循环时不再拼前缀,  prefix=''.
-///
-/// jsDelivr 有缓存, 可能滞后数个版本; 请求时带 ?_t= 时间戳 bust 缓存.
+/// 兜底版本源 —— `meta` 分支 version.json 经 jsDelivr CDN 分发.
+/// 每次发版由 CI (release.yml) 自动刷新; 作为 API 失败时的最后防线.
+/// jsDelivr 有缓存, 可能滞后; 请求时带 ?_t= 时间戳 bust 缓存.
 const String _kVersionMetaBaseUrl =
     'https://cdn.jsdelivr.net/gh/aqiyoung/sanyelive@meta/version.json';
 
@@ -339,49 +326,47 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   // -------- private: 网络 --------
 
   /// 拉最新版本信息.
-  /// 策略:
-  ///   1) GitHub API `releases/latest` 为主源 (权威, 发版即更新, 永不过期),
-  ///      经代理前缀链穿透 GFW; 任一代理成功即用.  当前首选 gh-proxy.com,
-  ///      与 FeiNiuMusic 下载代理保持一致 (2026-08-10 实测可用).
-  ///   2) jsDelivr 上的 meta/version.json 为兜底 (国内 CDN, 通常可用,
-  ///      仅在 API 全失败时启用; 带 ?_t= 时间戳 bust 缓存).
+  ///
+  /// 策略 (v0.3.12.182):
+  ///   1) GitHub API `releases/latest` 为唯一权威主源, 直连, 不加代理前缀.
+  ///      Dio 已绕过 Ipv4HttpOverrides, 使用系统默认连接行为 ——
+  ///      与 FeiNiuMusic 完全一致.
+  ///   2) jsDelivr 上的 meta/version.json 为单一 CDN 兜底,
+  ///      仅在 API 失败时启用; 带 ?_t= 时间戳 bust 缓存.
+  ///
   /// 返回 (_ParsedRelease) 或 null (全部失败).
   Future<_ParsedRelease?> _fetchLatestRelease() async {
     final cacheBuster = DateTime.now().millisecondsSinceEpoch;
     final failures = <String>[];
 
-    // 1) GitHub API (经代理链) —— 权威主源
-    for (final prefix in _kApiProxyPrefixes) {
-      final url =
-          prefix.isEmpty ? _kGitHubApiBaseUrl : '$prefix$_kGitHubApiBaseUrl';
-      try {
-        final resp = await _dio.get<dynamic>(
-          url,
-          options: Options(
-            receiveTimeout: const Duration(seconds: 10),
-            responseType: ResponseType.plain,
-            headers: kGitHubApiHeaders,
-          ),
-        );
-        if (resp.statusCode == 200) {
-          final data = _decodeJson(resp.data);
-          if (data != null) {
-            final parsed = _parseRelease(data, prefix);
-            if (parsed != null) return parsed;
-          }
+    // 1) GitHub API 直连 —— 权威主源.
+    try {
+      final resp = await _dio.get<dynamic>(
+        _kGitHubApiBaseUrl,
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          responseType: ResponseType.plain,
+          headers: kGitHubApiHeaders,
+        ),
+      );
+      if (resp.statusCode == 200) {
+        final data = _decodeJson(resp.data);
+        if (data != null) {
+          final parsed = _parseRelease(data, '');
+          if (parsed != null) return parsed;
         }
-      } on DioException catch (e) {
-        final msg = 'api $url → ${e.type}: ${e.message}';
-        debugPrint('version_checker: $msg');
-        failures.add(msg);
-      } catch (e) {
-        final msg = 'api $url → $e';
-        debugPrint('version_checker: $msg');
-        failures.add(msg);
       }
+    } on DioException catch (e) {
+      final msg = 'api $_kGitHubApiBaseUrl → ${e.type}: ${e.message}';
+      debugPrint('version_checker: $msg');
+      failures.add(msg);
+    } catch (e) {
+      final msg = 'api $_kGitHubApiBaseUrl → $e';
+      debugPrint('version_checker: $msg');
+      failures.add(msg);
     }
 
-    // 2) jsDelivr meta 兜底 (国内 CDN)
+    // 2) jsDelivr meta 兜底 (国内 CDN).
     final metaUrl = '$_kVersionMetaBaseUrl?_t=$cacheBuster';
     try {
       final resp = await _dio.get<dynamic>(
@@ -410,7 +395,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       debugPrint('version_checker: $msg');
       failures.add(msg);
     }
-    // 全部失败: 写崩溃日志汇总, 方便用户 adb pull 后定位具体哪一层网络挂了.
+    // 全部失败: 写崩溃日志汇总, 方便 adb pull 后定位具体哪一层网络挂了.
     await CrashLogger.log('version_checker all endpoints failed:\n${failures.join('\n')}');
     return null;
   }
@@ -670,8 +655,15 @@ final versionCheckerProvider =
   VersionCheckerNotifier.new,
 );
 
-/// Dio provider —— 默认 new Dio() (生产).  测试可 overrideWithValue 注入 mock.
-/// 用了 ref.read 创建, 避免 Notifier.build() 多次跑时重建 Dio.
+/// Dio provider —— 用于更新检查.
+///
+/// 关键：使用干净的 HttpClient，临时绕过 main.dart 安装的 [Ipv4HttpOverrides]，
+/// 恢复系统默认的 happy-eyeballs DNS + 连接策略。FeiNiuMusic 的更新服务
+/// 正是依赖这种默认行为才在用户手机上正常工作；sanyelive 之前复用全局
+/// Ipv4HttpOverrides，其自定义 connectionFactory 在部分网络（尤其移动数据）
+/// 下连不上 GitHub API，导致检查更新反复失败。
+///
+/// 测试可 overrideWithValue 注入 mock，mock 会替换掉这里的 adapter。
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
@@ -679,6 +671,17 @@ final dioProvider = Provider<Dio>((ref) {
       receiveTimeout: const Duration(seconds: 8),
       sendTimeout: const Duration(seconds: 8),
     ),
+  );
+  dio.httpClientAdapter = IOHttpClientAdapter(
+    createHttpClient: () {
+      final prev = HttpOverrides.current;
+      HttpOverrides.global = null;
+      try {
+        return HttpClient();
+      } finally {
+        HttpOverrides.global = prev;
+      }
+    },
   );
   ref.onDispose(dio.close);
   return dio;

@@ -1,15 +1,15 @@
 {
-  "tag": "v0.3.12.171",
-  "versionName": "0.3.12+171",
-  "versionCode": 171,
-  "releaseName": "v0.3.12.171",
+  "tag": "v0.3.12.172",
+  "versionName": "0.3.12+172",
+  "versionCode": 172,
+  "releaseName": "v0.3.12.172",
   "apk": {
-    "arm64-v8a": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.171/sanyelive-v0.3.12+171-arm64-v8a.apk",
-    "armeabi-v7a": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.171/sanyelive-v0.3.12+171-armeabi-v7a.apk",
-    "x86_64": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.171/sanyelive-v0.3.12+171-x86_64.apk"
+    "arm64-v8a": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.172/sanyelive-v0.3.12+172-arm64-v8a.apk",
+    "armeabi-v7a": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.172/sanyelive-v0.3.12+172-armeabi-v7a.apk",
+    "x86_64": "https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/download/v0.3.12.172/sanyelive-v0.3.12+172-x86_64.apk"
   },
-  "releaseUrl": "https://github.com/aqiyoung/sanyelive/releases/tag/v0.3.12.171",
+  "releaseUrl": "https://github.com/aqiyoung/sanyelive/releases/tag/v0.3.12.172",
   "critical": false,
-  "notes": "视界 v0.3.12.171 已发布, 详情见 GitHub Releases",
+  "notes": "视界 v0.3.12.172 已发布, 详情见 GitHub Releases",
   "updatedAt": "2026-08-09"
 }

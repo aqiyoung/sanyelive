@@ -190,7 +190,7 @@ List<CctvSource>? _registrySourcesFor(String channelId) {
 /// [reg] 为 registry 记录 (若有), 可据 method/alive 覆盖分类.
 double _priorityScore(String url, {CctvSource? reg}) {
   if (reg != null) {
-    if (reg.alive == false) return -1.0; // 死亡源永远最后
+    if (!reg.alive) return -1.0; // 死亡源永远最后
     final isp = const <String>{'tencent_cloud', 'cmcc', 'skygo'}
             .contains(reg.method)
         ? _Isp.domestic
@@ -506,6 +506,7 @@ class CctvSource {
     this.method = '',
     this.lastChecked = '',
     this.rttMs = 0,
+    this.alive = true,
   });
 
   final String url;
@@ -522,6 +523,9 @@ class CctvSource {
   /// 首屏 RTT (毫秒)
   final int rttMs;
 
+  /// 探活结果: false = 上次探测已死 (failover 时垫底)
+  final bool alive;
+
   factory CctvSource.fromJson(Map<String, dynamic> j) {
     return CctvSource(
       url: j['url'] as String,
@@ -529,6 +533,7 @@ class CctvSource {
       method: (j['method'] as String?) ?? '',
       lastChecked: (j['lastChecked'] as String?) ?? '',
       rttMs: (j['rttMs'] as num?)?.toInt() ?? 0,
+      alive: (j['alive'] as bool?) ?? true,
     );
   }
 
@@ -538,6 +543,7 @@ class CctvSource {
         'method': method,
         'lastChecked': lastChecked,
         'rttMs': rttMs,
+        'alive': alive,
       };
 
   @override

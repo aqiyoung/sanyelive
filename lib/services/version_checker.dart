@@ -666,7 +666,7 @@ final dioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
-/// 「启动时自动检查更新」开关 —— 默认开启.
+/// 「启动时自动检查更新」开关 —— 默认关闭.
 /// 关闭后 checkOnStartup() 直接 return (不 fetch); 手动 checkForce() 不受影响.
 class AutoCheckUpdateNotifier extends Notifier<bool> {
   late final SharedPreferences _prefs;
@@ -674,7 +674,7 @@ class AutoCheckUpdateNotifier extends Notifier<bool> {
   @override
   bool build() {
     _prefs = ref.read(sharedPreferencesProvider);
-    return _prefs.getBool(kAutoCheckUpdateKey) ?? true;
+    return _prefs.getBool(kAutoCheckUpdateKey) ?? false;
   }
 
   Future<void> set(bool value) async {

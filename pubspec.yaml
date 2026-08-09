@@ -105,7 +105,7 @@ publish_to: "none"
 # 0.3.12+175 (8/9): 彻底修复更新检查 (对齐 FeiNiuMusic). 数据源反转 —
 #   GitHub API releases/latest 为权威主源, jsDelivr meta 仅兜底; 当前版本只
 #   取干净 versionName, 比较前去 v/首个 +/- 截断逐段比较. 修复 173 检不到 174.
-version: 0.3.12+178
+version: 0.3.12+179
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

@@ -67,45 +67,50 @@ void main() {
         );
   }
 
-  /// 渲染一个简化的 dialog 内容 (Container + version text + release notes +
-  /// 按钮栈),  模拟 _ForceUpdateDialogContent 的关键 UI.  不走 showDialog,
-  /// 避免真实 overlay + 异步动画.  按钮逻辑跟 _ForceUpdateDialogContent 一致.
-  Widget buildTestDialog({
-    required VersionCheckOutdated state,
-    required void Function() onDismiss,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            state.isCritical ? '重要更新' : '发现新版本',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text('${state.currentVersion} → ${state.latestVersion}'),
-          const SizedBox(height: 12),
-          Text(state.releaseNotes),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (!state.isCritical)
-                TextButton(onPressed: onDismiss, child: const Text('稍后')),
-              FilledButton(
-                onPressed: () {
-                  // 测时不真跳转浏览器.
-                },
-                child: const Text('去下载'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+/// 渲染一个简化的 dialog 内容 (Container + version text + release notes +
+/// 按钮栈),  模拟 _ForceUpdateDialogContent 的关键 UI.  不走 showDialog,
+/// 避免真实 overlay + 异步动画.  按钮布局与文案跟生产代码保持一致.
+Widget buildTestDialog({
+  required VersionCheckOutdated state,
+  required void Function() onDismiss,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          state.isCritical ? '重要更新' : '发现新版本',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Text('${state.currentVersion} → ${state.latestVersion}'),
+        const SizedBox(height: 12),
+        Text(state.releaseNotes),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            if (!state.isCritical)
+              TextButton(onPressed: onDismiss, child: const Text('稍后')),
+            OutlinedButton(
+              onPressed: () {},
+              child: const Text('代理下载'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: () {
+                // 测时不真跳转浏览器.
+              },
+              child: const Text('前往下载'),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   group('ForceUpdateDialog 内容渲染 (P0/critical 模式)', () {
     testWidgets('P0 release → 不显示 "稍后" 按钮', (tester) async {
@@ -128,7 +133,8 @@ void main() {
       );
 
       expect(find.text('稍后'), findsNothing, reason: 'P0 critical 不应显示 "稍后" 按钮');
-      expect(find.text('去下载'), findsOneWidget);
+      expect(find.text('代理下载'), findsOneWidget);
+      expect(find.text('前往下载'), findsOneWidget);
       expect(find.text('重要更新'), findsOneWidget);
     });
 
@@ -152,7 +158,8 @@ void main() {
       );
 
       expect(find.text('稍后'), findsOneWidget);
-      expect(find.text('去下载'), findsOneWidget);
+      expect(find.text('代理下载'), findsOneWidget);
+      expect(find.text('前往下载'), findsOneWidget);
       expect(find.text('发现新版本'), findsOneWidget);
     });
   });

@@ -163,7 +163,7 @@ class SettingsPage extends ConsumerWidget {
                   return SwitchListTile(
                     secondary: const Icon(Icons.autorenew_outlined),
                     title: const Text('启动时自动检查更新'),
-                    subtitle: const Text('打开应用时后台检查，有新版本弹窗提示'),
+                    subtitle: const Text('关闭时启动后不再主动弹窗，可手动点「检查更新」'),
                     value: auto,
                     onChanged: (v) =>
                         ref.read(autoCheckUpdateProvider.notifier).set(v),
@@ -418,8 +418,12 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 
+/// 更新流程专用强调色 — 青玉 teal, 替代品牌赤陶红, 避免更新弹窗"红得刺眼".
+const Color _kUpdateAccent = Color(0xFF2A9D8F);
+const Color _kUpdateAccentContainer = Color(0xFFE6F4F2);
+
 /// 检查更新小窗内容 — Consumer 订阅 state, 自动在 检查中/结果 间切换.
-/// 新版设计: 统一标题栏 + 状态图标 + 内容区 + 底部操作, 避免旧版"横条药丸"感.
+/// 新版设计: 居中状态图标 + 大标题 + 内容卡片 + 底部操作, 去红、去拥挤.
 class _CheckUpdateDialogBody extends ConsumerStatefulWidget {
   const _CheckUpdateDialogBody();
 
@@ -450,9 +454,9 @@ class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> 
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(scheme, state),
-        const SizedBox(height: 16),
-        _buildBody(scheme, state, current),
         const SizedBox(height: 20),
+        _buildBody(scheme, state, current),
+        const SizedBox(height: 24),
         _buildActions(ctx, scheme, state),
       ],
     );
@@ -462,61 +466,61 @@ class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> 
     if (state is VersionCheckUpToDate) {
       return _StatusHeader(
         icon: Icons.check_circle_outline_rounded,
-        iconColor: Colors.green.shade600,
+        accent: _kUpdateAccent,
         title: '已是最新版本',
+        subtitle: '当前版本无需更新',
       );
     }
     if (state is VersionCheckOutdated) {
       return _StatusHeader(
-        icon: Icons.system_update_alt_rounded,
-        iconColor: scheme.primary,
+        icon: Icons.rocket_launch_outlined,
+        accent: _kUpdateAccent,
         title: '发现新版本',
+        subtitle: '升级后可体验最新功能',
       );
     }
     if (state is VersionCheckFailed) {
       return _StatusHeader(
-        icon: Icons.error_outline_rounded,
-        iconColor: Colors.red.shade600,
+        icon: Icons.cloud_off_outlined,
+        accent: scheme.onSurfaceVariant,
         title: '检查更新失败',
+        subtitle: '网络或 GitHub 访问受限',
       );
     }
-    return Row(
-      children: [
-        SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
-        ),
-        const SizedBox(width: 12),
-        const Expanded(
-          child: Text(
-            '正在检查更新',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
+    return _StatusHeader(
+      icon: Icons.sync_outlined,
+      accent: _kUpdateAccent,
+      title: '正在检查更新',
+      subtitle: '连接 GitHub 获取最新版本…',
+      isLoading: true,
     );
   }
 
   Widget _buildBody(ColorScheme scheme, VersionCheckState state, String current) {
     if (state is VersionCheckUpToDate) {
-      return Text(
-        '当前 v$current 已为最新版本',
-        style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.5),
+      return _VersionMetaCard(
+        child: Text(
+          '当前 v$current 已为最新版本',
+          style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.6),
+        ),
       );
     }
     if (state is VersionCheckOutdated) {
       return _OutdatedInfo(state: state, current: current);
     }
     if (state is VersionCheckFailed) {
-      return Text(
-        state.reason,
-        style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.5),
+      return _VersionMetaCard(
+        child: Text(
+          state.reason,
+          style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.6),
+        ),
       );
     }
-    return Text(
-      '正在连接 GitHub 获取最新版本信息，请稍候…',
-      style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.5),
+    return _VersionMetaCard(
+      child: Text(
+        '正在连接 GitHub 获取最新版本信息，请稍候…',
+        style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant, height: 1.6),
+      ),
     );
   }
 
@@ -526,6 +530,10 @@ class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> 
         alignment: Alignment.centerRight,
         child: FilledButton(
           onPressed: () => Navigator.of(ctx).pop(),
+          style: FilledButton.styleFrom(
+            backgroundColor: _kUpdateAccent,
+            foregroundColor: Colors.white,
+          ),
           child: const Text('确定'),
         ),
       );
@@ -537,7 +545,11 @@ class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> 
         children: [
           FilledButton.icon(
             icon: const Icon(Icons.open_in_new, size: 18),
-            label: const Text('前往更新'),
+            label: const Text('查看更新详情'),
+            style: FilledButton.styleFrom(
+              backgroundColor: _kUpdateAccent,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               Navigator.of(ctx).pop();
               ForceUpdateDialog.show(ctx);
@@ -546,7 +558,10 @@ class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> 
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('稍后再说'),
+            child: Text(
+              '稍后再说',
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
           ),
         ],
       );
@@ -562,6 +577,10 @@ class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> 
           const SizedBox(width: 8),
           FilledButton(
             onPressed: () => ref.read(versionCheckerProvider.notifier).checkForce(),
+            style: FilledButton.styleFrom(
+              backgroundColor: _kUpdateAccent,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('重试'),
           ),
         ],
@@ -575,26 +594,82 @@ class _CheckUpdateDialogBodyState extends ConsumerState<_CheckUpdateDialogBody> 
 class _StatusHeader extends StatelessWidget {
   const _StatusHeader({
     required this.icon,
-    required this.iconColor,
+    required this.accent,
     required this.title,
+    required this.subtitle,
+    this.isLoading = false,
   });
   final IconData icon;
-  final Color iconColor;
+  final Color accent;
   final String title;
+  final String subtitle;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, color: iconColor, size: 28),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: isLoading
+              ? Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2.5, color: accent),
+                  ),
+                )
+              : Icon(icon, color: accent, size: 30),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: scheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            color: scheme.onSurfaceVariant,
+            height: 1.4,
           ),
         ),
       ],
+    );
+  }
+}
+
+class _VersionMetaCard extends StatelessWidget {
+  const _VersionMetaCard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.maxFinite,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.3)),
+      ),
+      child: child,
     );
   }
 }
@@ -611,23 +686,23 @@ class _OutdatedInfo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: scheme.primaryContainer.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            'v$current → ${state.latestVersion}',
-            style: TextStyle(
-              fontSize: 15,
-              color: scheme.onPrimaryContainer,
-              fontWeight: FontWeight.w600,
+        // 版本对比: 当前(灰) → 最新(青玉)
+        Row(
+          children: [
+            _VersionChip(label: 'v$current', dim: true),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                size: 18,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
-          ),
+            _VersionChip(label: state.latestVersion, dim: false),
+          ],
         ),
         if (state.releaseName.isNotEmpty && state.releaseName != state.latestVersion) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
             state.releaseName,
             style: TextStyle(
@@ -637,29 +712,116 @@ class _OutdatedInfo extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 180),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: scheme.outline.withValues(alpha: 0.3)),
             ),
             child: SingleChildScrollView(
-              child: Text(
-                state.releaseNotes.isEmpty ? '(暂无变更日志)' : state.releaseNotes,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: scheme.onSurfaceVariant,
-                  height: 1.6,
-                ),
-              ),
+              child: _ReleaseNotesText(notes: state.releaseNotes),
             ),
           ),
         ),
       ],
     );
+  }
+}
+
+class _VersionChip extends StatelessWidget {
+  const _VersionChip({required this.label, required this.dim});
+  final String label;
+  final bool dim;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: dim
+            ? scheme.surfaceContainerHighest.withValues(alpha: 0.6)
+            : _kUpdateAccentContainer,
+        borderRadius: BorderRadius.circular(999),
+        border: dim ? null : Border.all(color: _kUpdateAccent.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: dim ? scheme.onSurfaceVariant : _kUpdateAccent,
+        ),
+      ),
+    );
+  }
+}
+
+/// 简单渲染 release notes: 把 Markdown 标题/粗体/列表做基础高亮, 提升可读性.
+class _ReleaseNotesText extends StatelessWidget {
+  const _ReleaseNotesText({required this.notes});
+  final String notes;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    if (notes.isEmpty) {
+      return Text(
+        '暂无变更日志',
+        style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant, height: 1.6),
+      );
+    }
+
+    final spans = <TextSpan>[];
+    final lines = notes.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (line.trim().isEmpty) {
+        spans.add(const TextSpan(text: '\n'));
+        continue;
+      }
+
+      // 标题: ## / ###
+      if (line.startsWith('### ')) {
+        spans.add(TextSpan(
+          text: '${line.substring(4)}\n',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: scheme.onSurface,
+            height: 1.6,
+          ),
+        ));
+      } else if (line.startsWith('## ')) {
+        spans.add(TextSpan(
+          text: '${line.substring(3)}\n',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: _kUpdateAccent,
+            height: 1.6,
+          ),
+        ));
+      } else {
+        // 列表项 / 普通行: 去掉前导 "- " 后加小圆点
+        var content = line;
+        if (content.startsWith('- ')) content = content.substring(2);
+        if (content.startsWith('* ')) content = content.substring(2);
+        spans.add(TextSpan(
+          text: '• $content\n',
+          style: TextStyle(
+            fontSize: 13,
+            color: scheme.onSurfaceVariant,
+            height: 1.6,
+          ),
+        ));
+      }
+    }
+    return RichText(text: TextSpan(children: spans));
   }
 }
 

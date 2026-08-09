@@ -602,7 +602,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   static bool debugIsCriticalRelease(String body) => _isCriticalRelease(body);
 
   @visibleForTesting
-  int debugCompareVersions(String a, String b) => _compareVersions(a, b);
+  static int debugCompareVersions(String a, String b) => _compareVersions(a, b);
 
   @visibleForTesting
   static Map<String, dynamic>? debugParseRelease(

@@ -331,5 +331,54 @@ void main() {
         greaterThan(0),
       );
     });
+
+    test('case 7: registry 解析真实 schema (_meta 字段 + channels 包裹)', () {
+      // v176 的致命 bug: _fromJson 直接遍历顶层 entries, 第一个 key `_comment`
+      // 是 String, `as List` 抛 TypeError 被 load() 的 catch 吞掉 → registry
+      // 永远为空 → 国内腾讯云源一条都进不了候选 → 移动宽带央视一直转圈.
+      final reg = CctvSourceRegistry.debugFromJson(<String, dynamic>{
+        '_comment': '这是 meta 字符串, 不是频道列表',
+        '_generated_at': '2026-06-20T17:20:46+0800',
+        '_source_count': 2,
+        'channels': <String, dynamic>{
+          'CCTV1.cn': <dynamic>[
+            <String, dynamic>{
+              'url': 'http://a.myqcloud.com/cctv1.m3u8',
+              'score': 0.95,
+              'method': 'tencent_cloud',
+              'alive': true,
+            },
+          ],
+        },
+      });
+      expect(reg.getForChannel('CCTV1.cn').length, 1,
+          reason: 'channels 下的频道必须被解析出来');
+      expect(reg.channelIds.contains('_comment'), isFalse,
+          reason: '_ 前缀的 meta 字段不能被当成频道');
+      expect(reg.getForChannel('CCTV1.cn').first.alive, isTrue);
+    });
+
+    test('case 8: 蒙古 CDN / GitHub Pages 不算国内源', () {
+      // cctv_sources.json 里 method 标签不可信: "cmcc" 实际指向 github.io,
+      // "skygo" 是蒙古 CDN (实测 RTT ~3000ms). 分类必须以 host 为准.
+      const c = Channel(
+        id: 'CCTV1.cn',
+        name: 'CCTV-1',
+        country: 'CN',
+        categories: <String>['general'],
+        sources: <String>[
+          'https://cdn4.skygo.mn/live/disk1/CCTV-1/HLSv3-FTA/CCTV-1.m3u8',
+          'https://xykt-fix.github.io/play/a02b/index.m3u8',
+          'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1/index.m3u8',
+        ],
+        cctvSource: <String>[],
+      );
+      final picked = CctvSourcePicker.pickSources(c);
+      expect(
+        picked.first,
+        'http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1/index.m3u8',
+        reason: '腾讯云国内源必须排第一, 蒙古 CDN / GitHub Pages 靠后',
+      );
+    });
   });
 }

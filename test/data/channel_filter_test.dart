@@ -125,4 +125,44 @@ void main() {
       expect(ChannelFilter.local(const <Channel>[]), isEmpty);
     });
   });
+
+  group('ChannelFilter.hot (首页「正在直播」优选)', () {
+    final all = <Channel>[
+      _ch(id: 'SomeLocalTV.cn', name: '某地方台', country: 'CN'),
+      _ch(id: 'ZhejiangSatelliteTV.cn', name: 'Zhejiang Satellite TV', country: 'CN', altNames: <String>['浙江卫视']),
+      _ch(id: 'CCTV5.cn', name: 'CCTV-5', country: 'CN'),
+      _ch(id: 'CCTV1.cn', name: 'CCTV-1', country: 'CN'),
+      _ch(id: '浙江卫视.cn', name: '浙江卫视', country: 'CN'),
+      _ch(id: 'CCTV13.cn', name: 'CCTV-13', country: 'CN'),
+      _ch(id: 'AnotherLocal.cn', name: '另一地方台', country: 'CN'),
+    ];
+
+    test('按国民度排序, 央视排在地方台前面', () {
+      final hot = ChannelFilter.hot(all, limit: 4);
+      expect(hot[0].id, 'CCTV1.cn');
+      expect(hot[1].id, 'CCTV13.cn');
+      expect(hot[2].id, 'CCTV5.cn');
+      expect(hot.map((c) => c.id), isNot(contains('SomeLocalTV.cn')),
+          reason: 'limit 内不应出现冷门地方台');
+    });
+
+    test('中英文双 id 同频道只出现一次', () {
+      final hot = ChannelFilter.hot(all, limit: 12);
+      final zj = hot.where((c) => c.displayName.contains('浙江')).length;
+      expect(zj, 1, reason: '浙江卫视有中英文两套 id, 去重后只能占一格');
+    });
+
+    test('优选表命中不足时用剩余频道补齐, 不留空行', () {
+      final few = <Channel>[
+        _ch(id: 'A.cn', name: '甲台', country: 'CN'),
+        _ch(id: 'B.cn', name: '乙台', country: 'CN'),
+      ];
+      final hot = ChannelFilter.hot(few, limit: 6);
+      expect(hot.length, 2);
+    });
+
+    test('空列表返回空', () {
+      expect(ChannelFilter.hot(const <Channel>[]), isEmpty);
+    });
+  });
 }

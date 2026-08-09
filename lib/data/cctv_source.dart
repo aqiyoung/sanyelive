@@ -144,7 +144,14 @@ const Set<String> _kDomesticHostSuffixes = <String>{
   '.bupt.edu.cn',
   '.mobaibox.com',
   '.fanmingming.com',
+};
+
+/// 明确的海外域名后缀 (国内直连慢或不稳, 排到最后兜底).
+/// - `.skygo.mn`  蒙古 CDN, 实测 RTT ~3000ms, 国内最慢
+/// - `.github.io` GitHub Pages, 国内经常连不上 (被 method 标成 "cmcc" 也不算国内)
+const Set<String> _kForeignHostSuffixes = <String>{
   '.skygo.mn',
+  '.github.io',
 };
 
 /// 从 URL 提取 host (去协议/路径/端口/userinfo), 全小写.
@@ -166,6 +173,9 @@ String _hostOf(String url) {
 _Isp _classifyHost(String host) {
   for (final suf in _kDomesticHostSuffixes) {
     if (host.endsWith(suf)) return _Isp.domestic;
+  }
+  for (final suf in _kForeignHostSuffixes) {
+    if (host.endsWith(suf)) return _Isp.foreign;
   }
   final octets = host.split('.');
   if (octets.length == 4) {
@@ -191,12 +201,10 @@ List<CctvSource>? _registrySourcesFor(String channelId) {
 double _priorityScore(String url, {CctvSource? reg}) {
   if (reg != null) {
     if (!reg.alive) return -1.0; // 死亡源永远最后
-    final isp = const <String>{'tencent_cloud', 'cmcc', 'skygo'}
-            .contains(reg.method)
-        ? _Isp.domestic
-        : reg.method == 'legacy_iptv'
-            ? _Isp.foreign
-            : _classifyHost(_hostOf(url));
+    // 只按 host 分类, 不信 registry 的 method 标签 —— 实测标签不可靠:
+    // method="cmcc" 的两条实际指向 xykt-fix.github.io (GitHub Pages, 非移动 CDN),
+    // method="skygo" 是蒙古 CDN. 盲信标签会把海外源当国内源排到最前.
+    final isp = _classifyHost(_hostOf(url));
     final bucket = isp == _Isp.domestic
         ? 2.0
         : isp == _Isp.neutral
@@ -472,14 +480,35 @@ class CctvSourceRegistry {
     _instance = registry;
   }
 
+  /// 测试用: 直接解析 JSON (守住 v177 修的"解析静默失败导致 registry 为空").
+  @visibleForTesting
+  static CctvSourceRegistry debugFromJson(Map<String, dynamic> json) =>
+      CctvSourceRegistry._fromJson(json);
+
   factory CctvSourceRegistry._fromJson(Map<String, dynamic> json) {
     final sourcesByChannel = <String, List<CctvSource>>{};
-    for (final entry in json.entries) {
+    // 实际 schema: {_comment, _generated_at, _source_count, channels:{CCTV1.cn:[...]}}
+    // 老 schema 兼容: 顶层直接是 {CCTV1.cn:[...]}.
+    // 注: v176 之前这里直接遍历顶层 entries, 第一个 key `_comment` 是 String,
+    // `as List` 抛 TypeError 被 load() 的 catch 吞掉 → registry 永远为空,
+    // 国内腾讯云源一条都进不了候选 → 移动宽带央视一直转圈. 见 v177 修复.
+    final root = json['channels'] is Map<String, dynamic>
+        ? json['channels'] as Map<String, dynamic>
+        : json;
+    for (final entry in root.entries) {
       final channelId = entry.key;
-      final list = (entry.value as List).cast<dynamic>();
-      sourcesByChannel[channelId] = list
-          .map((e) => CctvSource.fromJson(e as Map<String, dynamic>))
-          .toList(growable: false);
+      if (channelId.startsWith('_')) continue; // 跳过 _meta 字段
+      final value = entry.value;
+      if (value is! List) continue; // 单条脏数据不拖垮整表
+      final parsed = <CctvSource>[];
+      for (final e in value) {
+        if (e is! Map<String, dynamic>) continue;
+        if (e['url'] is! String) continue;
+        parsed.add(CctvSource.fromJson(e));
+      }
+      if (parsed.isNotEmpty) {
+        sourcesByChannel[channelId] = List<CctvSource>.unmodifiable(parsed);
+      }
     }
     return CctvSourceRegistry._(sourcesByChannel: sourcesByChannel);
   }

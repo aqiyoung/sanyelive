@@ -222,7 +222,9 @@ class _TvLeanbackHome extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final featured = channels.isNotEmpty ? channels.first : null;
+    // Hero 主推优选第一个 (CCTV-1), 而不是频道库原始首项
+    final hotList = ChannelFilter.hot(channels, limit: 12);
+    final featured = hotList.isNotEmpty ? hotList.first : null;
     // 复用 ChannelFilter (与分类页 / chips 路由一致), 避免 categories 派生
     // 与分类页过滤逻辑不一致导致首页分类行缺失.
     final cctv = ChannelFilter.cctv(channels);
@@ -247,7 +249,8 @@ class _TvLeanbackHome extends ConsumerWidget {
         const SizedBox(height: 18),
         const _ChannelChips(),
         const SizedBox(height: 22),
-        _ChannelRow(title: '正在直播', channels: channels),
+        // 优选热门频道 (央视 + 头部卫视), 不再铺全量 198 个频道
+        _ChannelRow(title: '正在直播', channels: hotList),
         const SizedBox(height: 20),
         if (cctv.isNotEmpty) ...[
           _ChannelRow(title: '央视频道', channels: cctv),
@@ -954,8 +957,11 @@ class _LiveTvModule extends StatelessWidget {
   Widget build(BuildContext context) {
     final textColor = context.fgMain;
 
-    final primary = channels.isNotEmpty ? channels.first : null;
-    final rest = channels.skip(1).take(3).toList();
+    // 优选热门: Hero 主推第 1 个, 右侧「正在直播」列表接后 3 个.
+    // 原来直接取全量 channels 前 4 个, 冷门地方台常年霸屏.
+    final hot = ChannelFilter.hot(channels, limit: 4);
+    final primary = hot.isNotEmpty ? hot.first : null;
+    final rest = hot.skip(1).take(3).toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

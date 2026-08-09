@@ -4,6 +4,76 @@ import 'models/channel.dart';
 class ChannelFilter {
   ChannelFilter._();
 
+  /// 首页「正在直播」优选顺序 (按国民度手排).
+  /// 每项先按 channel id 精确匹配, 不中再按 displayName/altNames 关键词匹配 ——
+  /// 数据里同一频道有中英文两套 id (如 `浙江卫视.cn` 与 `ZhejiangSatelliteTV.cn`),
+  /// 关键词兜底可保证换 id 体系也能命中.
+  static const List<String> kHotChannelKeys = <String>[
+    'CCTV1.cn', // 综合
+    'CCTV13.cn', // 新闻
+    'CCTV5.cn', // 体育
+    '湖南卫视',
+    'CCTV6.cn', // 电影
+    '浙江卫视',
+    'CCTV3.cn', // 综艺
+    '江苏卫视',
+    '东方卫视',
+    'CCTV8.cn', // 电视剧
+    '北京卫视',
+    'CCTV4.cn', // 中文国际
+  ];
+
+  /// 优选热门频道 — 首页「正在直播」用.
+  ///
+  /// 之前首页第一行直接铺全量 channels (198 个), 冷门地方台混在最前面,
+  /// 用户要横滑很久才看到央视/湖南卫视. 这里按 [kHotChannelKeys] 的国民度
+  /// 顺序优选, 并按 displayName 去重 (避免中英文双 id 同频道各占一格).
+  /// 不足 [limit] 时用剩余频道原顺序补齐, 保证这一行永远不空.
+  static List<Channel> hot(List<Channel> all, {int limit = 12}) {
+    if (all.isEmpty) return const <Channel>[];
+    final picked = <Channel>[];
+    final seenId = <String>{};
+    final seenName = <String>{};
+
+    bool take(Channel c) {
+      if (!seenId.add(c.id)) return false;
+      if (!seenName.add(c.displayName)) return false;
+      picked.add(c);
+      return true;
+    }
+
+    for (final key in kHotChannelKeys) {
+      if (picked.length >= limit) break;
+      // 1. id 精确
+      Channel? hit;
+      for (final c in all) {
+        if (c.id == key) {
+          hit = c;
+          break;
+        }
+      }
+      // 2. 名称关键词 (中文名 / alt_names)
+      if (hit == null) {
+        for (final c in all) {
+          if (c.displayName.contains(key) ||
+              c.name.contains(key) ||
+              c.altNames.any((a) => a.contains(key))) {
+            hit = c;
+            break;
+          }
+        }
+      }
+      if (hit != null) take(hit);
+    }
+
+    // 补齐: 优选表命中不足时按原顺序填充, 这一行不能是空的
+    for (final c in all) {
+      if (picked.length >= limit) break;
+      take(c);
+    }
+    return picked;
+  }
+
   static List<Channel> cctv(List<Channel> all) {
     return all
         .where((c) => c.id.startsWith(RegExp(r'CCTV', caseSensitive: false)))

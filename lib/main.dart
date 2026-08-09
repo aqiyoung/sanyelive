@@ -182,13 +182,10 @@ void main() async {
         child: IptvApp(playerObserver: playerObserver),
       ),
     );
-    Future.microtask(() async {
-      try {
-        await container.read(versionCheckerProvider.notifier).checkOnStartup();
-      } catch (e) {
-        debugPrint('=== version check failed (silenced): $e ===');
-      }
-    });
+    // 启动时自动检查更新改到 HomePage.initState 首帧后执行:
+    // 飞牛音乐同款做法 — 等 Widget 树 / Navigator 就绪、Splash 消失后再触发,
+    // 避免 main() 里 Future.microtask 时机过早导致弹窗被 splash 遮挡或
+    // context 未挂载. main.dart 只保留全局 ref.listen 监听 outdated 弹窗.
   } catch (fatal) {
     // 终极兜底: 任何未预料的异常都不阻塞.
     // 写 crash log + 仍然 runApp 显示错误页.

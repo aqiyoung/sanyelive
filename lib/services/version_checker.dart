@@ -217,6 +217,10 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   late final SharedPreferences _prefs;
   bool _checking = false;
 
+  /// 飞牛音乐同款：本会话是否已执行过启动自动检查。
+  /// 防止 widget 重建 / provider 刷新导致重复弹窗。
+  bool _hasCheckedThisSession = false;
+
   @override
   VersionCheckState build() {
     _dio = ref.read(dioProvider);
@@ -245,9 +249,14 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   }
 
   /// 启动时调 — 走 cache 策略 + 异步 fetch, 受「自动检查」开关控制.
-  /// 立即返回 (microtask 里跑),  弹 dialog 由 main.dart listen state.
+  /// 立即返回, 弹 dialog 由 main.dart / home_page 的 listener 处理.
+  ///
+  /// 对齐飞牛音乐: 本会话只检查一次; 开关关闭 / cache 命中 / 失败 / 已最新
+  /// 都静默, 只有发现新版本 (outdated) 才弹窗.
   Future<void> checkOnStartup() async {
     if (_checking) return;
+    if (_hasCheckedThisSession) return;
+    _hasCheckedThisSession = true;
     _checking = true;
     try {
       // 用户关闭了「启动时自动检查更新」→ 直接跳过 (手动 checkForce 不受影响).

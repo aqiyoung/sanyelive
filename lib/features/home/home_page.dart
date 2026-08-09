@@ -10,6 +10,7 @@ import 'package:sanyelive/widgets/liquid_glass_container.dart';
 import '../../../core/theme/colors.dart';
 import '../settings/app_mode_provider.dart';
 import '../settings/province_provider.dart' show provinceProvider;
+import '../../services/version_checker.dart' show versionCheckerProvider;
 import 'poster_wall_page.dart';
 
 /// 视界主页 — 外层统一管理底部导航
@@ -32,6 +33,15 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (ref.read(provinceProvider) == null) {
       unawaited(ref.read(provinceProvider.notifier).autoDetect());
     }
+
+    // 对齐飞牛音乐: 启动时自动检查更新放到首页首帧后触发。
+    // SplashScreen 已消失、Navigator 已就绪，弹窗不会被遮挡。
+    // versionCheckerProvider 内部有 _hasCheckedThisSession 保证每会话只查一次。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(ref.read(versionCheckerProvider.notifier).checkOnStartup());
+      }
+    });
   }
 
   /// 根据模式构建底部导航项 + 对应页面.

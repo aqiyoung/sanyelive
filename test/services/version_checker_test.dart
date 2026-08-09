@@ -307,6 +307,35 @@ void main() {
     });
   });
 
+  group('debugCompareVersions (对齐 FeiNiuMusic)', () {
+    // 基础: 4 段版本逐位比较.
+    test('v0.3.12.174 > 0.3.12.173', () {
+      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.12.174', '0.3.12.173'), 1);
+    });
+    test('0.3.12.173 == 0.3.12.173', () {
+      expect(VersionCheckerNotifier.debugCompareVersions('0.3.12.173', '0.3.12.173'), 0);
+    });
+    test('去前导 v 后相等', () {
+      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.12.173', '0.3.12.173'), 0);
+    });
+    // 当前串残留 +buildNumber 时, 截断 + 后仍能正确比较 (旧版 main.dart 的串).
+    test('0.3.12.173+173 截断 == 0.3.12.173', () {
+      expect(VersionCheckerNotifier.debugCompareVersions('0.3.12.173+173', '0.3.12.173'), 0);
+    });
+    // 用户真实漏检场景: 远端 .172 > 本地 .171+2171 历史异常包.
+    test('v0.3.12.172 > 0.3.12.171+2171', () {
+      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.12.172', '0.3.12.171+2171'), 1);
+    });
+    // 反向升级保护: 服务端更旧 (残留 build) 绝不以 outdated 提示.
+    test('v0.3.12.167 < 0.3.12.168+2171', () {
+      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.12.167', '0.3.12.168+2171'), -1);
+    });
+    // 位数不够补 0: 3 段 vs 4 段.
+    test('v0.3.13 (4段) > 0.3.12+174 (截断3段)', () {
+      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.13', '0.3.12+174'), 1);
+    });
+  });
+
   group('debugIsCriticalRelease', () {
     test('**P0** 标记 → true', () {
       expect(VersionCheckerNotifier.debugIsCriticalRelease('**P0** fix bug'),
@@ -594,6 +623,67 @@ void main() {
       expect(outdated.latestVersion, 'v0.3.12.172');
       expect(outdated.latestVersionCode, 172);
       expect(outdated.currentVersion, '0.3.12.171+2171');
+    });
+
+    test('回归(用户漏检): v0.3.12.173 → v0.3.12.174 必须弹 outdated', () async {
+      // 用户原话: "173还是检查不到174的更新包". main.dart 重构后 currentVersion
+      // = PackageInfo.version 干净串 "0.3.12.173" (build.gradle 拼成 versionName).
+      // 远端最新 tag v0.3.12.174, 必须识别为 outdated 并弹更新.
+      final container = await buildContainer(
+        adapter: _MockAdapter((opts) async {
+          return _jsonBody({
+            'tag_name': 'v0.3.12.174',
+            'body': '修复检查更新漏检 + 网络层优化',
+            'assets': [
+              {
+                'name': 'sanyelive-v0.3.12+174-arm64-v8a.apk',
+                'browser_download_url': 'https://example.com/apk-174.apk',
+              },
+            ],
+          });
+        }),
+        currentVersionCode: 173,
+        currentVersionString: '0.3.12.173',
+      );
+      addTearDown(container.dispose);
+
+      await container.read(versionCheckerProvider.notifier).checkForce();
+
+      final state = container.read(versionCheckerProvider);
+      expect(state, isA<VersionCheckOutdated>(),
+          reason: 'v0.3.12.174 必须大于本地 0.3.12.173, 否则用户会漏检');
+      final outdated = state as VersionCheckOutdated;
+      expect(outdated.latestVersion, 'v0.3.12.174');
+      expect(outdated.latestVersionCode, 174);
+      expect(outdated.currentVersion, '0.3.12.173');
+    });
+
+    test('回归: 带 +buildNumber 的旧串 (0.3.12.173+173) 同样能检出 174', () async {
+      // 已安装旧版用户 PackageInfo.version 可能仍带 +buildNumber, 验证新比较
+      // 逻辑对它依旧正确 (截断 + 后只剩 0.3.12.173).
+      final container = await buildContainer(
+        adapter: _MockAdapter((opts) async {
+          return _jsonBody({
+            'tag_name': 'v0.3.12.174',
+            'body': '修复检查更新漏检',
+            'assets': [
+              {
+                'name': 'sanyelive-v0.3.12+174-arm64-v8a.apk',
+                'browser_download_url': 'https://example.com/apk-174.apk',
+              },
+            ],
+          });
+        }),
+        currentVersionCode: 173,
+        currentVersionString: '0.3.12.173+173',
+      );
+      addTearDown(container.dispose);
+
+      await container.read(versionCheckerProvider.notifier).checkForce();
+
+      final state = container.read(versionCheckerProvider);
+      expect(state, isA<VersionCheckOutdated>(),
+          reason: '旧版 +buildNumber 串也必须能检出 174');
     });
   });
 }

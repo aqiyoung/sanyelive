@@ -1,31 +1,32 @@
 //
 // 职责:
-//   - 启动时异步拉 GitHub releases/latest,  解析 tag_name + APK asset
-//     名里的 versionCode.
-//   - 对比当前 pubspec.yaml versionCode,  判断 outdated / upToDate / failed.
-//   - 持久化 last_check_time / last_seen_version / dismissed_version
-//     (用 sharedPreferencesProvider,  main.dart 注入).
-//   - < 1h 用 cache,  24h 后再 fetch.  fail 静默 (后台任务,  弹窗会骚扰).
+//   - 启动时 / 手动检查更新: 拉取 GitHub 最新 release, 解析版本号,
+//     与当前安装版本比较, 判断是否 outdated.
+//   - 命中 outdated → 由 main.dart / settings_page 的 listener 弹更新弹窗.
 //
-// 数据流:
-//   runApp → microtask → versionCheckerProvider.notifier.checkOnStartup()
-//     → 1. 读 prefs,  < 1h 跳 fetch → 直接 return cache
-//     → 2. fetch GitHub API (dio + 5s timeout)
-//     → 3. parse tag_name + assets[].name 里的 versionCode
-//     → 4. 对比 currentVersion (pubspec 编译期 const,  传进来)
-//          major.minor.patch 优先, 一样再比 build.
-//     → 5. 写 last_check_time,  标记 outdated → 弹 ForceUpdateDialog
-//     → 6. upToDate / failed → 静默 return
+// ─────────────────────────────────────────────────────────────────────────
+// v0.3.12.175 重构 (对齐 FeiNiuMusic 已验证可用实现):
 //
-// Riverpod Notifier 设计:
-//   - VersionCheckState (sealed): idle / upToDate / outdated / failed.
-//   - state 被 build 内 ref.watch 监听,  main.dart 用 ref.listen 弹 dialog.
-//   - 写操作 (dismissedVersion / checkNow) 通过 notifier 方法.
+// 1) 数据源顺序反转 —— 以 GitHub API `releases/latest` 为权威主源,
+//    jsDelivr 上的 meta/version.json 仅作兜底.
+//    旧版反过来 (meta 为主源), 而 meta 由 release.yml 异步写回,
+//    一旦那步被 `continue-on-error` 吞掉 → meta 永远落后一个版本 →
+//    所有用户误判"已最新", 这正是"更新功能一次都没成功过"的根因.
+//    GitHub API `releases/latest` 在发版瞬间原子更新, 永不过期,
+//    与 FeiNiuMusic 完全一致.
 //
-// P0/critical:
-//   - 用 release body 第一个 `**P0**` / `**critical**` 关键词识别,  命中
-//     后 dialog 不显示"稍后"按钮,  必须更新.  其他 P1 提级不强制.
-//   - 如果 release body 缺 P0 标记,  默认 non-critical.
+// 2) 比较逻辑对齐 FeiNiuMusic:
+//    - 当前版本只取 PackageInfo.version (干净的 versionName, 如 "0.3.12.173"),
+//      不再自作主张拼上 +versionCode (那会多出一个第 5 段数字, 造成误判).
+//    - 远端 tag (如 "v0.3.12.174") 去掉前导 v, 在首个 + / - 处截断,
+//      按 "." 切出数字段逐位比较.  major.minor.patch 比完再比 build.
+//    这能正确识别 0.3.12.174 > 0.3.12.173, 也正确处理
+//    0.3.12.171+2171 这类历史异常包 (截断 + 后只剩 0.3.12.171).
+//
+// 3) 网络容错: API 走多个代理前缀 (gh.llkk.cc 已验证可直连 GitHub,
+//    直连留给 VPN/海外用户), 全部失败才退回 jsDelivr (国内 CDN, 通常可用).
+//    每层都带 User-Agent + Accept 头 —— 缺 User-Agent 时 GitHub API 直接 403.
+// ─────────────────────────────────────────────────────────────────────────
 
 import 'dart:async';
 import 'dart:convert';
@@ -39,57 +40,32 @@ import 'package:sanyelive/features/settings/theme_provider.dart'
     show sharedPreferencesProvider;
 import 'package:sanyelive/utils/crash_logger.dart';
 
-///   FeiNiuMusic 标准做法 (已验证可用): 用 `/releases/latest` 单请求拿最新
-///   stable release, 并带 `User-Agent` + `Accept` 头.  GitHub API 对**没有
-///   User-Agent 的请求会直接 403 拒掉** — 这正是旧版"检查不到更新"的根因
-///   (请求被静默失败, 不弹窗).  参照 FeiNiuMusic 补上请求头后即稳定.
-///   sanyelive 的 release 非 pre-release, `/releases/latest` 即最新版.
-/// GitHub API 基础 URL (直连).  镜像 fallback 会在此基础上加前缀.
+/// GitHub API 基础 URL (直连).  镜像 fallback 会在前面加前缀.
 const String _kGitHubApiBaseUrl =
     'https://api.github.com/repos/aqiyoung/sanyelive/releases/latest';
 
-/// 版本信息静态源 — 放在 `raw.githubusercontent.com` 的 `meta` 分支.
-/// 每次发版由 CI (release.yml) 自动刷新.  旧版直连 `api.github.com` 被墙 +
-/// 公共镜像不代理 API 域名 → "检查不到更新".  改用 raw 版本源 + 多镜像兜底.
-/// 注意: 这些都是**完整 URL** (代理已烤进路径),  循环时不再拼前缀,  prefix=''.
-/// 顺序按国内可靠性:  jsDelivr CDN (国内多节点, 最稳) → gh-proxy 系列 → 直连.
+/// API 代理前缀列表 —— 国内/弱网环境直连 api.github.com 会被墙,
+/// 依次尝试这些代理;  空串 '' 表示直连 (VPN/海外用户).
+/// 顺序: gh.llkk.cc 已实测可穿透到 GitHub API, 直连兜底给翻墙用户.
+const List<String> _kApiProxyPrefixes = [
+  'https://gh.llkk.cc/',
+  '',
+];
+
+/// 兜底版本源 —— 放在 `raw.githubusercontent.com` 的 `meta` 分支 (经 jsDelivr CDN).
+/// 每次发版由 CI (release.yml) 自动刷新;  作为 API 全部失败时的最后防线.
+/// 注意: 这些都是**完整 URL**,  循环时不再拼前缀,  prefix=''.
 const List<String> _kVersionMetaUrls = [
-  // jsDelivr: 正规 CDN, 国内节点多, 通常最稳.  @meta 指 meta 分支.
   'https://cdn.jsdelivr.net/gh/aqiyoung/sanyelive@meta/version.json',
-  // gh-proxy 系列: 公共代理, 主业就是代理 raw.githubusercontent.com.
-  'https://gh-proxy.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  'https://ghproxy.net/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  'https://mirror.ghproxy.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  'https://ghps.cc/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  'https://github.moeyy.xyz/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  'https://gh.api.99988866.xyz/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  'https://gh.idayer.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  'https://ghproxy.cc/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  'https://hub.gitmirror.com/https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
-  // 直连 raw (翻墙用户 / 兜底).
-  'https://raw.githubusercontent.com/aqiyoung/sanyelive/meta/version.json',
 ];
 
-/// 国内 GitHub 镜像前缀列表 (仅用于 GitHub API 兜底).  当直连 `api.github.com`
-/// 失败时, 自动依次尝试.  用法: `$prefix$_kGitHubApiBaseUrl`.
-const List<String> _kGitHubProxyPrefixes = [
-  '', // 直连
-  'https://gh-proxy.com/',
-  'https://ghps.cc/',
-  'https://github.moeyy.xyz/',
-  'https://gh.api.99988866.xyz/',
-];
-
-/// 兼容老代码 — 取基础 URL. 单元测试可 overrideWithValue.
-const List<String> kDefaultEndpointUrls = [_kGitHubApiBaseUrl];
-
-/// FeiNiuMusic 同款请求头 — GitHub API 必须有 User-Agent, 否则 403.
+/// FeiNiuMusic 同款请求头 —— GitHub API 必须有 User-Agent, 否则 403.
 const Map<String, String> kGitHubApiHeaders = {
   'User-Agent': 'sanyelive',
   'Accept': 'application/vnd.github.v3+json',
 };
 
-/// meta 版本源请求头 — 用通用 Accept, 避免某些代理对 GitHub API 专用 Accept
+/// meta 版本源请求头 —— 用通用 Accept, 避免某些代理对 GitHub API 专用 Accept
 /// 返回 406/403.
 const Map<String, String> kMetaHeaders = {
   'User-Agent': 'sanyelive',
@@ -97,6 +73,9 @@ const Map<String, String> kMetaHeaders = {
 };
 
 /// 兼容老代码 — 取基础 URL. 单元测试可 overrideWithValue.
+const List<String> kDefaultEndpointUrls = [_kGitHubApiBaseUrl];
+
+/// 兼容老代码 — 取基础 URL.
 String get kDefaultEndpointUrl => _kGitHubApiBaseUrl;
 
 /// SharedPreferences 持久化.
@@ -105,35 +84,11 @@ const String kEndpointPrefsKey = 'version_checker.endpoint_url';
 /// 「启动时自动检查更新」开关持久化键 (默认开启).
 const String kAutoCheckUpdateKey = 'version_checker.auto_check_update';
 
-/// 旧版支持自定义更新源 (gh-proxy / 自建镜像),  v0.3.12+128 起停止支持,
-/// 统一走 kDefaultEndpointUrls (api.github.com 直连).  残留的自定义 URL
-/// 在 VersionCheckerNotifier.build() 里清理, 防止死链导致检查失败.
-
-/// 「启动时自动检查更新」开关 — 默认开启.
-/// 关闭后 checkOnStartup() 直接 return (不 fetch);  手动 checkForce() 不受影响.
-class AutoCheckUpdateNotifier extends Notifier<bool> {
-  late final SharedPreferences _prefs;
-
-  @override
-  bool build() {
-    _prefs = ref.read(sharedPreferencesProvider);
-    return _prefs.getBool(kAutoCheckUpdateKey) ?? true;
-  }
-
-  Future<void> set(bool value) async {
-    await _prefs.setBool(kAutoCheckUpdateKey, value);
-    state = value;
-  }
-}
-
-final autoCheckUpdateProvider =
-    NotifierProvider<AutoCheckUpdateNotifier, bool>(AutoCheckUpdateNotifier.new);
-
 /// 兼容旧代码 — get kGitHubReleasesUrl 改成 get endpoint.
 @Deprecated('Use endpointProvider instead')
 String get kGitHubReleasesUrl => kDefaultEndpointUrl;
 
-/// 当前 APP versionCode — 由 main.dart 在 ProviderContainer 初始化时
+/// 当前 APP versionCode —— 由 main.dart 在 ProviderContainer 初始化时
 /// 注入.  编译期 const (来自 pubspec.yaml),  单元测试可 mock.
 final currentVersionCodeProvider = Provider<int>((ref) {
   throw UnimplementedError(
@@ -156,10 +111,10 @@ class _Keys {
   static const dismissedAt = 'version_checker.dismissed_at';
 }
 
-/// Cache 有效期 — 1h 内不再 fetch (避免每启都打 GitHub).
+/// Cache 有效期 —— 1h 内不再 fetch (避免每启都打 GitHub).
 const Duration _kCacheTtl = Duration(hours: 1);
 
-/// 用户点"稍后"后,  24h 内不再弹 (避免 P1 反复骚扰).
+/// 用户点"稍后"后, 24h 内不再弹 (避免 P1 反复骚扰).
 const Duration _kDismissTtl = Duration(hours: 24);
 
 /// 强制更新检测结果.
@@ -167,7 +122,7 @@ sealed class VersionCheckState {
   const VersionCheckState();
 }
 
-/// 还没 check 过,  或上次 check 失败被静默吞掉.
+/// 还没 check 过, 或上次 check 失败被静默吞掉.
 class VersionCheckIdle extends VersionCheckState {
   const VersionCheckIdle();
 }
@@ -200,12 +155,12 @@ class VersionCheckOutdated extends VersionCheckState {
   final String apkDownloadUrl;
   final String releaseNotes;
 
-  /// P0/critical:  release body 含 "**P0**" 或 "**critical**" 标记 → 强制更新,
+  /// P0/critical: release body 含 "**P0**" 或 "**critical**" 标记 → 强制更新,
   /// dialog 不显示"稍后"按钮.
   final bool isCritical;
 }
 
-/// 拉版本失败 (网络/parse).  静默,  不骚扰用户.
+/// 拉版本失败 (网络/parse).  静默, 不骚扰用户.
 class VersionCheckFailed extends VersionCheckState {
   const VersionCheckFailed(this.reason);
   final String reason;
@@ -230,10 +185,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     return const VersionCheckIdle();
   }
 
-  /// 手动检查 — 设置页"检查更新"按钮调用.
-  /// 绕过 1h cache + 24h dismiss, 且**不受**「启动时自动检查更新」开关影响
-  /// (旧版错误地调用 checkOnStartup, 开关一关手动检查就直接 return,
-  ///  loading 弹窗永不关闭、什么也不显示 — 这正是"检查不到更新"的根因之一).
+  /// 手动检查 —— 设置页"检查更新"按钮调用.
+  /// 绕过 1h cache + 24h dismiss, 且**不受**「启动时自动检查更新」开关影响.
   Future<void> checkForce() async {
     if (_checking) return;
     _checking = true;
@@ -248,8 +201,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     }
   }
 
-  /// 启动时调 — 走 cache 策略 + 异步 fetch, 受「自动检查」开关控制.
-  /// 立即返回, 弹 dialog 由 main.dart / home_page 的 listener 处理.
+  /// 启动时调 —— 走 cache 策略 + 异步 fetch, 受「自动检查」开关控制.
+  /// 立即返回, 弹 dialog 由 main.dart / settings_page 的 listener 处理.
   ///
   /// 对齐飞牛音乐: 本会话只检查一次; 开关关闭 / cache 命中 / 失败 / 已最新
   /// 都静默, 只有发现新版本 (outdated) 才弹窗.
@@ -262,11 +215,11 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       // 用户关闭了「启动时自动检查更新」→ 直接跳过 (手动 checkForce 不受影响).
       if (!ref.read(autoCheckUpdateProvider)) return;
 
-      // 1. cache 命中 (< 1h) → 直接跳过 fetch,  state 保持 idle
+      // 1. cache 命中 (< 1h) → 直接跳过 fetch, state 保持 idle
       final lastCheck = _prefs.getInt(_Keys.lastCheckTime);
       final now = DateTime.now().millisecondsSinceEpoch;
       if (lastCheck != null && (now - lastCheck) < _kCacheTtl.inMilliseconds) {
-        // 启动时 cache 路径不更新 state,  让 UI 不弹窗.
+        // 启动时 cache 路径不更新 state, 让 UI 不弹窗.
         return;
       }
 
@@ -276,33 +229,28 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     }
   }
 
-  /// 实际执行一次检查 (fetch + 比较 + 写 state).  checkOnStartup / checkForce 共用.
+  /// 实际执行一次检查 (fetch + 比较 + 写 state). checkOnStartup / checkForce 共用.
   Future<void> _performCheck() async {
     final now = DateTime.now().millisecondsSinceEpoch;
     try {
-      // 2. fetch GitHub API (带镜像 fallback)
-      final (release, proxyPrefix) = await _fetchLatestRelease();
-      final parsed = _parseAny(release, proxyPrefix);
+      // 2. fetch GitHub 最新 release (API 主源 + meta 兜底)
+      final parsed = await _fetchLatestRelease();
       if (parsed == null) {
-        state = const VersionCheckFailed('parse failed');
+        state = const VersionCheckFailed('无法获取版本信息，请检查网络后重试');
         await _prefs.setInt(_Keys.lastCheckTime, now);
         return;
       }
 
-      final currentCode = ref.read(currentVersionCodeProvider);
       final currentStr = ref.read(currentVersionStringProvider);
 
-      // 写 last_seen_version (无论 outdated / upToDate 都写,  方便诊断).
+      // 写 last_seen_version (无论 outdated / upToDate 都写, 方便诊断).
       await _prefs.setString(_Keys.lastSeenVersion, parsed.tagName);
 
-      // 对齐 FeiNiuMusic: 提取所有数字段逐位比较.
+      // 对齐 FeiNiuMusic: 提取 major.minor.patch(+build) 数字段逐位比较.
       // sanyelive 固定 0.3.12 只涨 build, 因此 .N 与 +N 都参与比较,
-      // 像 0.3.12.171+2171 这种异常测试包也能正确识别 v0.3.12.172 比它新.
+      // 像 0.3.12.171+2171 这种历史异常包也能正确识别 v0.3.12.172 比它新.
       final cmp = _compareVersions(parsed.tagName, currentStr);
-
-      // versionName 完全相同时, 再以 APK versionCode 兜底 (极少数场景).
-      final isOutdated =
-          cmp > 0 || (cmp == 0 && parsed.versionCode > currentCode);
+      final isOutdated = cmp > 0;
 
       if (isOutdated) {
         // 检查是否被用户 dismiss 过 (24h 内同版本不再弹).
@@ -311,7 +259,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
         if (dismissedVer == parsed.tagName &&
             dismissedAt != null &&
             (now - dismissedAt) < _kDismissTtl.inMilliseconds) {
-          // 24h 内 dismiss 过了,  静默不弹.
+          // 24h 内 dismiss 过了, 静默不弹.
           state = const VersionCheckUpToDate('current', 'current');
           await _prefs.setInt(_Keys.lastCheckTime, now);
           return;
@@ -338,7 +286,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       state = const VersionCheckFailed(
         '网络连接失败，请检查网络或稍后重试\n也可手动前往 GitHub Releases 查看更新',
       );
-      // 失败也写 last_check_time,  避免每启都重试刷流量.  下次 1h 后再试.
+      // 失败也写 last_check_time, 避免每启都重试刷流量. 下次 1h 后再试.
       await _prefs.setInt(_Keys.lastCheckTime, now);
     } catch (e) {
       debugPrint('version_checker: unexpected error → $e');
@@ -353,7 +301,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     }
   }
 
-  /// 用户点"稍后" — 记录 dismissed_version + dismissed_at,  24h 不再弹.
+  /// 用户点"稍后" —— 记录 dismissed_version + dismissed_at, 24h 不再弹.
   /// P0/critical 时调用方 (dialog) 不暴露这个按钮.
   Future<void> markDismissed() async {
     final s = state;
@@ -363,7 +311,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       _Keys.dismissedAt,
       DateTime.now().millisecondsSinceEpoch,
     );
-    // 弹完后 state 回到 idle,  不让 main.dart 的 listener 二次弹.
+    // 弹完后 state 回到 idle, 不让 main.dart 的 listener 二次弹.
     state = const VersionCheckIdle();
   }
 
@@ -375,9 +323,9 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     await _prefs.remove(_Keys.dismissedAt);
   }
 
-  /// @visibleForTesting — 跳开 fetch,  直接在 state 设 outdated/upToDate.
-  /// Riverpod 的 Notifier.state setter 是 @protected,  不能从外面调,
-  /// 这里包一层.  测试用,  生产代码不要调.
+  /// @visibleForTesting —— 跳开 fetch, 直接在 state 设 outdated/upToDate.
+  /// Riverpod 的 Notifier.state setter 是 @protected, 不能从外面调,
+  /// 这里包一层.  测试用, 生产代码不要调.
   @visibleForTesting
   void debugSetState(VersionCheckState newState) {
     state = newState;
@@ -386,63 +334,17 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   // -------- private: 网络 --------
 
   /// 拉最新版本信息.
-  /// 策略: 优先查 `raw.githubusercontent.com` 上的 version.json (经 gh-proxy 等
-  /// 公共代理, 国内稳达 — 这些代理主业就是代理 raw.githubusercontent.com),
-  /// 这是根治"检查不到更新"的关键: 旧方案直连 api.github.com, 国内被墙,
-  /// 而公共镜像几乎都不代理 api.github.com 这个 API 域名, 导致 5 个端点全挂.
-  /// 兜底: GitHub API (走同一代理链, 适合已翻墙 / VPN 的用户).
-  /// 返回 (release JSON, 成功使用的镜像前缀). 前缀用于把 APK 下载链接也走
-  /// 同一镜像, 避免源通了但下载地址被墙.
-  Future<(Map<String, dynamic>, String)> _fetchLatestRelease() async {
-    // 1) meta 版本源 (raw, 多镜像兜底, 国内稳达) — 优先.
-    //    这些 URL 已是完整地址 (代理烤进路径),  prefix='' 表示 APK 下载链接
-    //    不再二次拼前缀.
-    final metaErrors = <String>[];
-    for (final url in _kVersionMetaUrls) {
-      try {
-        final resp = await _dio.get<dynamic>(
-          url,
-          options: Options(
-            receiveTimeout: const Duration(seconds: 10),
-            responseType: ResponseType.plain,
-            headers: kMetaHeaders,
-          ),
-        );
-        if (resp.statusCode == 200 && resp.data is String) {
-          final s = (resp.data as String).trim();
-          // 拿到 HTML (如代理没干活 / 404 页) 直接跳过这个源.
-          if (s.startsWith('<')) {
-            metaErrors.add('$url → HTML');
-            continue;
-          }
-          try {
-            final decoded = jsonDecode(s);
-            if (decoded is Map<String, dynamic> &&
-                decoded.containsKey('tag') &&
-                decoded.containsKey('versionCode')) {
-              return (decoded, '');
-            }
-            metaErrors.add('$url → missing fields');
-          } catch (_) {
-            metaErrors.add('$url → JSON parse fail');
-            debugPrint('version_checker: meta JSON parse fail from $url');
-          }
-        } else {
-          metaErrors.add('$url → HTTP ${resp.statusCode}');
-        }
-      } on DioException catch (e) {
-        metaErrors.add('$url → ${e.type}');
-        debugPrint('version_checker: meta $url → $e');
-      } catch (e) {
-        metaErrors.add('$url → $e');
-        debugPrint('version_checker: meta $url → $e');
-      }
-    }
-
-    // 2) GitHub API 兜底 (已翻墙用户 / 代理恰好支持 API 时).
-    final apiErrors = <String>[];
-    for (final prefix in _kGitHubProxyPrefixes) {
-      final url = prefix.isEmpty ? _kGitHubApiBaseUrl : '$prefix$_kGitHubApiBaseUrl';
+  /// 策略 (对齐 FeiNiuMusic):
+  ///   1) GitHub API `releases/latest` 为主源 (权威, 发版即更新, 永不过期),
+  ///      经代理前缀链穿透 GFW; 任一代理成功即用.
+  ///   2) jsDelivr 上的 meta/version.json 为兜底 (国内 CDN, 通常可用,
+  ///      仅在 API 全失败时启用, 可能滞后一个版本).
+  /// 返回 (_ParsedRelease) 或 null (全部失败).
+  Future<_ParsedRelease?> _fetchLatestRelease() async {
+    // 1) GitHub API (经代理链) —— 权威主源
+    for (final prefix in _kApiProxyPrefixes) {
+      final url =
+          prefix.isEmpty ? _kGitHubApiBaseUrl : '$prefix$_kGitHubApiBaseUrl';
       try {
         final resp = await _dio.get<dynamic>(
           url,
@@ -453,61 +355,84 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
           ),
         );
         if (resp.statusCode == 200) {
-          final data = resp.data;
-          if (data is String) {
-            final s = data.replaceFirst(RegExp(r'^\s+'), '');
-            if (s.startsWith('<') || s.startsWith('<!DOCTYPE')) {
-              apiErrors.add('$url → HTML');
-              continue;
-            }
-            try {
-              final decoded = jsonDecode(s);
-              Map<String, dynamic> release;
-              if (decoded is List<dynamic>) {
-                if (decoded.isEmpty) {
-                  apiErrors.add('$url → empty releases list');
-                  continue;
-                }
-                final first = decoded.first;
-                if (first is! Map<String, dynamic>) {
-                  apiErrors.add('$url → first release not a Map');
-                  continue;
-                }
-                release = first;
-              } else if (decoded is Map<String, dynamic>) {
-                release = decoded;
-              } else {
-                apiErrors.add('$url → non-Map/List JSON');
-                continue;
-              }
-              return (release, prefix);
-            } catch (_) {
-              apiErrors.add(
-                  '$url → invalid JSON: ${s.substring(0, s.length.clamp(0, 80))}');
-            }
-          } else {
-            apiErrors.add('$url → unexpected type ${data.runtimeType}');
+          final data = _decodeJson(resp.data);
+          if (data != null) {
+            final parsed = _parseRelease(data, prefix);
+            if (parsed != null) return parsed;
           }
-        } else {
-          apiErrors.add('$url → HTTP ${resp.statusCode}');
         }
       } on DioException catch (e) {
-        apiErrors.add('$url → ${e.type}');
         debugPrint('version_checker: api $url → $e');
       } catch (e) {
-        apiErrors.add('$url → $e');
         debugPrint('version_checker: api $url → $e');
       }
     }
-    throw Exception('meta: $metaErrors; api: $apiErrors');
+
+    // 2) jsDelivr meta 兜底 (国内 CDN)
+    for (final url in _kVersionMetaUrls) {
+      try {
+        final resp = await _dio.get<dynamic>(
+          url,
+          options: Options(
+            receiveTimeout: const Duration(seconds: 10),
+            responseType: ResponseType.plain,
+            headers: kMetaHeaders,
+          ),
+        );
+        if (resp.statusCode == 200) {
+          final data = _decodeJson(resp.data);
+          if (data is Map<String, dynamic> &&
+              data.containsKey('tag') &&
+              data.containsKey('versionCode')) {
+            final parsed = _parseMeta(data, '');
+            if (parsed != null) return parsed;
+          }
+        }
+      } on DioException catch (e) {
+        debugPrint('version_checker: meta $url → $e');
+      } catch (e) {
+        debugPrint('version_checker: meta $url → $e');
+      }
+    }
+    return null;
   }
 
-  static _ParsedRelease? _parseRelease(Map<String, dynamic> json, String proxyPrefix) {
-    final tagName = json['tag_name'] as String?;
+  /// 把 Dio 返回的 data (String / Map) 解析成 Map; 拿到 HTML 或非法 JSON 返回 null.
+  static Map<String, dynamic>? _decodeJson(dynamic data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is String) {
+      final s = data.trim();
+      // 拿到 HTML (代理没干活 / 404 页) 直接返回 null.
+      if (s.startsWith('<')) return null;
+      try {
+        final decoded = jsonDecode(s);
+        return decoded is Map<String, dynamic> ? decoded : null;
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  static _ParsedRelease? _parseRelease(dynamic json, String proxyPrefix) {
+    Map<String, dynamic>? release;
+    if (json is Map<String, dynamic>) {
+      release = json;
+    } else if (json is List<dynamic> && json.isNotEmpty) {
+      // 兜底: 个别代理把单对象包成列表, 取首个 Map.
+      for (final e in json) {
+        if (e is Map<String, dynamic>) {
+          release = e;
+          break;
+        }
+      }
+    }
+    if (release == null) return null;
+
+    final tagName = release['tag_name'] as String?;
     if (tagName == null || tagName.isEmpty) return null;
 
-    // 优先 arm64-v8a (国内 TV/盒子主架构),  没有就拿第一个 .apk.
-    final assets = json['assets'] as List<dynamic>?;
+    final assets = release['assets'] as List<dynamic>?;
     if (assets == null) return null;
 
     String? apkName;
@@ -532,8 +457,8 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     final versionCode = _extractVersionCode(apkName);
     if (versionCode == null) return null;
 
-    final body = (json['body'] as String?) ?? '';
-    final releaseName = (json['name'] as String?)?.trim() ?? tagName;
+    final body = (release['body'] as String?) ?? '';
+    final releaseName = (release['name'] as String?)?.trim() ?? tagName;
     final isCritical = _isCriticalRelease(body);
 
     return _ParsedRelease(
@@ -547,10 +472,12 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     );
   }
 
-
   /// 按来源格式分流解析: meta 版本源 (含 versionCode/tag) 走 _parseMeta,
   /// 其余 (GitHub API 格式, 含 assets/tag_name) 走 _parseRelease.
-  static _ParsedRelease? _parseAny(Map<String, dynamic> json, String proxyPrefix) {
+  static _ParsedRelease? _parseAny(
+    Map<String, dynamic> json,
+    String proxyPrefix,
+  ) {
     if (json.containsKey('versionCode') && json.containsKey('tag')) {
       return _parseMeta(json, proxyPrefix);
     }
@@ -558,7 +485,10 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   }
 
   /// 解析 meta 版本源 (version.json) 格式.
-  static _ParsedRelease? _parseMeta(Map<String, dynamic> json, String proxyPrefix) {
+  static _ParsedRelease? _parseMeta(
+    Map<String, dynamic> json,
+    String proxyPrefix,
+  ) {
     final tag = json['tag'] as String?;
     if (tag == null || tag.isEmpty) return null;
     final code = json['versionCode'];
@@ -599,56 +529,50 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     );
   }
 
-/// 版本号比较. 返 1 = a > b, 0 = a == b, -1 = a < b.
-///
-/// 对齐 FeiNiuMusic 思路: 提取版本字符串中所有连续数字段, 逐位比较.
-/// sanyelive 固定 0.3.12 只涨 build 号, 因此 `.N` 和 `+N` 都要参与比较,
-/// 避免 `0.3.12.171+2171` 这种异常格式被误判.
-///
-/// 示例:
-///   v0.3.12.172      → [0, 3, 12, 172]
-///   0.3.12.171+2171  → [0, 3, 12, 171, 2171]
-///   0.3.12+168       → [0, 3, 12, 168]
-///
-/// 位数不够补 0; 解析失败 → 归一化字符串字典序 fallback.
-int _compareVersions(String a, String b) {
-  final pa = _parseVersion(a);
-  final pb = _parseVersion(b);
-  if (pa == null || pb == null) {
-    return _normalizeForFallback(a).compareTo(_normalizeForFallback(b));
-  }
-  final len = pa.length > pb.length ? pa.length : pb.length;
-  for (var i = 0; i < len; i++) {
-    final av = i < pa.length ? pa[i] : 0;
-    final bv = i < pb.length ? pb[i] : 0;
-    if (av != bv) return av > bv ? 1 : -1;
-  }
-  return 0;
-}
+  /// 版本号比较. 返 1 = a > b, 0 = a == b, -1 = a < b.
+  ///
+  /// 对齐 FeiNiuMusic 思路: 提取版本字符串中所有连续数字段, 逐位比较.
+  /// 与 FeiNiuMusic 一致, 比较前会:
+  ///   - 去掉前导 v / V (tag 形如 v0.3.12.174)
+  ///   - 在首个 + 或 - 处截断 (忽略 build / prerelease 后缀)
+  /// 这样 0.3.12.171+2171 这种历史异常包会被规整成 0.3.12.171 再比较,
+  /// 不会因多出的 build 段误判.
+  ///
+  /// 示例:
+  ///   v0.3.12.174      → [0, 3, 12, 174]
+  ///   0.3.12.173        → [0, 3, 12, 173]
+  ///   0.3.12.173+2173   → [0, 3, 12, 173]  (截断 + 后)
+  ///
+  /// 位数不够补 0.
+  static int _compareVersions(String a, String b) {
+    List<int> release(String v) {
+      var s = _normalizeVersion(v);
+      final cut = s.indexOf(RegExp(r'[+\-]'));
+      if (cut >= 0) s = s.substring(0, cut);
+      return s
+          .split('.')
+          .map((e) => int.tryParse(e.trim()) ?? 0)
+          .toList();
+    }
 
-static String _normalizeForFallback(String v) {
-  return v.trim().toLowerCase().replaceFirst(RegExp(r'^v'), '');
-}
+    final left = release(a);
+    final right = release(b);
+    final len = left.length > right.length ? left.length : right.length;
+    for (var i = 0; i < len; i++) {
+      final av = i < left.length ? left[i] : 0;
+      final bv = i < right.length ? right[i] : 0;
+      if (av != bv) return av.compareTo(bv);
+    }
+    return 0;
+  }
 
-/// 解析版本字符串 → 所有连续数字段组成的 List<int>.
-///
-/// 兼容:
-///   - 0.3.12+168        → [0, 3, 12, 168]
-///   - 0.3.12.168        → [0, 3, 12, 168]
-///   - 0.3.12.168+2168   → [0, 3, 12, 168, 2168]
-///   - v0.3.12.152       → [0, 3, 12, 152]
-///
-/// 数字段少于 3 视为无法判断主版本, 返回 null.
-static List<int>? _parseVersion(String v) {
-  var cleaned = v.trim().toLowerCase();
-  if (cleaned.startsWith('v')) cleaned = cleaned.substring(1);
-  final nums = RegExp(r'\d+')
-      .allMatches(cleaned)
-      .map((m) => int.parse(m.group(0)!))
-      .toList();
-  if (nums.length < 3) return null;
-  return nums;
-}
+  static String _normalizeVersion(String version) {
+    final value = version.trim();
+    if (value.startsWith('v') || value.startsWith('V')) {
+      return value.substring(1);
+    }
+    return value;
+  }
 
   static int? _extractVersionCode(String apkName) {
     final match = RegExp(r'\+(\d+)').firstMatch(apkName);
@@ -667,8 +591,8 @@ static List<int>? _parseVersion(String v) {
   }
 
   // -------- @visibleForTesting 入口 --------
-  // 测试不依赖 Dio,  直接验证 parse 逻辑.  private static → 改写成 public 静态
-  // 包装,  保持 production 调用路径不变.
+  // 测试不依赖 Dio, 直接验证 parse 逻辑.  private static → 改写成 public 静态
+  // 包装, 保持 production 调用路径不变.
 
   @visibleForTesting
   static int? debugExtractVersionCode(String apkName) =>
@@ -685,13 +609,13 @@ static List<int>? _parseVersion(String v) {
     Map<String, dynamic> json, {
     String proxyPrefix = '',
   }) {
-    // 走 _parseAny,  同时覆盖 meta 版本源 与 GitHub API 两种格式.
+    // 走 _parseAny, 同时覆盖 meta 版本源 与 GitHub API 两种格式.
     final parsed = _parseAny(json, proxyPrefix);
     if (parsed == null) return null;
     return _parsedToMap(parsed);
   }
 
-  /// 把 _ParsedRelease 转成 Map,  供测试断言.
+  /// 把 _ParsedRelease 转成 Map, 供测试断言.
   static Map<String, dynamic> _parsedToMap(_ParsedRelease r) => {
         'tagName': r.tagName,
         'releaseName': r.releaseName,
@@ -728,14 +652,36 @@ final versionCheckerProvider =
   VersionCheckerNotifier.new,
 );
 
-/// Dio provider — 默认 new Dio() (生产).  测试可 overrideWithValue 注入 mock.
-/// 用了 ref.read 创建,  避免 Notifier.build() 多次跑时重建 Dio.
+/// Dio provider —— 默认 new Dio() (生产).  测试可 overrideWithValue 注入 mock.
+/// 用了 ref.read 创建, 避免 Notifier.build() 多次跑时重建 Dio.
 final dioProvider = Provider<Dio>((ref) {
-  final dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 8),
-    receiveTimeout: const Duration(seconds: 8),
-    sendTimeout: const Duration(seconds: 8),
-  ));
+  final dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 8),
+      sendTimeout: const Duration(seconds: 8),
+    ),
+  );
   ref.onDispose(dio.close);
   return dio;
 });
+
+/// 「启动时自动检查更新」开关 —— 默认开启.
+/// 关闭后 checkOnStartup() 直接 return (不 fetch); 手动 checkForce() 不受影响.
+class AutoCheckUpdateNotifier extends Notifier<bool> {
+  late final SharedPreferences _prefs;
+
+  @override
+  bool build() {
+    _prefs = ref.read(sharedPreferencesProvider);
+    return _prefs.getBool(kAutoCheckUpdateKey) ?? true;
+  }
+
+  Future<void> set(bool value) async {
+    await _prefs.setBool(kAutoCheckUpdateKey, value);
+    state = value;
+  }
+}
+
+final autoCheckUpdateProvider =
+    NotifierProvider<AutoCheckUpdateNotifier, bool>(AutoCheckUpdateNotifier.new);

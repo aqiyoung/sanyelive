@@ -129,11 +129,13 @@ void main() async {
     try {
       await CrashLogger.log('step5: before PackageInfo');
       final info = await PackageInfo.fromPlatform();
-      // 用 pubspec 风格: version+buildNumber.  如果 PackageInfo.version 已经
-      // 含 '+' (某些环境), 直接用; 否则拼上 buildNumber.
-      final base = info.version.trim();
-      final build = info.buildNumber.trim();
-      runtimeVersion = base.contains('+') ? base : '$base+$build';
+      // 对齐 FeiNiuMusic currentVersion(): 当前版本只取 PackageInfo.version
+      // (干净的 versionName, 例如 "0.3.12.173"), 不再自作主张拼上 +buildNumber
+      // —— 那会多出一个第 5 段数字, 与远端 tag 的 4 段逐位比较时造成歧义/误判.
+      // version_checker._compareVersions 会在首个 + / - 处截断, 因此这里给
+      // 干净串即可.  versionName 由 build.gradle 拼成 "x.y.z.code",
+      // 已经自带 build, 不需要再拼一次.
+      runtimeVersion = info.version.trim();
       runtimeVersionCode = int.tryParse(info.buildNumber) ?? 0;
       await CrashLogger.log('step5: PackageInfo OK: $runtimeVersion');
     } catch (e) {

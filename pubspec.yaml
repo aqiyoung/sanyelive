@@ -105,7 +105,7 @@ publish_to: "none"
 # 0.3.12+175 (8/9): 彻底修复更新检查 (对齐 FeiNiuMusic). 数据源反转 —
 #   GitHub API releases/latest 为权威主源, jsDelivr meta 仅兜底; 当前版本只
 #   取干净 versionName, 比较前去 v/首个 +/- 截断逐段比较. 修复 173 检不到 174.
-version: 0.3.12+175
+version: 0.3.12+176
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -186,6 +186,8 @@ flutter:
     - assets/data/known_sources.json
     # v0.3.11: 补车来源 (CCTV5/5+/16/4K 极速源)
     - assets/data/iptv_fast_sources.json
+    # v0.3.12+176: CCTV 分运营商健康分源 (国内腾讯云/移动 CDN 优先, 根治移动宽带加载不出)
+    - assets/data/cctv_sources.json
     # v0.3.12+127: 离线台标 (CI 构建前由 scripts/fetch_tv_logos.py 生成
     #   assets/logos/<channel_id>.png + manifest.json).  TV 模式优先离线渲染,
     #   不再依赖设备端网络拉台标, 根治 70% 频道 logo 为 null 显示字母的问题.

@@ -106,6 +106,16 @@ void main() async {
       debugPrint('=== loadPersistedScores failed (non-fatal): $e ===');
       await CrashLogger.log('step4: loadPersistedScores FAILED: $e');
     }
+    // v0.3.12+176: 加载 CCTV 分运营商健康分源 (cctv_sources.json,
+    // 国内腾讯云/移动 CDN 优先, 死亡源垫底) — 根治"手机连移动宽带电视加载不出来".
+    // 失败非致命: 降级到静态 kCctvHealthScores + channel.sources 原顺序.
+    try {
+      await CctvSourceRegistry.load();
+      await CrashLogger.log('step4b: CctvSourceRegistry loaded');
+    } catch (e) {
+      debugPrint('=== CctvSourceRegistry.load failed (non-fatal): $e ===');
+      await CrashLogger.log('step4b: CctvSourceRegistry load FAILED: $e');
+    }
     _applySystemUiOverlay(prefs);
     // 网络模式: auto=优先IPv4+IPv6兜底(默认), ipv4=强制IPv4, system=不覆盖.
     // 详见 lib/features/settings/network_mode_provider.dart. 切换需重启生效.

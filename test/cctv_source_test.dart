@@ -304,5 +304,32 @@ void main() {
         0.5,
       );
     });
+
+    test('case 6: 国内移动/腾讯云 CDN 源优先于海外裸 IP (移动宽带修复)', () {
+      // CCTV-5 在 channel.sources 里同时有海外裸 IP 与国内移动 CDN 源,
+      // 移动宽带下海外 IP 被阻断, 必须把国内源排最前才能秒开.
+      const c = Channel(
+        id: 'CCTV5.cn',
+        name: 'CCTV-5',
+        country: 'CN',
+        categories: <String>['sports'],
+        sources: <String>[
+          'http://74.91.26.218:82/live/cctv5p.m3u8', // 海外裸 IP
+          'http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226019/index.m3u8', // 国内移动 CDN
+        ],
+        cctvSource: <String>[],
+      );
+      final picked = CctvSourcePicker.pickSources(c);
+      expect(
+        picked.first,
+        'http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226019/index.m3u8',
+        reason: '移动宽带下国内 CDN 必须排第一',
+      );
+      // 海外裸 IP 必须被排到国内源之后
+      expect(
+        picked.indexOf('http://74.91.26.218:82/live/cctv5p.m3u8'),
+        greaterThan(0),
+      );
+    });
   });
 }

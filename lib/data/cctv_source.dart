@@ -123,6 +123,96 @@ const Map<String, double> kCctvHealthScores = <String, double>{
   'https://xykt-fix.github.io/play/a02e/index.m3u8': 0.65,
 };
 
+/// 选源时按"运营商可达性"分层 — 根治"手机连移动宽带电视加载不出来".
+///
+/// 背景:  公开 m3u8 源大量是海外裸 IP (74.91.x / 198.204.x / ...), 在中国移动
+/// 宽带下被限速/阻断, 而在 CI(美西) 探测时反而最快 → 旧逻辑把它们排最前,
+/// 移动用户逐个超时 = "加载不出来".  国内 CDN (腾讯云 myqcloud / 移动 CDN
+/// chinamobile / 央视 cctv / 学校 bupt / 芒果 skygo 等) 在三大运营商都稳.
+/// 故把"国内源"排到"海外源"之前.
+enum _Isp { domestic, neutral, foreign }
+
+/// 已知海外 IPTV 裸 IP 首段 (这些服务器基本都在美/欧, 国内宽带直连差).
+const Set<int> _kForeignFirstOctets = <int>{38, 69, 74, 107, 173, 192, 198, 207};
+
+/// 国内 CDN / 运营商域名后缀 (命中即视为国内源, 优先尝试).
+const Set<String> _kDomesticHostSuffixes = <String>{
+  '.myqcloud.com',
+  '.chinamobile.com',
+  '.cctv.com',
+  '.cctvnews.cctv.com',
+  '.bupt.edu.cn',
+  '.mobaibox.com',
+  '.fanmingming.com',
+  '.skygo.mn',
+};
+
+/// 从 URL 提取 host (去协议/路径/端口/userinfo), 全小写.
+String _hostOf(String url) {
+  var s = url;
+  final proto = s.indexOf('://');
+  if (proto != -1) s = s.substring(proto + 3);
+  final slash = s.indexOf('/');
+  if (slash != -1) s = s.substring(0, slash);
+  final at = s.indexOf('@');
+  if (at != -1) s = s.substring(at + 1);
+  final colon = s.lastIndexOf(':');
+  // 仅对 IPv4 (不含 '[') 去端口
+  if (colon != -1 && !s.contains('[')) s = s.substring(0, colon);
+  return s.toLowerCase();
+}
+
+/// 主机分类: 国内 / 中性 / 海外.
+_Isp _classifyHost(String host) {
+  for (final suf in _kDomesticHostSuffixes) {
+    if (host.endsWith(suf)) return _Isp.domestic;
+  }
+  final octets = host.split('.');
+  if (octets.length == 4) {
+    final o1 = int.tryParse(octets[0]);
+    if (o1 != null) {
+      if (_kForeignFirstOctets.contains(o1)) return _Isp.foreign;
+      return _Isp.domestic; // 其它裸 IP 视为国内段 (222/112/39/183 等)
+    }
+  }
+  return _Isp.neutral; // 未命中的域名 (github.io / bkpcp.top 等)
+}
+
+/// 取该频道在 [CctvSourceRegistry] 里的源 (启动已 load 才有, 否则 null).
+List<CctvSource>? _registrySourcesFor(String channelId) {
+  final reg = CctvSourceRegistry._instance;
+  if (reg == null) return null;
+  final list = reg.getForChannel(channelId);
+  return list.isEmpty ? null : list;
+}
+
+/// failover 优先级分: 国内 > 中性 > 海外; 同档按健康分降序; 已探活死亡垫底.
+/// [reg] 为 registry 记录 (若有), 可据 method/alive 覆盖分类.
+double _priorityScore(String url, {CctvSource? reg}) {
+  if (reg != null) {
+    if (reg.alive == false) return -1.0; // 死亡源永远最后
+    final isp = const <String>{'tencent_cloud', 'cmcc', 'skygo'}
+            .contains(reg.method)
+        ? _Isp.domestic
+        : reg.method == 'legacy_iptv'
+            ? _Isp.foreign
+            : _classifyHost(_hostOf(url));
+    final bucket = isp == _Isp.domestic
+        ? 2.0
+        : isp == _Isp.neutral
+            ? 1.0
+            : 0.0;
+    return bucket * 100.0 + reg.score;
+  }
+  final isp = _classifyHost(_hostOf(url));
+  final bucket = isp == _Isp.domestic
+      ? 2.0
+      : isp == _Isp.neutral
+          ? 1.0
+          : 0.0;
+  return bucket * 100.0 + CctvSourcePicker.healthScore(url);
+}
+
 /// CCTV 源选择器 (单例, 无状态, 纯函数)
 class CctvSourcePicker {
   const CctvSourcePicker._();
@@ -154,6 +244,17 @@ class CctvSourcePicker {
   /// 为什么不无脑前置 cctvSource:
   ///   - cctvSource 是 CCTV 主频道专用, CCTV 数字频道 (Billiards 等) 不用
   ///   - 老 release 升级时, cctvSource 字段缺失 (空数组), 走老逻辑不丢源
+  /// 给定 channel, 返回按"国内源优先"排序的播放源 URL 列表.
+  ///
+  /// 层次 (从前到后):
+  ///   1. registry (cctv_sources.json, 已探活, 国内 CDN 优先, 死亡垫底)
+  ///   2. channel.cctvSource (CCTV 专用源字段)
+  ///   3. channel.sources (iptv-org 历史源 + 已合并的 known_sources)
+  ///   4. known_sources 兜底
+  /// 每层内部按 [_priorityScore] 降序 (国内 > 中性 > 海外, 死亡源垫底).
+  ///
+  /// 设计:  海外裸 IP 在 CI(美西) 探测最快, 但中国移动宽带直连被阻断,
+  /// 把国内源排前面 → 根治"手机连移动宽带电视加载不出来".
   static List<String> pickSources(
     Channel channel, {
     Map<String, List<String>> knownSources = const <String, List<String>>{},
@@ -164,30 +265,39 @@ class CctvSourcePicker {
           channel.sources, knownSources[channel.id] ?? const <String>[]);
     }
 
-    // CCTV 主频道: cctvSource 优先
-    final cctvSorted = _sortByHealth(channel.cctvSource);
-    final known = knownSources[channel.id] ?? const <String>[];
+    // CCTV 主频道: 多层源合并, 国内源优先.
+    final regList = _registrySourcesFor(channel.id);
+    final regByUrl = <String, CctvSource>{};
+    if (regList != null) {
+      for (final s in regList) regByUrl[s.url] = s;
+    }
 
-    // 合并: cctvSource (排好序) + sources (去重) + known_sources (去重)
     final seen = <String>{};
-    final merged = <String>[];
+    final out = <String>[];
 
-    // 1. cctvSource (健康分已排序)
-    for (final url in cctvSorted) {
-      if (seen.add(url)) merged.add(url);
+    // 每层独立按运营商可达性排序 (跨层去重, 首次出现的位置生效).
+    void addLayer(List<String> urls) {
+      if (urls.isEmpty) return;
+      final layer = <_ScoredUrl>[];
+      for (final url in urls) {
+        if (!seen.add(url)) continue;
+        layer.add(_ScoredUrl(url, _priorityScore(url, reg: regByUrl[url])));
+      }
+      if (layer.isEmpty) return;
+      layer.sort((a, b) => b.score.compareTo(a.score));
+      for (final e in layer) out.add(e.url);
     }
 
-    // 2. channel.sources (iptv-org 历史源, 不再按健康分, 保持原顺序)
-    for (final url in channel.sources) {
-      if (seen.add(url)) merged.add(url);
-    }
+    // 1. registry (启动已 load 才有; 含国内腾讯云/移动 CDN 高分源)
+    if (regList != null) addLayer(regList.map((s) => s.url).toList());
+    // 2. cctvSource 专用源
+    addLayer(channel.cctvSource);
+    // 3. sources (含已合并的 known_sources)
+    addLayer(channel.sources);
+    // 4. known_sources 兜底
+    addLayer(knownSources[channel.id] ?? const <String>[]);
 
-    // 3. known_sources 兜底
-    for (final url in known) {
-      if (seen.add(url)) merged.add(url);
-    }
-
-    return merged;
+    return out;
   }
 
   /// 跟 [mergeKnownSources] 在 [channel_repository.dart] 等价 — 这里是 CCTV 版本
@@ -206,26 +316,6 @@ class CctvSourcePicker {
       if (seen.add(url)) out.add(url);
     }
     return out;
-  }
-
-  /// 按健康分降序排列 URL 列表 (无分数的排在最后保持原顺序).
-  /// 优先用运行时动态分, 没有则回退 kCctvHealthScores.
-  static List<String> _sortByHealth(List<String> urls) {
-    final withScore = <_ScoredUrl>[];
-    final noScore = <String>[];
-    for (final url in urls) {
-      final score = healthScore(url);
-      if (score == 0.5 && !kCctvHealthScores.containsKey(url)) {
-        noScore.add(url);
-      } else {
-        withScore.add(_ScoredUrl(url, score));
-      }
-    }
-    withScore.sort((a, b) => b.score.compareTo(a.score));
-    return [
-      ...withScore.map((e) => e.url),
-      ...noScore,
-    ];
   }
 
   /// 运行时动态健康分 (覆盖 kCctvHealthScores 初始分).

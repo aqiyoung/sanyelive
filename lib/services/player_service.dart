@@ -460,7 +460,13 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
   }
   try {
     MediaKit.ensureInitialized();
-    return Player();
+    final player = Player();
+    // 央视/卫视直播多为 1080i 隔行信号; libmpv 在 Android MediaCodec 硬解时
+    // 不自动去隔行 → 画面交错锯齿 = 用户报的"花屏". 开启 mpv 内置去隔行
+    // (yadif), 对所有直播频道通用. setProperty 是 async 但会在 open 前完成
+    // 排队 (Player 已 ensureInitialized), 首帧起即生效.
+    unawaited(player.setProperty('deinterlace', 'yes'));
+    return player;
   } catch (e, st) {
     debugPrint('mediaKitPlayerProvider: failed: $e\n$st');
     unawaited(CrashLogger.log('Player init failed: $e'));

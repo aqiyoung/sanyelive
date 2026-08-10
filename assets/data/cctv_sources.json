@@ -20,7 +20,7 @@
         "method": "legacy_iptv",
         "lastChecked": "2026-06-20T17:20:46+0800",
         "rttMs": 516,
-        "alive": true
+        "alive": false
       },
       {
         "url": "http://69.30.245.50/live/cctv1.m3u8",

@@ -1,3 +1,5 @@
+
+
 # 视界 (Shijie)
 
 > 个人使用 / 学习项目 — Flutter 直播 + 影视综合平台
@@ -34,13 +36,14 @@ flutter analyze    # 静态检查
 
 ## 构建发布
 
-⚠️ **本项目不在本地构建 APK** — 改代码后 push 到 GitHub，CI 自动 build + release：
+⚠️ **本项目不在本地构建 APK** — 改代码后 push 到 GitHub，CI 自动处理：
 
 ```bash
 git add -A
 git commit -m "fix: ..."
 git push origin main
-# CI 自动: flutter analyze + test + APK build + GitHub Release
+# CI 自动: flutter analyze + test
+# 构建 APK / Pre-release 请 push 到 beta 分支
 ```
 
 ## License

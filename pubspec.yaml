@@ -115,7 +115,11 @@ publish_to: "none"
 #   latest-wins 代数覆盖, 连点不丢; 死源超时 1500→800ms; 去掉多余 stop() 前摇;
 #   新 open 取代旧流避免 cancel→stop 误杀. (2) player_service/cctv_source/
 #   player_page 拆模块, 6 个 Riverpod provider 集中到 di/player_providers.dart.
-version: 0.3.12+187
+# 0.3.12+188 (8/12): 解耦频道格式解析层. 新增 lib/data/format/ —— ChannelFormat
+#   抽象 + M3uFormat (解析 #EXTINF 属性) + IptvOrgJsonFormat (收敛原 fromJson) +
+#   ChannelFormatRegistry (按内容嗅探选解析器). 新增格式只写一个类. bundled 加载
+#   改走注册表 (输出不变). 附 M3uFormat 单测 (CI 不跑 test, 本机 flutter test 验证).
+version: 0.3.12+188
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/channel.dart';
+import '../format/format_registry.dart';
 // 分类 JSON (每周一 cron 自动生成),  失败 fallback 本地 assets/data/channels_cn.json.
 // 单独抽 remote_channels_source.dart 让 channel_repository 保持 focused on assets.
 import '../remote_channels_source.dart';
@@ -257,19 +258,15 @@ class ChannelRepository {
 /// 注:  json.decode + Channel.fromJson 在 isolate 里 ~10x 快于主线程
 /// (无 UI / GC 干扰).  启动 2-5s 阻塞 → < 500ms.
 List<Channel> parseChannelsIsolate(String rawJson) {
-  final decoded = json.decode(rawJson);
-  final List<dynamic> list;
-  if (decoded is List) {
-    list = decoded;
-  } else if (decoded is Map && decoded['channels'] is List) {
-    list = decoded['channels'] as List<dynamic>;
-  } else {
-    debugPrint('parseChannelsIsolate: 未知 JSON 顶层结构 (${decoded.runtimeType})');
+  // 走统一的格式注册表: bundled assets 是 iptv-org JSON → IptvOrgJsonFormat,
+  // 输出与历史一致; 若将来 assets 含 m3u 也能直接解析 (零改动).
+  // 注册表内格式均纯 Dart, 可在 compute() isolate 安全运行.
+  try {
+    return ChannelFormatRegistry.instance.parse(rawJson);
+  } catch (e) {
+    debugPrint('parseChannelsIsolate: 解析失败 ($e)');
     return const <Channel>[];
   }
-  return list
-      .map((e) => Channel.fromJson(e as Map<String, dynamic>))
-      .toList(growable: false);
 }
 
 final channelRepositoryProvider = Provider<ChannelRepository>(

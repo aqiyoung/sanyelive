@@ -178,7 +178,8 @@ void main() {
       expect(result, isNull);
     });
 
-    test('edge: APK asset 名无 +N 模式 → return null', () {
+    test('edge: APK 名无 +N → 从 tag 末段兜底 versionCode, 不再 return null', () {
+      // 对齐 synapse: 不依赖 APK 文件名格式. 旧实现这里会因缺 +N 整条源判失败.
       final result = VersionCheckerNotifier.debugParseRelease({
         'tag_name': 'v0.3.8',
         'body': '...',
@@ -189,7 +190,10 @@ void main() {
           },
         ],
       });
-      expect(result, isNull);
+      expect(result, isNotNull);
+      // versionCode 从 tag 末段 "8" 兜底, 而非 null.
+      expect(result!['versionCode'], 8);
+      expect(result['apkAssetName'], 'sanyelive-v0.3.8-arm64-v8a.apk');
     });
 
     test('fallback: 没 arm64-v8a → 拿第一个 .apk', () {

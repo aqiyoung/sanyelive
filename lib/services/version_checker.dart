@@ -17,13 +17,17 @@
 //    - 远端 tag (如 "v0.3.12.174") 去掉前导 v, 在首个 + / - 处截断,
 //      按 "." 切出数字段逐位比较.  major.minor.patch 比完再比 build.
 //
-// 3) 网络策略 (v0.3.12.182 修正):
-//    - 不再走任何第三方代理前缀. 代理前缀 (gh.llkk.cc / gh-proxy.com 等)
-//      在部分网络/运营商下会被墙/返回 403/504, 反而导致检查失败.
-//    - Dio 使用"干净"的 HttpClient, 临时绕过 main.dart 安装的
-//      Ipv4HttpOverrides, 恢复系统默认 happy-eyeballs DNS + 连接行为,
-//      与 FeiNiuMusic 的 _SslOverride + 默认 HttpClient 行为一致.
-//    - 仅保留 jsDelivr meta 作为单一 CDN 兜底, 不带任何代理前缀.
+// 3) 网络策略 (v0.3.12.184 修正, 参考 synapse 的"多路径可达"思路):
+//    - 每个数据源 (GitHub API / jsDelivr meta) 都依次尝试
+//      [gh-proxy.com 代理] → [直连] 两层, 任一成功即用.
+//      gh-proxy.com 优先: 国内 / 移动宽带直连 api.github.com 会被墙,
+//      经代理是这些用户唯一可达的路径 (release.yml 下载也用同款代理).
+//      直连兜底: 覆盖 VPN / 海外 / 代理被局部封锁的用户.
+//    - 任一层返回非 200 / 非 JSON (如代理偶发 403 HTML) 都静默跳过,
+//      试下一层 —— 不会因"代理偶尔抽风"而整体失败. 这正是 v0.3.12.182
+//      误删代理链、改成纯直连后, 移动宽带用户检查更新全军覆没的根因.
+//    - Dio 仍用"干净" HttpClient, 绕过 main.dart 的 Ipv4HttpOverrides,
+//      恢复系统默认 happy-eyeballs 行为 (与 FeiNiuMusic 一致).
 //    - 每层都带 User-Agent + Accept 头 —— 缺 User-Agent 时 GitHub API 直接 403.
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -50,6 +54,15 @@ const String _kGitHubApiBaseUrl =
 /// jsDelivr 有缓存, 可能滞后; 请求时带 ?_t= 时间戳 bust 缓存.
 const String _kVersionMetaBaseUrl =
     'https://cdn.jsdelivr.net/gh/aqiyoung/sanyelive@meta/version.json';
+
+/// 代理前缀链 —— 国内 / 移动宽带直连 api.github.com 会被墙, 依次尝试
+/// gh-proxy.com (与 release.yml 下载同源, 国内可达) 再直连 (VPN/海外).
+/// 任一层失败 (403 / HTML / 超时) 自动跳过试下一层, 不会因代理偶尔抽风
+/// 而整体失败. 顺序: 代理优先 (覆盖绝大多数国内用户), 直连兜底.
+const List<String> _kApiProxyPrefixes = [
+  'https://gh-proxy.com/',
+  '',
+];
 
 /// FeiNiuMusic 同款请求头 —— GitHub API 必须有 User-Agent, 否则 403.
 const Map<String, String> kGitHubApiHeaders = {
@@ -327,76 +340,86 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
 
   /// 拉最新版本信息.
   ///
-  /// 策略 (v0.3.12.182):
-  ///   1) GitHub API `releases/latest` 为唯一权威主源, 直连, 不加代理前缀.
-  ///      Dio 已绕过 Ipv4HttpOverrides, 使用系统默认连接行为 ——
-  ///      与 FeiNiuMusic 完全一致.
-  ///   2) jsDelivr 上的 meta/version.json 为单一 CDN 兜底,
-  ///      仅在 API 失败时启用; 带 ?_t= 时间戳 bust 缓存.
+  /// 策略 (v0.3.12.184, 参考 synapse 的"多路径可达"思路):
+  ///   对每一个数据源 (GitHub API / jsDelivr meta) 都依次尝试
+  ///   [gh-proxy.com 代理] → [直连] 两条路径, 任一成功即用.
+  ///   - gh-proxy.com 优先: 国内 / 移动宽带直连 api.github.com 会被墙,
+  ///     经代理是这些用户唯一可达的路径 (release.yml 下载也用同款代理).
+  ///   - 直连兜底: 给 VPN / 海外 / 代理被局部封锁的用户.
+  ///   任一层返回非 200 / 非 JSON (如代理 403 HTML) 都静默跳过, 试下一层,
+  ///   不会因"代理偶尔 403"而整体失败 —— 这正是 v0.3.12.182 误删代理链、
+  ///   改成纯直连后, 移动宽带用户检查更新全军覆没的根因.
+  ///   比较只依赖 tag_name vs PackageInfo.version, 不依赖 APK 文件名格式
+  ///   (与 synapse 一致); versionCode 缺失时从 tag 末段兜底, 不会让整条源判失败.
   ///
   /// 返回 (_ParsedRelease) 或 null (全部失败).
   Future<_ParsedRelease?> _fetchLatestRelease() async {
     final cacheBuster = DateTime.now().millisecondsSinceEpoch;
     final failures = <String>[];
 
-    // 1) GitHub API 直连 —— 权威主源.
-    try {
-      final resp = await _dio.get<dynamic>(
-        _kGitHubApiBaseUrl,
-        options: Options(
-          receiveTimeout: const Duration(seconds: 10),
-          responseType: ResponseType.plain,
-          headers: kGitHubApiHeaders,
-        ),
-      );
-      if (resp.statusCode == 200) {
-        final data = _decodeJson(resp.data);
-        if (data != null) {
-          final parsed = _parseRelease(data, '');
-          if (parsed != null) return parsed;
+    // 1) GitHub API —— 代理链 (gh-proxy.com 优先, 直连兜底).
+    for (final prefix in _kApiProxyPrefixes) {
+      final url =
+          prefix.isEmpty ? _kGitHubApiBaseUrl : '$prefix$_kGitHubApiBaseUrl';
+      try {
+        final resp = await _dio.get<dynamic>(
+          url,
+          options: Options(
+            receiveTimeout: const Duration(seconds: 10),
+            responseType: ResponseType.plain,
+            headers: kGitHubApiHeaders,
+          ),
+        );
+        if (resp.statusCode == 200) {
+          final data = _decodeJson(resp.data);
+          if (data != null) {
+            // apkDownloadUrl 当前 UI 未直接使用, 这里不追加代理前缀.
+            final parsed = _parseRelease(data, '');
+            if (parsed != null) return parsed;
+          }
         }
+      } on DioException catch (e) {
+        failures.add('api $url → ${e.type}: ${e.message}');
+      } catch (e) {
+        failures.add('api $url → $e');
       }
-    } on DioException catch (e) {
-      final msg = 'api $_kGitHubApiBaseUrl → ${e.type}: ${e.message}';
-      debugPrint('version_checker: $msg');
-      failures.add(msg);
-    } catch (e) {
-      final msg = 'api $_kGitHubApiBaseUrl → $e';
-      debugPrint('version_checker: $msg');
-      failures.add(msg);
     }
 
-    // 2) jsDelivr meta 兜底 (国内 CDN).
-    final metaUrl = '$_kVersionMetaBaseUrl?_t=$cacheBuster';
-    try {
-      final resp = await _dio.get<dynamic>(
-        metaUrl,
-        options: Options(
-          receiveTimeout: const Duration(seconds: 10),
-          responseType: ResponseType.plain,
-          headers: kMetaHeaders,
-        ),
-      );
-      if (resp.statusCode == 200) {
-        final data = _decodeJson(resp.data);
-        if (data is Map<String, dynamic> &&
-            data.containsKey('tag') &&
-            data.containsKey('versionCode')) {
-          final parsed = _parseMeta(data, '');
-          if (parsed != null) return parsed;
+    // 2) jsDelivr meta 兜底 (国内 CDN, 同样走代理链).
+    for (final prefix in _kApiProxyPrefixes) {
+      final metaUrl = prefix.isEmpty
+          ? '$_kVersionMetaBaseUrl?_t=$cacheBuster'
+          : '$prefix$_kVersionMetaBaseUrl?_t=$cacheBuster';
+      try {
+        final resp = await _dio.get<dynamic>(
+          metaUrl,
+          options: Options(
+            receiveTimeout: const Duration(seconds: 10),
+            responseType: ResponseType.plain,
+            headers: kMetaHeaders,
+          ),
+        );
+        if (resp.statusCode == 200) {
+          final data = _decodeJson(resp.data);
+          if (data is Map<String, dynamic> &&
+              data.containsKey('tag') &&
+              data.containsKey('versionCode')) {
+            // version.json 的 apk 直链已内置 gh-proxy, 这里不再二次加前缀.
+            final parsed = _parseMeta(data, '');
+            if (parsed != null) return parsed;
+          }
         }
+      } on DioException catch (e) {
+        failures.add('meta $metaUrl → ${e.type}: ${e.message}');
+      } catch (e) {
+        failures.add('meta $metaUrl → $e');
       }
-    } on DioException catch (e) {
-      final msg = 'meta $metaUrl → ${e.type}: ${e.message}';
-      debugPrint('version_checker: $msg');
-      failures.add(msg);
-    } catch (e) {
-      final msg = 'meta $metaUrl → $e';
-      debugPrint('version_checker: $msg');
-      failures.add(msg);
     }
+
     // 全部失败: 写崩溃日志汇总, 方便 adb pull 后定位具体哪一层网络挂了.
-    await CrashLogger.log('version_checker all endpoints failed:\n${failures.join('\n')}');
+    await CrashLogger.log(
+      'version_checker all endpoints failed:\n${failures.join('\n')}',
+    );
     return null;
   }
 
@@ -456,9 +479,9 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     }
     if (apkName == null || apkUrl == null) return null;
 
-    // 用 +N 模式.
-    final versionCode = _extractVersionCode(apkName);
-    if (versionCode == null) return null;
+    // 用 +N 模式; 缺失时从 tag 末段兜底 (对齐 synapse: 不依赖 APK 文件名格式).
+    final versionCode =
+        _extractVersionCode(apkName) ?? _versionCodeFromTag(tagName) ?? 0;
 
     final body = (release['body'] as String?) ?? '';
     final releaseName = (release['name'] as String?)?.trim() ?? tagName;
@@ -583,6 +606,18 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
     return int.tryParse(match.group(1)!);
   }
 
+  /// 从 tag (如 "v0.3.12.182") 取末段数字作为 versionCode 兜底.
+  /// APK 文件名缺 +N 时仍能给出合理值, 避免整条源判失败 (对齐 synapse).
+  static int? _versionCodeFromTag(String tag) {
+    final s = _normalizeVersion(tag);
+    final segs = s.split('.');
+    for (var i = segs.length - 1; i >= 0; i--) {
+      final n = int.tryParse(segs[i].trim());
+      if (n != null) return n;
+    }
+    return null;
+  }
+
   static bool _isCriticalRelease(String body) {
     // release body 第一个非空行含 "**P0**" 或 "**critical**" (case-insensitive).
     final firstLine = body
@@ -687,15 +722,16 @@ final dioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
-/// 「启动时自动检查更新」开关 —— 默认关闭.
-/// 关闭后 checkOnStartup() 直接 return (不 fetch); 手动 checkForce() 不受影响.
+/// 「启动时自动检查更新」开关 —— 默认开启 (对齐 synapse: 启动即检查,
+/// 仅发现新版本才弹窗, 不强制). 关闭后 checkOnStartup() 直接 return (不 fetch);
+/// 手动 checkForce() 不受影响.
 class AutoCheckUpdateNotifier extends Notifier<bool> {
   late final SharedPreferences _prefs;
 
   @override
   bool build() {
     _prefs = ref.read(sharedPreferencesProvider);
-    return _prefs.getBool(kAutoCheckUpdateKey) ?? false;
+    return _prefs.getBool(kAutoCheckUpdateKey) ?? true;
   }
 
   Future<void> set(bool value) async {

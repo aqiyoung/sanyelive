@@ -491,18 +491,26 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   // 走 software fallback  →  H.264 High profile 4.1 1080p 解码慢/失败 → 绿屏.
   // 'mediacodec' = Android MediaCodec API,  原生硬解,  H.264/H.265/AV1 都支持.
   try {
-    // 'mediacodec' 在部分 TV box (Amlogic S905X3 / Rockchip 等) 的
-    // MediaCodec 实现不完整,  创建 VideoController 或首帧渲染时触发
-    // native crash (SIGSEGV).  'auto-safe' 让 libmpv 自动选择最安全的
-    // 解码方式 — 优先硬解,  不支持时 fallback 软解,  不会崩.
-    // VideoController 创建成功但后续渲染异常 (有声音没画面),
-    // 会在 VideoArea 层 fallback 到 cover fit.
-    // 根因是 BoxFit.contain 在某些平板 surface 尺寸=0,
-    // 不是 hwdec 问题.  这里保留 'auto-safe' 不变.
+    // hwdec: 'no' = 强制软件解码.
+    //
+    // 为什么不用 'auto-safe' / 'mediacodec':
+    //   央视/卫视是 1080i 隔行广播,  Player 已 setProperty('deinterlace','yes')
+    //   启用 mpv 的 yadif 软件去隔行.  但 mpv 的软件去隔行 (yadif) 只对
+    //   *软件解码* 出来的帧生效,  对 MediaCodec 硬件解码出来的帧无能为力 —
+    //   走 hwdec 硬解路径时 deinterlace 等于空设置 → 隔行信号直接上屏 =
+    //   用户报的"花屏".  这是之前 06a47f2 开了 deinterlace 仍花屏的根因.
+    //   改 'no' 让帧走软件解码,  yadif 才能真正去隔行,  花屏根治.
+    //
+    // 额外好处:  'mediacodec' 在部分 TV box (Amlogic S905X3 / Rockchip)
+    // MediaCodec 实现不完整时会触发 native SIGSEGV;  'no' 完全不走
+    // MediaCodec,  反而比 auto-safe 更不容易崩.
+    //
+    // 代价:  1080i50 软解吃 CPU,  老旧电视盒可能掉帧.  若某设备卡顿明显,
+    // 可改回 'auto-safe' (牺牲央视去隔行) 或后续加"硬解/软解"设置项.
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'auto-safe',
+        hwdec: 'no',
       ),
     );
   } catch (e, st) {

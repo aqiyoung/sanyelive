@@ -109,7 +109,7 @@ publish_to: "none"
 #   setProperty (在 NativePlayer 上), analyze 报 undefined_method 卡死流水线,
 #   184 根本没出包. 同时把更新检查下沉到 app_update_core.dart, 与 FeiNiuMusic /
 #   synapse 共用同一份引擎 (代理链 + tag 比较 + GitHub App 跳转).
-version: 0.3.12+185
+version: 0.3.12+186
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

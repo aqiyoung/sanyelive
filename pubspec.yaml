@@ -119,7 +119,10 @@ publish_to: "none"
 #   抽象 + M3uFormat (解析 #EXTINF 属性) + IptvOrgJsonFormat (收敛原 fromJson) +
 #   ChannelFormatRegistry (按内容嗅探选解析器). 新增格式只写一个类. bundled 加载
 #   改走注册表 (输出不变). 附 M3uFormat 单测 (CI 不跑 test, 本机 flutter test 验证).
-version: 0.3.12+188
+# 0.3.12+189 (8/12): 修 +187 构建失败 (CI 抓到) — di/player_providers.dart 缺
+#   dart:async (unawaited 找不到) + media_kit 的 PlayerState 与本项目同名冲突,
+#   给 media_kit / media_kit_video import 加 hide PlayerState 解决.
+version: 0.3.12+189
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

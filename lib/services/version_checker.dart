@@ -32,7 +32,6 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -44,54 +43,40 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanyelive/features/settings/theme_provider.dart'
     show sharedPreferencesProvider;
 import 'package:sanyelive/utils/crash_logger.dart';
+import 'package:sanyelive/services/app_update_core.dart';
 
-/// GitHub API 权威主源 (直连, 不再加任何代理前缀).
-const String _kGitHubApiBaseUrl =
-    'https://api.github.com/repos/aqiyoung/sanyelive/releases/latest';
+/// 统一更新引擎实例 —— 检测与跳转均委托给它 (sanyelive / FeiNiuMusic / synapse 共用).
+/// 公开: force_update_dialog / settings 页直接复用同一实例做「跳转发布页」,
+/// 保证三端行为一致 (GitHub App 优先 → 浏览器 → 复制链接).
+const AppUpdateConfig kUpdateConfig = AppUpdateConfig(
+  owner: 'aqiyoung',
+  repo: 'sanyelive',
+);
+final AppUpdateCore appUpdateCore = AppUpdateCore(kUpdateConfig);
 
-/// 兜底版本源 —— `meta` 分支 version.json 经 jsDelivr CDN 分发.
-/// 每次发版由 CI (release.yml) 自动刷新; 作为 API 失败时的最后防线.
-/// jsDelivr 有缓存, 可能滞后; 请求时带 ?_t= 时间戳 bust 缓存.
-const String _kVersionMetaBaseUrl =
-    'https://cdn.jsdelivr.net/gh/aqiyoung/sanyelive@meta/version.json';
-
-/// 代理前缀链 —— 国内 / 移动宽带直连 api.github.com 会被墙, 依次尝试
-/// gh-proxy.com (与 release.yml 下载同源, 国内可达) 再直连 (VPN/海外).
-/// 任一层失败 (403 / HTML / 超时) 自动跳过试下一层, 不会因代理偶尔抽风
-/// 而整体失败. 顺序: 代理优先 (覆盖绝大多数国内用户), 直连兜底.
-const List<String> _kApiProxyPrefixes = [
-  'https://gh-proxy.com/',
-  '',
-];
-
-/// FeiNiuMusic 同款请求头 —— GitHub API 必须有 User-Agent, 否则 403.
-const Map<String, String> kGitHubApiHeaders = {
-  'User-Agent': 'sanyelive',
-  'Accept': 'application/vnd.github.v3+json',
-};
-
-/// meta 版本源请求头 —— 用通用 Accept, 避免某些代理对 GitHub API 专用 Accept
-/// 返回 406/403.
-const Map<String, String> kMetaHeaders = {
-  'User-Agent': 'sanyelive',
-  'Accept': 'application/json',
-};
-
-/// 兼容老代码 — 取基础 URL. 单元测试可 overrideWithValue.
-const List<String> kDefaultEndpointUrls = [_kGitHubApiBaseUrl];
-
-/// 兼容老代码 — 取基础 URL.
-String get kDefaultEndpointUrl => _kGitHubApiBaseUrl;
+/// 把 sanyelive 的 Dio 适配成引擎需要的取数函数 (引擎本身不绑定 dio / http).
+/// validateStatus 全放行 —— 非 200 交给引擎判定, 由它自行切换下一条路径.
+AppUpdateFetch dioUpdateFetch(Dio dio) => (url, headers) async {
+      final resp = await dio.get<dynamic>(
+        url,
+        options: Options(
+          responseType: ResponseType.plain,
+          receiveTimeout: const Duration(seconds: 10),
+          headers: headers,
+          validateStatus: (_) => true,
+        ),
+      );
+      return AppUpdateHttpResponse(
+        resp.statusCode ?? 0,
+        resp.data?.toString() ?? '',
+      );
+    };
 
 /// SharedPreferences 持久化.
 const String kEndpointPrefsKey = 'version_checker.endpoint_url';
 
 /// 「启动时自动检查更新」开关持久化键 (默认开启).
 const String kAutoCheckUpdateKey = 'version_checker.auto_check_update';
-
-/// 兼容旧代码 — get kGitHubReleasesUrl 改成 get endpoint.
-@Deprecated('Use endpointProvider instead')
-String get kGitHubReleasesUrl => kDefaultEndpointUrl;
 
 /// 当前 APP versionCode —— 由 main.dart 在 ProviderContainer 初始化时
 /// 注入.  编译期 const (来自 pubspec.yaml),  单元测试可 mock.
@@ -254,7 +239,7 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
       // 对齐 FeiNiuMusic: 提取 major.minor.patch(+build) 数字段逐位比较.
       // sanyelive 固定 0.3.12 只涨 build, 因此 .N 与 +N 都参与比较,
       // 像 0.3.12.171+2171 这种历史异常包也能正确识别 v0.3.12.172 比它新.
-      final cmp = _compareVersions(parsed.tagName, currentStr);
+      final cmp = AppUpdateCore.compareVersions(parsed.tagName, currentStr);
       final isOutdated = cmp > 0;
 
       if (isOutdated) {
@@ -338,331 +323,34 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
 
   // -------- private: 网络 --------
 
-  /// 拉最新版本信息.
+  /// 拉最新版本信息 —— 全部委托统一更新引擎 [appUpdateCore]
+  /// (lib/services/app_update_core.dart, sanyelive / FeiNiuMusic / synapse 共用).
   ///
-  /// 策略 (v0.3.12.184, 参考 synapse 的"多路径可达"思路):
-  ///   对每一个数据源 (GitHub API / jsDelivr meta) 都依次尝试
-  ///   [gh-proxy.com 代理] → [直连] 两条路径, 任一成功即用.
-  ///   - gh-proxy.com 优先: 国内 / 移动宽带直连 api.github.com 会被墙,
-  ///     经代理是这些用户唯一可达的路径 (release.yml 下载也用同款代理).
-  ///   - 直连兜底: 给 VPN / 海外 / 代理被局部封锁的用户.
-  ///   任一层返回非 200 / 非 JSON (如代理 403 HTML) 都静默跳过, 试下一层,
-  ///   不会因"代理偶尔 403"而整体失败 —— 这正是 v0.3.12.182 误删代理链、
-  ///   改成纯直连后, 移动宽带用户检查更新全军覆没的根因.
-  ///   比较只依赖 tag_name vs PackageInfo.version, 不依赖 APK 文件名格式
-  ///   (与 synapse 一致); versionCode 缺失时从 tag 末段兜底, 不会让整条源判失败.
+  /// 引擎策略: 每个数据源 (GitHub API → jsDelivr meta) 都依次尝试
+  /// [gh-proxy.com 代理] → [直连] 两条路径, 任一成功即用; 非 200 / 非 JSON
+  /// (代理偶发 403 HTML) 静默跳过试下一层. 这正是 v0.3.12.182 误删代理链、
+  /// 改成纯直连后, 移动宽带用户检查更新全军覆没的根因.
+  /// 比较只依赖 tag_name vs PackageInfo.version, 不依赖 APK 文件名格式.
   ///
-  /// 返回 (_ParsedRelease) 或 null (全部失败).
+  /// 返回 (_ParsedRelease) 或 null (全部数据源失败).
   Future<_ParsedRelease?> _fetchLatestRelease() async {
-    final cacheBuster = DateTime.now().millisecondsSinceEpoch;
-    final failures = <String>[];
-
-    // 1) GitHub API —— 代理链 (gh-proxy.com 优先, 直连兜底).
-    for (final prefix in _kApiProxyPrefixes) {
-      final url =
-          prefix.isEmpty ? _kGitHubApiBaseUrl : '$prefix$_kGitHubApiBaseUrl';
-      try {
-        final resp = await _dio.get<dynamic>(
-          url,
-          options: Options(
-            receiveTimeout: const Duration(seconds: 10),
-            responseType: ResponseType.plain,
-            headers: kGitHubApiHeaders,
-          ),
-        );
-        if (resp.statusCode == 200) {
-          final data = _decodeJson(resp.data);
-          if (data != null) {
-            // apkDownloadUrl 当前 UI 未直接使用, 这里不追加代理前缀.
-            final parsed = _parseRelease(data, '');
-            if (parsed != null) return parsed;
-          }
-        }
-      } on DioException catch (e) {
-        failures.add('api $url → ${e.type}: ${e.message}');
-      } catch (e) {
-        failures.add('api $url → $e');
-      }
-    }
-
-    // 2) jsDelivr meta 兜底 (国内 CDN, 同样走代理链).
-    for (final prefix in _kApiProxyPrefixes) {
-      final metaUrl = prefix.isEmpty
-          ? '$_kVersionMetaBaseUrl?_t=$cacheBuster'
-          : '$prefix$_kVersionMetaBaseUrl?_t=$cacheBuster';
-      try {
-        final resp = await _dio.get<dynamic>(
-          metaUrl,
-          options: Options(
-            receiveTimeout: const Duration(seconds: 10),
-            responseType: ResponseType.plain,
-            headers: kMetaHeaders,
-          ),
-        );
-        if (resp.statusCode == 200) {
-          final data = _decodeJson(resp.data);
-          if (data is Map<String, dynamic> &&
-              data.containsKey('tag') &&
-              data.containsKey('versionCode')) {
-            // version.json 的 apk 直链已内置 gh-proxy, 这里不再二次加前缀.
-            final parsed = _parseMeta(data, '');
-            if (parsed != null) return parsed;
-          }
-        }
-      } on DioException catch (e) {
-        failures.add('meta $metaUrl → ${e.type}: ${e.message}');
-      } catch (e) {
-        failures.add('meta $metaUrl → $e');
-      }
-    }
-
-    // 全部失败: 写崩溃日志汇总, 方便 adb pull 后定位具体哪一层网络挂了.
-    await CrashLogger.log(
-      'version_checker all endpoints failed:\n${failures.join('\n')}',
-    );
-    return null;
-  }
-
-  /// 把 Dio 返回的 data (String / Map) 解析成 Map; 拿到 HTML 或非法 JSON 返回 null.
-  static Map<String, dynamic>? _decodeJson(dynamic data) {
-    if (data is Map<String, dynamic>) return data;
-    if (data is String) {
-      final s = data.trim();
-      // 拿到 HTML (代理没干活 / 404 页) 直接返回 null.
-      if (s.startsWith('<')) return null;
-      try {
-        final decoded = jsonDecode(s);
-        return decoded is Map<String, dynamic> ? decoded : null;
-      } catch (_) {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  static _ParsedRelease? _parseRelease(dynamic json, String proxyPrefix) {
-    Map<String, dynamic>? release;
-    if (json is Map<String, dynamic>) {
-      release = json;
-    } else if (json is List<dynamic> && json.isNotEmpty) {
-      // 兜底: 个别代理把单对象包成列表, 取首个 Map.
-      for (final e in json) {
-        if (e is Map<String, dynamic>) {
-          release = e;
-          break;
-        }
-      }
-    }
-    if (release == null) return null;
-
-    final tagName = release['tag_name'] as String?;
-    if (tagName == null || tagName.isEmpty) return null;
-
-    final assets = release['assets'] as List<dynamic>?;
-    if (assets == null) return null;
-
-    String? apkName;
-    String? apkUrl;
-    for (final a in assets) {
-      if (a is! Map<String, dynamic>) continue;
-      final name = a['name'] as String? ?? '';
-      if (!name.endsWith('.apk')) continue;
-      // arm64-v8a 优先
-      if (name.contains('arm64-v8a') || apkName == null) {
-        apkName = name;
-        final originalUrl = a['browser_download_url'] as String?;
-        apkUrl = (originalUrl != null && proxyPrefix.isNotEmpty)
-            ? '$proxyPrefix$originalUrl'
-            : originalUrl;
-        if (name.contains('arm64-v8a')) break;
-      }
-    }
-    if (apkName == null || apkUrl == null) return null;
-
-    // 用 +N 模式; 缺失时从 tag 末段兜底 (对齐 synapse: 不依赖 APK 文件名格式).
-    final versionCode =
-        _extractVersionCode(apkName) ?? _versionCodeFromTag(tagName) ?? 0;
-
-    final body = (release['body'] as String?) ?? '';
-    final releaseName = (release['name'] as String?)?.trim() ?? tagName;
-    final isCritical = _isCriticalRelease(body);
-
+    final current = ref.read(currentVersionStringProvider);
+    final result = await appUpdateCore.check(dioUpdateFetch(_dio), current);
+    if (result == null) return null;
     return _ParsedRelease(
-      tagName: tagName,
-      releaseName: releaseName,
-      versionCode: versionCode,
-      apkAssetName: apkName,
-      apkDownloadUrl: apkUrl,
-      releaseNotes: body,
-      isCritical: isCritical,
+      tagName: result.tagName,
+      releaseName: result.releaseName,
+      versionCode: result.versionCode,
+      apkAssetName: result.apkAssetName ?? '',
+      apkDownloadUrl: result.apkDownloadUrl ?? '',
+      releaseNotes: result.releaseNotes ?? '',
+      isCritical: result.isCritical,
     );
   }
 
-  /// 按来源格式分流解析: meta 版本源 (含 versionCode/tag) 走 _parseMeta,
-  /// 其余 (GitHub API 格式, 含 assets/tag_name) 走 _parseRelease.
-  static _ParsedRelease? _parseAny(
-    Map<String, dynamic> json,
-    String proxyPrefix,
-  ) {
-    if (json.containsKey('versionCode') && json.containsKey('tag')) {
-      return _parseMeta(json, proxyPrefix);
-    }
-    return _parseRelease(json, proxyPrefix);
-  }
-
-  /// 解析 meta 版本源 (version.json) 格式.
-  static _ParsedRelease? _parseMeta(
-    Map<String, dynamic> json,
-    String proxyPrefix,
-  ) {
-    final tag = json['tag'] as String?;
-    if (tag == null || tag.isEmpty) return null;
-    final code = json['versionCode'];
-    if (code is! int) return null;
-
-    // apk 下载链接: 优先 arm64-v8a, 其次 armeabi-v7a / x86_64.
-    final apks = json['apk'];
-    String? apkUrl;
-    String? apkName;
-    if (apks is Map) {
-      final cand = <dynamic>[
-        apks['arm64-v8a'],
-        apks['armeabi-v7a'],
-        apks['x86_64'],
-      ];
-      for (final c in cand) {
-        if (c is String && c.isNotEmpty) {
-          apkUrl = (proxyPrefix.isNotEmpty) ? '$proxyPrefix$c' : c;
-          apkName = c.split('/').last;
-          break;
-        }
-      }
-    }
-    if (apkUrl == null || apkName == null) return null;
-
-    final releaseName = (json['releaseName'] as String?)?.trim() ?? tag;
-    final notes = (json['notes'] as String?) ?? '';
-    final critical = json['critical'] == true;
-
-    return _ParsedRelease(
-      tagName: tag,
-      releaseName: releaseName,
-      versionCode: code,
-      apkAssetName: apkName,
-      apkDownloadUrl: apkUrl,
-      releaseNotes: notes,
-      isCritical: critical,
-    );
-  }
-
-  /// 版本号比较. 返 1 = a > b, 0 = a == b, -1 = a < b.
-  ///
-  /// 对齐 FeiNiuMusic 思路: 提取版本字符串中所有连续数字段, 逐位比较.
-  /// 与 FeiNiuMusic 一致, 比较前会:
-  ///   - 去掉前导 v / V (tag 形如 v0.3.12.174)
-  ///   - 在首个 + 或 - 处截断 (忽略 build / prerelease 后缀)
-  /// 这样 0.3.12.171+2171 这种历史异常包会被规整成 0.3.12.171 再比较,
-  /// 不会因多出的 build 段误判.
-  ///
-  /// 示例:
-  ///   v0.3.12.174      → [0, 3, 12, 174]
-  ///   0.3.12.173        → [0, 3, 12, 173]
-  ///   0.3.12.173+2173   → [0, 3, 12, 173]  (截断 + 后)
-  ///
-  /// 位数不够补 0.
-  static int _compareVersions(String a, String b) {
-    List<int> release(String v) {
-      var s = _normalizeVersion(v);
-      final cut = s.indexOf(RegExp(r'[+\-]'));
-      if (cut >= 0) s = s.substring(0, cut);
-      return s
-          .split('.')
-          .map((e) => int.tryParse(e.trim()) ?? 0)
-          .toList();
-    }
-
-    final left = release(a);
-    final right = release(b);
-    final len = left.length > right.length ? left.length : right.length;
-    for (var i = 0; i < len; i++) {
-      final av = i < left.length ? left[i] : 0;
-      final bv = i < right.length ? right[i] : 0;
-      if (av != bv) return av.compareTo(bv);
-    }
-    return 0;
-  }
-
-  static String _normalizeVersion(String version) {
-    final value = version.trim();
-    if (value.startsWith('v') || value.startsWith('V')) {
-      return value.substring(1);
-    }
-    return value;
-  }
-
-  static int? _extractVersionCode(String apkName) {
-    final match = RegExp(r'\+(\d+)').firstMatch(apkName);
-    if (match == null) return null;
-    return int.tryParse(match.group(1)!);
-  }
-
-  /// 从 tag (如 "v0.3.12.182") 取末段数字作为 versionCode 兜底.
-  /// APK 文件名缺 +N 时仍能给出合理值, 避免整条源判失败 (对齐 synapse).
-  static int? _versionCodeFromTag(String tag) {
-    final s = _normalizeVersion(tag);
-    final segs = s.split('.');
-    for (var i = segs.length - 1; i >= 0; i--) {
-      final n = int.tryParse(segs[i].trim());
-      if (n != null) return n;
-    }
-    return null;
-  }
-
-  static bool _isCriticalRelease(String body) {
-    // release body 第一个非空行含 "**P0**" 或 "**critical**" (case-insensitive).
-    final firstLine = body
-        .split('\n')
-        .map((l) => l.trim())
-        .firstWhere((l) => l.isNotEmpty, orElse: () => '');
-    final lower = firstLine.toLowerCase();
-    return lower.contains('**p0**') || lower.contains('**critical**');
-  }
-
-  // -------- @visibleForTesting 入口 --------
-  // 测试不依赖 Dio, 直接验证 parse 逻辑.  private static → 改写成 public 静态
-  // 包装, 保持 production 调用路径不变.
-
-  @visibleForTesting
-  static int? debugExtractVersionCode(String apkName) =>
-      _extractVersionCode(apkName);
-
-  @visibleForTesting
-  static bool debugIsCriticalRelease(String body) => _isCriticalRelease(body);
-
-  @visibleForTesting
-  static int debugCompareVersions(String a, String b) => _compareVersions(a, b);
-
-  @visibleForTesting
-  static Map<String, dynamic>? debugParseRelease(
-    Map<String, dynamic> json, {
-    String proxyPrefix = '',
-  }) {
-    // 走 _parseAny, 同时覆盖 meta 版本源 与 GitHub API 两种格式.
-    final parsed = _parseAny(json, proxyPrefix);
-    if (parsed == null) return null;
-    return _parsedToMap(parsed);
-  }
-
-  /// 把 _ParsedRelease 转成 Map, 供测试断言.
-  static Map<String, dynamic> _parsedToMap(_ParsedRelease r) => {
-        'tagName': r.tagName,
-        'releaseName': r.releaseName,
-        'versionCode': r.versionCode,
-        'apkAssetName': r.apkAssetName,
-        'apkDownloadUrl': r.apkDownloadUrl,
-        'releaseNotes': r.releaseNotes,
-        'isCritical': r.isCritical,
-      };
+  // 解析 / 版本比较 / critical 判定已全部下沉到 app_update_core.dart
+  // (sanyelive / FeiNiuMusic / synapse 共用的唯一实现).
+  // 相关单测直接针对 AppUpdateCore 编写, 这里不再保留重复的 debug 包装.
 }
 
 class _ParsedRelease {

@@ -25,6 +25,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sanyelive/features/settings/theme_provider.dart';
+import 'package:sanyelive/services/app_update_core.dart';
 import 'package:sanyelive/services/version_checker.dart';
 
 /// 注入 mock Dio (响应 / 抛错,  不会走真网络).
@@ -84,9 +85,9 @@ void main() {
     prefs = await SharedPreferences.getInstance();
   });
 
-  group('debugParseRelease (parse 逻辑)', () {
+  group('AppUpdateCore.debugParse (parse 逻辑)', () {
     test('happy path: tag v0.3.8 + arm64-v8a APK', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.8',
         'body': '**P1** some new feature',
         'assets': [
@@ -102,14 +103,15 @@ void main() {
       });
       expect(result, isNotNull);
       expect(result!['tagName'], 'v0.3.8');
-      expect(result['versionCode'], 21);
+      // versionCode 统一从 tag 末段推导 (v0.3.8 → 8), 不再依赖 APK 文件名 +N.
+      expect(result['versionCode'], 8);
       expect(result['apkAssetName'], 'sanyelive-v0.3.8+21-arm64-v8a.apk');
       expect(result['apkDownloadUrl'], 'https://example.com/apk-21.apk');
       expect(result['isCritical'], isFalse);
     });
 
     test('critical: body 第一行含 **P0** → isCritical=true', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.6.1',
         'body': '**P0** 修复 CCTV-5 死链 + 启动崩溃',
         'assets': [
@@ -124,7 +126,7 @@ void main() {
     });
 
     test('critical (case-insensitive): body 含 **critical** 标记', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.7',
         'body': '**CRITICAL** 安全修复',
         'assets': [
@@ -138,7 +140,7 @@ void main() {
     });
 
     test('non-critical: body 第一行是普通标题', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.7',
         'body': '\n\n**P1** 新功能: 后台强制更新',
         'assets': [
@@ -152,35 +154,41 @@ void main() {
     });
 
     test('edge: 缺 tag_name → return null', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'body': '...',
         'assets': [],
       });
       expect(result, isNull);
     });
 
-    test('edge: 缺 assets → return null', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+    test('edge: 缺 assets → 仍可解析 (比较只依赖 tag, 不依赖 APK)', () {
+      // 统一引擎的关键改进: 判断是否有新版只看 tag_name, APK 资产缺失
+      // (发版中途 / 只挂了 aab) 也不会让整条数据源判失败.
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.8',
         'body': '...',
       });
-      expect(result, isNull);
+      expect(result, isNotNull);
+      expect(result!['tagName'], 'v0.3.8');
+      expect(result['apkAssetName'], isNull);
     });
 
-    test('edge: 资产没 .apk → return null', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+    test('edge: 资产没 .apk → 仍可解析, apk 字段为 null', () {
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.8',
         'body': '...',
         'assets': [
           {'name': 'source.zip', 'browser_download_url': '...'},
         ],
       });
-      expect(result, isNull);
+      expect(result, isNotNull);
+      expect(result!['apkAssetName'], isNull);
+      expect(result['apkDownloadUrl'], isNull);
     });
 
     test('edge: APK 名无 +N → 从 tag 末段兜底 versionCode, 不再 return null', () {
       // 对齐 synapse: 不依赖 APK 文件名格式. 旧实现这里会因缺 +N 整条源判失败.
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.8',
         'body': '...',
         'assets': [
@@ -197,7 +205,7 @@ void main() {
     });
 
     test('fallback: 没 arm64-v8a → 拿第一个 .apk', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.8',
         'body': '...',
         'assets': [
@@ -208,11 +216,11 @@ void main() {
         ],
       });
       expect(result!['apkAssetName'], 'sanyelive-v0.3.8+21-armeabi-v7a.apk');
-      expect(result['versionCode'], 21);
+      expect(result['versionCode'], 8);
     });
 
     test('空 body → releaseNotes 为空,  isCritical=false', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag_name': 'v0.3.8',
         'body': '',
         'assets': [
@@ -228,7 +236,7 @@ void main() {
 
     // ─── meta 版本源 (version.json) 格式 ──────────────────────────────
     test('meta: tag + versionCode + apk 映射 → 正确解析 arm64', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag': 'v0.3.12.131',
         'versionName': '0.3.12+131',
         'versionCode': 131,
@@ -256,28 +264,18 @@ void main() {
       expect(result['releaseNotes'], '台标离线化');
     });
 
-    test('meta: 带代理前缀 → apkDownloadUrl 也加前缀', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
-        'tag': 'v0.3.12.131',
-        'versionCode': 131,
-        'apk': {
-          'arm64-v8a': 'https://github.com/x/sanyelive-v0.3.12+131-arm64-v8a.apk',
-        },
-      }, proxyPrefix: 'https://gh-proxy.com/');
-      expect(result!['apkDownloadUrl'],
-          'https://gh-proxy.com/https://github.com/x/sanyelive-v0.3.12+131-arm64-v8a.apk');
-    });
-
-    test('meta: 缺少 apk 字段 → return null', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+    test('meta: 缺少 apk 字段 → 仍可解析 (只靠 tag 比较)', () {
+      final result = AppUpdateCore.debugParse({
         'tag': 'v0.3.12.131',
         'versionCode': 131,
       });
-      expect(result, isNull);
+      expect(result, isNotNull);
+      expect(result!['tagName'], 'v0.3.12.131');
+      expect(result['apkDownloadUrl'], isNull);
     });
 
     test('meta: versionCode 非 int → return null', () {
-      final result = VersionCheckerNotifier.debugParseRelease({
+      final result = AppUpdateCore.debugParse({
         'tag': 'v0.3.12.131',
         'versionCode': '131',
         'apk': {'arm64-v8a': 'https://x/y.apk'},
@@ -286,87 +284,62 @@ void main() {
     });
   });
 
-  group('debugExtractVersionCode', () {
-    test('v0.3.7+20-arm64-v8a.apk → 20', () {
-      expect(
-        VersionCheckerNotifier.debugExtractVersionCode(
-            'sanyelive-v0.3.7+20-arm64-v8a.apk'),
-        20,
-      );
-    });
-
-    test('sanyelive-v0.3.8+99-armeabi-v7a.apk → 99', () {
-      expect(
-        VersionCheckerNotifier.debugExtractVersionCode(
-            'sanyelive-v0.3.8+99-armeabi-v7a.apk'),
-        99,
-      );
-    });
-
-    test('没 +N 模式 → null', () {
-      expect(
-        VersionCheckerNotifier.debugExtractVersionCode('sanyelive.apk'),
-        isNull,
-      );
-    });
-  });
-
-  group('debugCompareVersions (对齐 FeiNiuMusic)', () {
+  group('AppUpdateCore.compareVersions (对齐 FeiNiuMusic)', () {
     // 基础: 4 段版本逐位比较.
     test('v0.3.12.174 > 0.3.12.173', () {
-      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.12.174', '0.3.12.173'), 1);
+      expect(AppUpdateCore.compareVersions('v0.3.12.174', '0.3.12.173'), 1);
     });
     test('0.3.12.173 == 0.3.12.173', () {
-      expect(VersionCheckerNotifier.debugCompareVersions('0.3.12.173', '0.3.12.173'), 0);
+      expect(AppUpdateCore.compareVersions('0.3.12.173', '0.3.12.173'), 0);
     });
     test('去前导 v 后相等', () {
-      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.12.173', '0.3.12.173'), 0);
+      expect(AppUpdateCore.compareVersions('v0.3.12.173', '0.3.12.173'), 0);
     });
     // 当前串残留 +buildNumber 时, 截断 + 后仍能正确比较 (旧版 main.dart 的串).
     test('0.3.12.173+173 截断 == 0.3.12.173', () {
-      expect(VersionCheckerNotifier.debugCompareVersions('0.3.12.173+173', '0.3.12.173'), 0);
+      expect(AppUpdateCore.compareVersions('0.3.12.173+173', '0.3.12.173'), 0);
     });
     // 用户真实漏检场景: 远端 .172 > 本地 .171+2171 历史异常包.
     test('v0.3.12.172 > 0.3.12.171+2171', () {
-      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.12.172', '0.3.12.171+2171'), 1);
+      expect(AppUpdateCore.compareVersions('v0.3.12.172', '0.3.12.171+2171'), 1);
     });
     // 反向升级保护: 服务端更旧 (残留 build) 绝不以 outdated 提示.
     test('v0.3.12.167 < 0.3.12.168+2171', () {
-      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.12.167', '0.3.12.168+2171'), -1);
+      expect(AppUpdateCore.compareVersions('v0.3.12.167', '0.3.12.168+2171'), -1);
     });
     // 位数不够补 0: 3 段 vs 4 段.
     test('v0.3.13 (4段) > 0.3.12+174 (截断3段)', () {
-      expect(VersionCheckerNotifier.debugCompareVersions('v0.3.13', '0.3.12+174'), 1);
+      expect(AppUpdateCore.compareVersions('v0.3.13', '0.3.12+174'), 1);
     });
   });
 
-  group('debugIsCriticalRelease', () {
+  group('AppUpdateCore.isCritical', () {
     test('**P0** 标记 → true', () {
-      expect(VersionCheckerNotifier.debugIsCriticalRelease('**P0** fix bug'),
+      expect(AppUpdateCore.isCritical('**P0** fix bug'),
           isTrue);
     });
 
     test('**critical** (小写) → true', () {
       expect(
-        VersionCheckerNotifier.debugIsCriticalRelease('**critical** security'),
+        AppUpdateCore.isCritical('**critical** security'),
         isTrue,
       );
     });
 
     test('**P1** 提级不强制 → false', () {
       expect(
-        VersionCheckerNotifier.debugIsCriticalRelease('**P1** new feature'),
+        AppUpdateCore.isCritical('**P1** new feature'),
         isFalse,
       );
     });
 
     test('空 body → false', () {
-      expect(VersionCheckerNotifier.debugIsCriticalRelease(''), isFalse);
+      expect(AppUpdateCore.isCritical(''), isFalse);
     });
 
     test('空白行后才是 P0 → 看 first non-empty line', () {
       expect(
-        VersionCheckerNotifier.debugIsCriticalRelease('\n\n**P0** fix bug'),
+        AppUpdateCore.isCritical('\n\n**P0** fix bug'),
         isTrue,
       );
     });
@@ -415,7 +388,7 @@ void main() {
       expect(state, isA<VersionCheckOutdated>());
       final outdated = state as VersionCheckOutdated;
       expect(outdated.latestVersion, 'v0.3.8');
-      expect(outdated.latestVersionCode, 21);
+      expect(outdated.latestVersionCode, 8); // 从 tag v0.3.8 末段推导
       expect(outdated.currentVersion, '0.3.7');
       expect(outdated.isCritical, isFalse);
     });

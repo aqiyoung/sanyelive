@@ -7,7 +7,8 @@
 //     去掉满幅渐变 Header, 改用实心 Dialog 背景, 信息层级更清晰.
 //   - P0/critical: release body 含 "**P0**" / "**critical**" 标记时, dialog
 //     不显示"稍后"按钮, 必须更新. 维持安全门.
-//   - 下载流程: 点"去下载" → url_launcher 打开 GitHub releases 页, 用户手动下载 APK.
+//   - 下载流程: 点"前往下载" → 统一引擎 AppUpdateCore.openRelease 打开 GitHub
+//     Release 页 (GitHub App 优先 → 浏览器 → 复制链接), 用户手动下载 APK.
 //
 // 调用方式:
 //   // main.dart
@@ -18,10 +19,9 @@
 //   });
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import 'package:sanyelive/services/app_update_core.dart';
 import 'package:sanyelive/services/version_checker.dart';
 
 /// 更新流程专用强调色 — 青玉 teal, 与设置页「检查更新」弹窗保持一致.
@@ -58,44 +58,20 @@ class _ForceUpdateDialogContentState
     extends ConsumerState<_ForceUpdateDialogContent> {
   bool _launching = false;
 
-  /// 构建 GitHub releases 页面 URL (直接跳转 GitHub).
-  String _buildReleasesUrl(String tagName) {
-    return 'https://github.com/aqiyoung/sanyelive/releases/tag/$tagName';
-  }
-
-  /// 构建 gh-proxy 代理跳转的 releases 页面 URL (国内/电视用户直连 GitHub
-  /// 失败时兜底). 与 version_checker 的 _kGitHubProxyPrefixes 首选项一致.
-  String _buildProxyReleasesUrl(String tagName) {
-    return 'https://gh-proxy.com/https://github.com/aqiyoung/sanyelive/releases/tag/$tagName';
-  }
-
-  /// 唤起外部浏览器打开链接; 打不开则复制链接并提示 (对齐飞牛音乐 _openUrl).
-  Future<void> _openUrl(BuildContext context, String url) async {
+  /// 跳转发布页 —— 统一走 [appUpdateCore.openRelease]:
+  /// GitHub App 优先 (App Link) → 系统浏览器 → 复制链接兜底.
+  /// 三个仓库 (sanyelive / FeiNiuMusic / synapse) 行为完全一致.
+  Future<void> _open(String url) async {
     setState(() => _launching = true);
     try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        return;
-      }
-      if (mounted) {
-        await Clipboard.setData(ClipboardData(text: url));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('无法打开浏览器, 下载链接已复制到剪贴板')),
-          );
-        }
+      final result = await appUpdateCore.openRelease(context, url);
+      if (result == OpenReleaseResult.copied && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('无法打开 GitHub, 下载链接已复制到剪贴板')),
+        );
       }
     } catch (e) {
       debugPrint('打开链接失败: $e');
-      if (mounted) {
-        await Clipboard.setData(ClipboardData(text: url));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('无法打开浏览器, 下载链接已复制到剪贴板')),
-          );
-        }
-      }
     } finally {
       if (mounted) setState(() => _launching = false);
     }
@@ -198,7 +174,7 @@ class _ForceUpdateDialogContentState
               ),
               const SizedBox(height: 12),
               Text(
-                '「前往下载」跳转 GitHub Release 页；若访问不畅，可用「代理下载」',
+                '「前往下载」优先用 GitHub App 打开发布页（未安装则用浏览器）；\n若访问不畅，可用「代理下载」',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
@@ -258,7 +234,11 @@ class _ForceUpdateDialogContentState
     actions.add(
       Expanded(
         child: OutlinedButton(
-          onPressed: () => _openUrl(context, _buildProxyReleasesUrl(s.latestVersion)),
+          onPressed: () => _open(
+            appUpdateCore.proxyUrl(
+              kUpdateConfig.releaseTagUrl(s.latestVersion),
+            ),
+          ),
           style: OutlinedButton.styleFrom(
             foregroundColor: _kUpdateAccent,
             side: BorderSide(color: _kUpdateAccent.withValues(alpha: 0.5)),
@@ -275,7 +255,8 @@ class _ForceUpdateDialogContentState
     actions.add(
       Expanded(
         child: FilledButton.icon(
-          onPressed: () => _openUrl(context, _buildReleasesUrl(s.latestVersion)),
+          onPressed: () =>
+              _open(kUpdateConfig.releaseTagUrl(s.latestVersion)),
           icon: const Icon(Icons.download_rounded, size: 18),
           label: const Text('前往下载'),
           style: FilledButton.styleFrom(

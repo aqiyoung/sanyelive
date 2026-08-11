@@ -36,6 +36,7 @@ import 'services/vod_source_registry.dart';
 // 跟 SVG viewBox 192×192 1:1 像素对齐 (widget 240×240 = ×1.25).
 import 'features/splash/splash_logo.dart';
 import 'features/update/force_update_dialog.dart';
+import 'di/player_providers.dart';
 import 'services/player_service.dart';
 import 'services/version_checker.dart';
 // adb pull /sdcard/Android/data/com.threelive.tv/files/crash.log 看错误.

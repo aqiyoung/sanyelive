@@ -46,6 +46,16 @@ class AllSourcesFailedException implements Exception {
       '${attempts.map((a) => "${a.url} → ${a.error}").join("; ")}';
 }
 
+/// 本次播放被更新的切换打断时抛出, 上层据此丢弃结果, 不污染状态。
+@immutable
+class SourcePlayAbortedException implements Exception {
+  const SourcePlayAbortedException();
+
+  @override
+  String toString() =>
+      'SourcePlayAbortedException: superseded by a newer channel switch';
+}
+
 /// 单个源的尝试结果 (内部用, 不导出)
 @immutable
 class _SourceAttempt {
@@ -91,9 +101,13 @@ class SourceFailover {
   /// 返回第一个成功的源 URL; 全部失败抛 [AllSourcesFailedException]
   ///
   /// [onAttempt] 在每次开始尝试新源时同步触发, 用于 UI 反馈
+  ///
+  /// [shouldAbort] 若返回 true, 立即抛出 [SourcePlayAbortedException] 中止,
+  /// 用于"频道切换中又切了一次"的场景 — 放弃本次, 让新切换接管.
   Future<String> play(
     List<String> sources, {
     void Function(SourceAttemptEvent event)? onAttempt,
+    bool Function()? shouldAbort,
   }) async {
     if (sources.isEmpty) {
       throw const AllSourcesFailedException([]);
@@ -102,6 +116,9 @@ class SourceFailover {
     final attempts = <_SourceAttempt>[];
 
     for (var i = 0; i < sources.length; i++) {
+      if (shouldAbort?.call() ?? false) {
+        throw const SourcePlayAbortedException();
+      }
       final url = sources[i];
       onAttempt?.call(
         SourceAttemptEvent(index: i + 1, total: sources.length, url: url),

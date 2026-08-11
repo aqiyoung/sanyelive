@@ -10,7 +10,7 @@ import '../../features/home/playback_history_page.dart';
 import '../../features/player/player_page.dart';
 import '../../features/search/search_page.dart';
 import '../../features/settings/settings_page.dart';
-import '../../services/player_service.dart';
+import '../../di/player_providers.dart';
 
 class AppRoutes {
   AppRoutes._();

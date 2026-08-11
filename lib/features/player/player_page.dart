@@ -8,11 +8,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/channel.dart';
 import '../../data/repositories/channel_repository.dart';
-import '../../services/player_service.dart';
+import '../../di/player_providers.dart';
 import '../../services/startup_service.dart';
 import 'system_ui_overlay.dart';
 import 'widgets/next_channels_strip.dart';
 import 'widgets/now_next_program.dart';
+import 'widgets/player_skeletons.dart';
 import 'widgets/player_top_bar.dart';
 import 'widgets/video_area.dart';
 
@@ -324,7 +325,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         // _isInitializing=true (initState 同步设的) → 显示骨架屏,  不依赖
         // asyncChannels.when (后者可能还在 loading).  首帧不是空白.
         child: _isInitializing
-            ? const _PlayerPageSkeleton()
+            ? const PlayerPageSkeleton()
             : asyncChannels.when(
                 loading: () => Center(
                   child:
@@ -404,14 +405,11 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       // ~24-32px (Android) / ~44px (iOS) 看着像有顶栏.
       // _isInitializing=true (initState 同步设的) → 显示骨架屏,  不依赖
       // asyncChannels.when (后者可能还在 loading).  首帧不是空白.
-      // 之前 _buildFullscreenOverlay 直接走 asyncChannels.when(loading:)
-      // 显示 spinner — 平板 / TV (shortestSide >= 600) 走这条路径,  首帧空白
-      // 直到 channelsProvider resolve.  修法:  跟 _buildMobile 一样加
-      // _isInitializing 检查,  显示 _PlayerFullscreenSkeleton (黑底 + spinner).
-      // initState 同步设 _isInitializing=true,  postFrameCallback 跑完
-      // _primeLoadingState 后设 false,  接管 player state loading 显示.
+      // 平板 / TV 首帧 channelsProvider 未 resolve 前会空白,  故先以
+      // PlayerFullscreenSkeleton (黑底 + spinner) 占位,  待 _primeLoadingState
+      // 完成后 (postFrameCallback 置 _isInitializing=false) 接管正常加载态.
       body: _isInitializing
-          ? const _PlayerFullscreenSkeleton()
+          ? const PlayerFullscreenSkeleton()
           : asyncChannels.when(
               loading: () => Center(
                 child:
@@ -570,120 +568,6 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                 );
               },
             ),
-    );
-  }
-}
-
-/// 嵌入布局骨架屏 — 首帧显示: 16:9 黑色视频区 + 顶栏灰条 + 节目卡占位.
-/// 跟 _buildMobile data 状态布局一致,  但所有内容是灰骨架,  不是空白.
-/// postFrameCallback 跑 _primeLoadingState 后,  _isInitializing=false,
-/// build 接管显示 player state.loading.
-class _PlayerPageSkeleton extends StatelessWidget {
-  const _PlayerPageSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final skeletonColor = scheme.surfaceContainerHighest;
-    return Column(
-      children: [
-        // 16:9 黑色视频区 (跟 data 状态一致)
-        const AspectRatio(
-          aspectRatio: 16 / 9,
-          child: ColoredBox(color: Colors.black),
-        ),
-        // 顶栏灰条 (跟 TopBar 高度一致 ~ 56 px)
-        Container(
-          height: 56,
-          color: scheme.surface,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          alignment: Alignment.centerLeft,
-          child: Row(
-            children: [
-              // 返回按钮占位
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: skeletonColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // 频道名占位
-              Container(
-                width: 120,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: skeletonColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ],
-          ),
-        ),
-        // 节目卡灰条
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 当前节目卡占位
-                Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: skeletonColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // 下一档节目占位
-                Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: skeletonColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // 频道横滑占位
-                Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: skeletonColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// 全屏覆盖骨架屏 — 平板/TV (shortestSide >= 600) 走 _buildFullscreenOverlay,
-/// 首帧 channelsProvider 还没 resolve,  之前直接显示 spinner 在白底 (其实是
-/// Scaffold 黑底) 看着像空白.  修法:  _isInitializing=true 时显示黑底 + 中
-/// 间 CircularProgressIndicator,  postFrameCallback 跑 _primeLoadingState
-/// 后设 false 接管 player state.loading.
-/// 跟 _PlayerPageSkeleton 区别:  全屏不需 AspectRatio (已经覆盖整个屏幕),
-///  也不需 TopBar/节目卡/横滑占位 (控件层是后叠上去的,  skeleton 阶段还没
-///  频道数据无法知道渲染什么).  简化:  黑底 + 中心 spinner.
-class _PlayerFullscreenSkeleton extends StatelessWidget {
-  const _PlayerFullscreenSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return const ColoredBox(
-      color: Colors.black,
-      child: Center(
-        child: CircularProgressIndicator(
-          color: Colors.white,
-        ),
-      ),
     );
   }
 }

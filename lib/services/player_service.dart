@@ -1,19 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 
+import '../data/cctv_source.dart';
 import '../data/models/channel.dart';
 import '../data/source_dispatcher.dart';
-import '../features/settings/theme_provider.dart';
-import '../utils/crash_logger.dart';
+import '../services/platform/fallback_player.dart';
 import 'smart_source_router.dart';
 import 'source_failover.dart';
 
-/// 播放状态
+/// 播放状态。
 enum PlayerStatus {
   /// 初始, 尚未开始
   idle,
@@ -28,7 +25,7 @@ enum PlayerStatus {
   error,
 }
 
-/// 不可变的播放状态快照
+/// 不可变的播放状态快照。
 @immutable
 class PlayerState {
   const PlayerState({
@@ -68,59 +65,8 @@ class PlayerState {
   }
 }
 
-/// media_kit 实现的 [StreamOpener] — 把 URL 真正打开到 player
-class MediaKitStreamOpener implements StreamOpener {
-  MediaKitStreamOpener(this._player);
-
-  final Player _player;
-
-  @override
-  Future<void> cancel(String url) async {
-    // player 可能已经在 open 中, 尝试 stop 让它立即停止.
-    try {
-      unawaited(_player.stop());
-    } catch (_) {}
-  }
-
-  @override
-  Future<bool> open(String url, {required Duration timeout}) async {
-    try {
-      // media_kit 的 open 是异步但很快 (通常 < 100ms),
-      // 真正的"起播"通过 [Player.stream.playing] 监听, 此处只检查 open 成功与否
-      final completer = Completer<bool>();
-      late final StreamSubscription<dynamic> sub;
-      late final Timer timer;
-      sub = _player.stream.playing.listen((playing) {
-        if (!completer.isCompleted) {
-          sub.cancel();
-          timer.cancel();
-          completer.complete(true);
-        }
-      });
-      timer = Timer(timeout, () {
-        if (!completer.isCompleted) {
-          sub.cancel();
-          completer.complete(false);
-        }
-      });
-
-      await _player.open(Media(url));
-      return await completer.future;
-    } catch (e) {
-      debugPrint('MediaKitStreamOpener.open failed: $e');
-      return false;
-    }
-  }
-}
-
-/// PlayerService — 全局单例
-///   - 持有唯一的 [Player] 实例 (避免每个页面都创建 native player)
-///   - 调用 [SourceFailover] 选源
-///   - 暴露 [state] 给 UI 监听
-///
-/// 闪退, 改用 [FallbackMediaPlayer] 占位 (通过 platform channel; 若 native
-/// 端未注册,  也是 silently fail — 视频不出图但 APP 不崩).  libmpv 加载失败
-/// 90% 是 Amlogic S905X3 等 TV box 的 dlopen 问题.
+/// 全局播放服务单例: 持有唯一 [Player], 调用 [SourceFailover] 选源, 暴露
+/// [state] 给 UI 监听。播放内核的创建/装配在 [player_providers.dart]。
 class PlayerService extends ChangeNotifier {
   PlayerService({
     required StreamOpener opener,
@@ -134,6 +80,7 @@ class PlayerService extends ChangeNotifier {
             SmartSourceFailover(
               opener: opener,
               router: router ?? SmartSourceRouter(),
+              perSourceTimeout: const Duration(milliseconds: 800),
             ),
         _fallbackPlayer =
             fallbackPlayer ?? (player == null ? FallbackMediaPlayer() : null);
@@ -141,10 +88,11 @@ class PlayerService extends ChangeNotifier {
   final Player? _player;
   final SourceFailover _failover;
   final SmartSourceRouter _router;
-  // MediaPlayer (如果 native 端没注册实现,  静默失败).  null = 用 libmpv 正常路径.
   final FallbackMediaPlayer? _fallbackPlayer;
   bool _disposed = false;
-  bool _playing = false;
+
+  /// 每次 [play] 自增; 仅"最新一代"的播放结果会写入状态, 旧切换被覆盖.
+  int _playGeneration = 0;
 
   bool get useFallbackPlayer => _player == null && _fallbackPlayer != null;
 
@@ -153,9 +101,8 @@ class PlayerService extends ChangeNotifier {
 
   String? get currentUrl => _state.currentSource;
 
-  /// 立即让 state 进入 loading — 不等 addPostFrameCallback 也不等 channelsProvider.
-  /// PlayerPage.initState 调用后第一帧就看到 "正在打开…" loading.
-  /// 状态从 idle/error → loading.  已是 playing/loading 跳过 (避免重置 attempt 计数器).
+  /// 立即进入 loading, 不等 channelsProvider / addPostFrameCallback,
+  /// 让 PlayerPage 第一帧就显示 "正在打开…"。
   void primeLoadingState() {
     if (_disposed) return;
     if (_state.status == PlayerStatus.idle ||
@@ -168,26 +115,15 @@ class PlayerService extends ChangeNotifier {
     }
   }
 
-  /// 切到 [channel]; 已在播放则先 stop
-  /// 之前 play() 串行 await:
-  ///   await _player.stop() (50-200ms, libmpv 命令)
-  ///   _set(loading) (触发 UI 重建)
-  ///   await _failover.play(sources, ...) (1-3s 真打开流)
-  /// 总耗时 1.5-3.5s, 但 _set(loading) 要等 stop 完成才发,  UI 第一帧看到
-  /// 修法:  不再 await _player.stop() — fire-and-forget 后台 stop,
-  ///  _set(loading) 同步发出去让 UI 第一帧看到 "正在打开…" +  attempt 计数器.
-  ///  _failover.play 依然 await (后续状态变化都依赖它).  视觉:
-  ///   - 点频道 → 立即 "正在打开… 尝试源 1/N"
-  ///   - 背景 stop + open 并行跑
-  ///   - open 成功 → "尝试源 1/1" → 变 playing
-  ///   - open 失败 → "尝试源 2/N" → 切下一个源,  状态保持 loading
+  /// 切到 [channel]。采用"后到覆盖"策略: 切换进行中又切了一次, 旧的
+  /// 结果会被丢弃 ([_playGeneration] 比对), 不再用 `_playing` 直接丢弃新请求
+  /// (那样会导致"点了没反应 / 卡在转圈")。
+  ///
+  /// loading 状态在 open 之前同步发出, UI 立即进入 loading overlay。
   Future<void> play(Channel channel) async {
     if (_disposed) return;
-    if (_playing) return;
+    final myGen = ++_playGeneration;
 
-    _playing = true;
-
-    // 非 CCTV 走老逻辑 channel.sources (repository 已合并 known_sources).
     final sources = SourceDispatcher.dispatch(channel);
     if (sources.isEmpty) {
       _set(
@@ -201,8 +137,6 @@ class PlayerService extends ChangeNotifier {
       return;
     }
 
-    //  顺序很重要:  set loading 必须在 stop 之前,  这样 stop 在 background
-    //  跑 50-200ms 时 UI 已经重建成 loading overlay.
     _set(
       _state.copyWith(
         status: PlayerStatus.loading,
@@ -212,23 +146,23 @@ class PlayerService extends ChangeNotifier {
       ),
     );
 
-    //  stop/open 在 libmpv 内部可能交错执行 (stop 未完成就 open 新流).
-    //  折中:  await stop (50-200ms),  但 set loading 在 stop 之前已经发出,
-    //  UI 不会白屏.  stop 完成后立即 open,  不引入额外延迟.
+    // 进播放页必须恢复音量 (首页 Hero 预览可能静音)。
+    // 不显式 stop(): player.open(newUrl) 会替换当前流, 避免多余往返;
+    // 也让新切换能直接接管, 不被旧 stop 误杀当前正在起播的流。
     if (_player != null) {
-      // 恢复音量 — 首页 Hero 预览可能是静音的 (setVolume(0)), 进播放页必须出声.
       await _player.setVolume(100);
-      await _player.stop();
     }
 
     try {
       final source = await _failover.play(
         sources,
         onAttempt: (event) {
-          if (_disposed) return;
+          if (_disposed || myGen != _playGeneration) return;
           _set(_state.copyWith(attempt: event));
         },
+        shouldAbort: () => myGen != _playGeneration,
       );
+      if (myGen != _playGeneration) return; // 已被更新的切换覆盖
       if (_disposed) return;
       unawaited(CctvSourcePicker.recordSuccess(source));
       _set(
@@ -238,11 +172,11 @@ class PlayerService extends ChangeNotifier {
           clearAttempt: true,
         ),
       );
+    } on SourcePlayAbortedException {
+      return; // 被新切换打断, 不更新状态
     } on AllSourcesFailedException catch (e) {
-      if (_disposed) {
-        _playing = false;
-        return;
-      }
+      if (myGen != _playGeneration) return; // 已被更新的切换覆盖
+      if (_disposed) return;
       for (final attempt in e.attempts) {
         unawaited(CctvSourcePicker.recordFailure(attempt.url));
       }
@@ -259,20 +193,14 @@ class PlayerService extends ChangeNotifier {
           clearAttempt: true,
         ),
       );
-    } finally {
-      _playing = false;
     }
   }
 
-  /// SourceFailover 自动选源.  适用: 央视源抽风时手动指定备份源.
-  ///
-  /// 当前 channel 用 [channel] 表示; 如果没传, 保持原 channel (例如切到
-  /// 同一频道的另一路源,  channel 不变).
+  /// 手动指定单源播放, 用于央视源抽风时换源。
   Future<void> playSingleSource(String url, {Channel? channel}) async {
     if (_disposed) return;
     final ch = channel ?? _state.channel;
     if (ch == null) {
-      // 没有 channel 上下文, 只能假定这是个 raw URL,  跳过错 channel 的检查
       _set(
         _state.copyWith(
           status: PlayerStatus.error,
@@ -283,9 +211,7 @@ class PlayerService extends ChangeNotifier {
       return;
     }
 
-    // 6/17 修声音残留: 跟 [play] 一样,  先 stop 旧 player 避免双声
     if (_player != null) {
-      // 恢复音量 — 首页 Hero 预览可能是静音的 (setVolume(0)), 手动选源也要出声.
       await _player.setVolume(100);
       await _player.stop();
     }
@@ -336,9 +262,7 @@ class PlayerService extends ChangeNotifier {
     }
   }
 
-  /// 暂停 (切后台 / 多窗口 / 来电时调)
-  /// 媒体 native 端只 stop 推 PCM, 不释放 libmpv 实例,  速度快 ( < 50ms),
-  /// 回到前台调 play() 即可恢复.
+  /// 切后台/多窗口/来电时暂停推流; 不改 _state.status, 业务层仍认为在 playing。
   Future<void> pause() async {
     if (_disposed) return;
     if (_player == null) {
@@ -346,11 +270,9 @@ class PlayerService extends ChangeNotifier {
       return;
     }
     await _player.pause();
-    // 不改 _state.status: 业务层觉得还在 "playing",  只是底层暂停
-    // 推流.  UI 显示可以靠 AppLifecycle 自己处理.
   }
 
-  /// 停止播放
+  /// 停止播放并释放 libmpv 推流。
   Future<void> stop() async {
     if (_disposed) return;
     if (_player == null) {
@@ -358,7 +280,6 @@ class PlayerService extends ChangeNotifier {
       _set(const PlayerState.idle());
       return;
     }
-    // 6/17: 同步停掉 native player, 不只是改 UI 状态
     await _player.stop();
     _set(const PlayerState.idle());
   }
@@ -366,11 +287,6 @@ class PlayerService extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    // 6/17: native player 必须显式 dispose 释放 libmpv 资源.
-    // ChangeNotifier.dispose() 同步返回, 但 media_kit 的 Player.stop/dispose
-    // 是 async — 这里 fire-and-forget,  native 端在 isolate 拆完 native
-    // handle 后自动释放.  测试环境 PlayerService 创建时 player 传 null,
-    // 这边不调.  实际使用 Player.stop() / dispose() 都是 libmpv 命令, < 50ms.
     if (_player != null) {
       unawaited(_player.stop());
       unawaited(_player.dispose());
@@ -384,182 +300,3 @@ class PlayerService extends ChangeNotifier {
     notifyListeners();
   }
 }
-
-// ───────────────────────────── Riverpod ─────────────────────────────
-
-/// libmpv.so 在某些 TV box (Amlogic S905X3 等) 加载失败时的 fallback 播放器.
-///
-/// 实现走 platform channel `com.threelive.iptv/fallback_player` —
-/// native 端 (MainActivity.kt) 应该注册 MethodChannel handler,  用 Android
-/// MediaPlayer API 打开 url.  当前 native 端可能还没注册,  所以 play() 会
-/// 静默失败 — 但关键是 APP 不再闪退,  CrashLogger 会记 platform_error.
-///
-/// Channel 协议:
-///   - play({url: String}) -> bool
-///   - stop() -> void
-///   - pause() -> void
-///   - resume() -> void
-class FallbackMediaPlayer {
-  FallbackMediaPlayer();
-
-  // 注意: channel name 跟 MainActivity 一致.  当前 MainActivity 没注册,
-  // invokeMethod 会抛 MissingPluginException — 我们 catch 静默.
-  static const _channel = MethodChannel('com.threelive.iptv/fallback_player');
-
-  Future<bool> play(String url) async {
-    try {
-      final result = await _channel.invokeMethod<bool>('play', {'url': url});
-      return result ?? false;
-    } catch (e) {
-      debugPrint('FallbackMediaPlayer.play failed: $e');
-      await CrashLogger.log('FallbackMediaPlayer.play failed: $e');
-      return false;
-    }
-  }
-
-  Future<void> stop() async {
-    try {
-      await _channel.invokeMethod('stop');
-    } catch (e) {
-      debugPrint('FallbackMediaPlayer.stop failed: $e');
-      // 不写 CrashLogger — 暂停/停止频繁调用, log 会爆.
-    }
-  }
-
-  Future<void> pause() async {
-    try {
-      await _channel.invokeMethod('pause');
-    } catch (e) {
-      debugPrint('FallbackMediaPlayer.pause failed: $e');
-    }
-  }
-
-  Future<void> resume() async {
-    try {
-      await _channel.invokeMethod('resume');
-    } catch (e) {
-      debugPrint('FallbackMediaPlayer.resume failed: $e');
-    }
-  }
-}
-
-/// 共享的 [Player] 实例 (整个 APP 一个 native player)
-///
-/// true = 可以调 MediaKit.ensureInitialized(), false = 直接走 Fallback.
-final libmpvAvailableProvider = Provider<bool>((ref) => true);
-
-/// main() 里调会触发 native SIGSEGV (libmpv.so dlopen 失败) 直接杀进程,
-/// Dart try-catch 捕获不到.  移到这里后只在用户进播放页时才触发,
-/// 首页/频道列表/设置页都不受影响.
-final mediaKitPlayerProvider = Provider<Player?>((ref) {
-  final available = ref.read(libmpvAvailableProvider);
-  if (!available) {
-    debugPrint('mediaKitPlayerProvider: libmpv 不可用 (ARM 32-bit?), 走 Fallback');
-    unawaited(CrashLogger.log('libmpv not available, using fallback player'));
-    return null;
-  }
-  try {
-    MediaKit.ensureInitialized();
-    final player = Player();
-    // 央视/卫视直播多为 1080i 隔行信号; libmpv 在 Android MediaCodec 硬解时
-    // 不自动去隔行 → 画面交错锯齿 = 用户报的"花屏". 开启 mpv 内置去隔行
-    // (yadif), 对所有直播频道通用. setProperty 是 async 但会在 open 前完成
-    // 排队 (waitForInitialization 默认 true), 首帧起即生效.
-    //
-    // 注意: setProperty 定义在 NativePlayer 上, 不在 Player 门面上
-    // (media_kit 1.2.x). 必须先取 player.platform 再做类型收窄, 直接
-    // player.setProperty(...) 会 undefined_method 编译失败.
-    final platform = player.platform;
-    if (platform is NativePlayer) {
-      unawaited(platform.setProperty('deinterlace', 'yes'));
-    }
-    return player;
-  } catch (e, st) {
-    debugPrint('mediaKitPlayerProvider: failed: $e\n$st');
-    unawaited(CrashLogger.log('Player init failed: $e'));
-    return null;
-  }
-});
-
-/// media_kit 的 video controller (用于 Video widget)
-///
-/// controller 时不渲染 Video widget,  直接走 ErrorOverlay / 占位.
-final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
-  final player = ref.watch(mediaKitPlayerProvider);
-  if (player == null) return null;
-  // 之前默认 'auto-safe' 在部分 Android 13+ 设备 (Pixel / 三星 / 小米新机) 会
-  // 走 software fallback  →  H.264 High profile 4.1 1080p 解码慢/失败 → 绿屏.
-  // 'mediacodec' = Android MediaCodec API,  原生硬解,  H.264/H.265/AV1 都支持.
-  try {
-    // hwdec: 'no' = 强制软件解码.
-    //
-    // 为什么不用 'auto-safe' / 'mediacodec':
-    //   央视/卫视是 1080i 隔行广播,  Player 已 setProperty('deinterlace','yes')
-    //   启用 mpv 的 yadif 软件去隔行.  但 mpv 的软件去隔行 (yadif) 只对
-    //   *软件解码* 出来的帧生效,  对 MediaCodec 硬件解码出来的帧无能为力 —
-    //   走 hwdec 硬解路径时 deinterlace 等于空设置 → 隔行信号直接上屏 =
-    //   用户报的"花屏".  这是之前 06a47f2 开了 deinterlace 仍花屏的根因.
-    //   改 'no' 让帧走软件解码,  yadif 才能真正去隔行,  花屏根治.
-    //
-    // 额外好处:  'mediacodec' 在部分 TV box (Amlogic S905X3 / Rockchip)
-    // MediaCodec 实现不完整时会触发 native SIGSEGV;  'no' 完全不走
-    // MediaCodec,  反而比 auto-safe 更不容易崩.
-    //
-    // 代价:  1080i50 软解吃 CPU,  老旧电视盒可能掉帧.  若某设备卡顿明显,
-    // 可改回 'auto-safe' (牺牲央视去隔行) 或后续加"硬解/软解"设置项.
-    return VideoController(
-      player,
-      configuration: const VideoControllerConfiguration(
-        hwdec: 'no',
-      ),
-    );
-  } catch (e, st) {
-    debugPrint(
-        'mediaKitVideoControllerProvider: VideoController() threw: $e\n$st');
-    unawaited(CrashLogger.log('VideoController() construction failed: $e'));
-    return null;
-  }
-});
-
-/// [StreamOpener] — 默认走 media_kit 真实实现
-///
-/// SourceFailover 调它时直接 fail.  这样 play() 走到 _player==null 分支
-/// 报 "本机播放器不可用" 错误, 不会尝试用 libmpv 打开流.
-final streamOpenerProvider = Provider<StreamOpener>((ref) {
-  final player = ref.watch(mediaKitPlayerProvider);
-  if (player == null) {
-    return _NoopStreamOpener();
-  }
-  return MediaKitStreamOpener(player);
-});
-
-class _NoopStreamOpener implements StreamOpener {
-  @override
-  Future<bool> open(String url, {required Duration timeout}) async {
-    await CrashLogger.log('_NoopStreamOpener.open($url) — libmpv unavailable');
-    return false;
-  }
-
-  @override
-  Future<void> cancel(String url) async {}
-}
-
-/// [PlayerService] — 全局单例
-final playerServiceProvider = ChangeNotifierProvider<PlayerService>((ref) {
-  final opener = ref.watch(streamOpenerProvider);
-  final player = ref.watch(mediaKitPlayerProvider);
-  // (否则 SmartSourceRouter 内部 _prefs 为 null, 评分不落盘, 切台永远无缓存).
-  final router = SmartSourceRouter(prefs: ref.watch(sharedPreferencesProvider));
-  // 6/17 fix: 之前 ref.onDispose(svc.dispose) 跟 ChangeNotifierProvider
-  // auto-dispose 重复,  ProviderContainer 销毁时 svc.dispose() 被调两次,
-  // 第二次 super.dispose() 触发 "ChangeNotifier used after being disposed".
-  // ChangeNotifierProvider 会自动调 notifier.dispose(),  这里只创建.
-  // PlayerService.dispose() 仍然会跑, 负责释放 native player (libmpv 实例).
-  return PlayerService(opener: opener, player: player, router: router);
-});
-
-/// 当前播放状态
-final currentPlayerStateProvider = Provider<PlayerState>((ref) {
-  final service = ref.watch(playerServiceProvider);
-  return service.state;
-});

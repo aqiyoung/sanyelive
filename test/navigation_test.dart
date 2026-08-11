@@ -13,7 +13,7 @@ import 'package:sanyelive/core/theme/theme.dart';
 import 'package:sanyelive/data/models/channel.dart';
 import 'package:sanyelive/data/repositories/channel_repository.dart';
 import 'package:sanyelive/features/favorites/favorites_service.dart';
-import 'package:sanyelive/services/player_service.dart';
+import 'package:sanyelive/di/player_providers.dart';
 import 'package:sanyelive/services/source_failover.dart';
 import 'package:sanyelive/services/startup_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';

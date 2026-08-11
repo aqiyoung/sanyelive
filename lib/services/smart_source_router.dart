@@ -289,6 +289,7 @@ class SmartSourceFailover extends SourceFailover {
   Future<String> play(
     List<String> sources, {
     void Function(SourceAttemptEvent event)? onAttempt,
+    bool Function()? shouldAbort,
   }) async {
     if (sources.isEmpty) {
       throw const AllSourcesFailedException([]);
@@ -296,6 +297,9 @@ class SmartSourceFailover extends SourceFailover {
 
     // 只有一个源, 直接走
     if (sources.length == 1) {
+      if (shouldAbort?.call() ?? false) {
+        throw const SourcePlayAbortedException();
+      }
       final url = sources.first;
       onAttempt?.call(SourceAttemptEvent(index: 1, total: 1, url: url));
       final ok = await opener.open(url, timeout: perSourceTimeout);
@@ -315,6 +319,9 @@ class SmartSourceFailover extends SourceFailover {
     final attempts = <({int index, String url, String error})>[];
 
     for (var i = 0; i < ranked.length; i++) {
+      if (shouldAbort?.call() ?? false) {
+        throw const SourcePlayAbortedException();
+      }
       final url = ranked[i];
       final score = scores[url];
       onAttempt?.call(SourceAttemptEvent(

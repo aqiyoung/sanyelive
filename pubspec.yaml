@@ -109,7 +109,13 @@ publish_to: "none"
 #   setProperty (在 NativePlayer 上), analyze 报 undefined_method 卡死流水线,
 #   184 根本没出包. 同时把更新检查下沉到 app_update_core.dart, 与 FeiNiuMusic /
 #   synapse 共用同一份引擎 (代理链 + tag 比较 + GitHub App 跳转).
-version: 0.3.12+186
+# 0.3.12+186 (8/12): 根治央视花屏 —— hwdec 由 auto-safe 改 no (强制软解),
+#   让 deinterlace=yes (yadif 去隔行) 真正生效 (硬解帧上 yadif 是空操作).
+# 0.3.12+187 (8/12): 频道秒切 + 模块化. (1) 切台去掉 _playing 丢弃式守卫,
+#   latest-wins 代数覆盖, 连点不丢; 死源超时 1500→800ms; 去掉多余 stop() 前摇;
+#   新 open 取代旧流避免 cancel→stop 误杀. (2) player_service/cctv_source/
+#   player_page 拆模块, 6 个 Riverpod provider 集中到 di/player_providers.dart.
+version: 0.3.12+187
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

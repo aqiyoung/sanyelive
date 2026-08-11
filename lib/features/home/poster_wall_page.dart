@@ -19,7 +19,7 @@ import '../../../features/settings/province_provider.dart'
     show provinceProvider;
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
-import '../../../services/player_service.dart';
+import '../../../di/player_providers.dart';
 
 /// 视界 海报墙首页
 class PosterWallPage extends ConsumerWidget {

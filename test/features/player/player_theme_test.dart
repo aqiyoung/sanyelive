@@ -23,7 +23,7 @@ import 'package:sanyelive/data/repositories/channel_repository.dart';
 import 'package:sanyelive/data/sources/remote_sources_source.dart';
 import 'package:sanyelive/features/favorites/favorites_service.dart';
 import 'package:sanyelive/features/player/player_page.dart';
-import 'package:sanyelive/services/player_service.dart';
+import 'package:sanyelive/di/player_providers.dart';
 import 'package:sanyelive/services/source_failover.dart';
 import 'package:sanyelive/services/startup_service.dart';
 

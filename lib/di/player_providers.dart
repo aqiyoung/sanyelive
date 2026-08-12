@@ -35,9 +35,8 @@ final libmpvAvailableProvider = Provider<bool>((ref) => true);
 /// 消除梳状纹。注意: 软件去隔行只对**软件解码**帧生效, 所以全屏播放前会由
 /// [MediaKitStreamOpener] 把 player 的 hwdec 切到 'no'。
 ///
-/// 首页 Hero 小窗口预览则走硬解优先 (auto-safe): 小窗口对隔行不敏感, 而
-/// 强制软解在本设备上反而导致花屏/灰屏。预览前会由 [configurePreview]
-/// 恢复 hwdec=auto-safe, 避免从播放页返回后继承软解状态。
+/// 首页 Hero 小窗口预览使用独立的 [heroPreviewPlayerProvider]，不走此实例，
+/// 避免运行时 setProperty 切换 hwdec / deinterlace 导致 texture 状态混乱。
 final mediaKitPlayerProvider = Provider<Player?>((ref) {
   final available = ref.read(libmpvAvailableProvider);
   if (!available) {
@@ -85,11 +84,12 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
 /// 必须与 [mediaKitPlayerProvider] 隔离：
 /// 1. media_kit 单个 [Player] 同时只能输出到一个 [Video] widget，而首页预览与
 ///    全屏播放页可能因导航状态快速切换导致纹理争用。
-/// 2. 全屏播放需要强制软解 + 软件去隔行 (bwdif)，该配置在本设备的小窗口预览
-///    上反而花屏/灰屏；预览单独一个 Player 后，两端配置互不干扰。
-/// 3. 运行时通过 setProperty 在硬解/软解之间切换，容易让 libmpv 的 decoder /
-///    texture 状态混乱，从而出现绿屏。独立 Player + 固定 auto-safe 彻底避开此
-///    问题。
+/// 2. 运行时通过 setProperty 在硬解/软解之间切换，容易让 libmpv 的 decoder /
+///    texture 状态混乱，从而出现绿屏/花屏。独立 Player + 创建时固定配置彻底
+///    避开此问题。
+/// 3. 央视/卫视是 1080i 隔行广播，预览窗口虽小，但仍需软件去隔行 (bwdif) 才能
+///    避免梳状隔行纹。软件去隔行只对软件解码帧生效，故 Player 与
+///    [VideoController] 均固定 `hwdec=no`。
 ///
 /// 预览默认静音 (在 [_TvHeroState._startPreview] 里 setVolume(0))；离开首页
 /// 时由 Riverpod onDispose 释放，不泄漏 native 资源/声音。
@@ -102,6 +102,13 @@ final heroPreviewPlayerProvider = Provider<Player?>((ref) {
   try {
     MediaKit.ensureInitialized();
     final player = Player();
+    final platform = player.platform;
+    if (platform is NativePlayer) {
+      // 创建时即固定软解 + 软件去隔行，绝不在运行时再 setProperty 切换。
+      unawaited(platform.setProperty('deinterlace', 'yes'));
+      unawaited(platform.setProperty('hwdec', 'no'));
+      unawaited(platform.setProperty('vf', 'bwdif'));
+    }
     ref.onDispose(() async {
       try {
         await player.dispose();
@@ -119,8 +126,8 @@ final heroPreviewPlayerProvider = Provider<Player?>((ref) {
 
 /// 首页 Hero 预览专用视频渲染控制器。
 ///
-/// 固定硬解优先 (auto-safe)，不强制软解，也不设置 deinterlace。这是本设备
-/// 小窗口预览能正常出画面的关键配置。
+/// 与 [heroPreviewPlayerProvider] 一致，固定强制软件解码 (`hwdec: 'no'`)，让
+/// bwdif 去隔行滤镜对预览帧生效。
 final heroPreviewVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(heroPreviewPlayerProvider);
   if (player == null) return null;
@@ -128,7 +135,7 @@ final heroPreviewVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'auto-safe',
+        hwdec: 'no',
       ),
     );
   } catch (e, st) {

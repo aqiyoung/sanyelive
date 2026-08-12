@@ -286,8 +286,10 @@ class _TvLeanbackHome extends ConsumerWidget {
 /// (首页专用独立 Player + VideoController, 与全屏播放页的 Player 隔离, 互不争用
 /// 纹理). 叠加 LIVE 徽标 + 节目信息条. 点击进入全屏播放页 (带声音).
 ///
-/// 预览固定走硬解优先 (auto-safe) 且不去隔行；全屏播放页强制软解 + bwdif 去隔行。
-/// 两者配置互不干扰，避免运行时切换 hwdec 导致 libmpv texture 状态混乱而绿屏。
+/// 预览 Player / VideoController 创建时即固定 `hwdec=no + deinterlace=yes + vf=bwdif`，
+/// 绝不在运行时用 setProperty 切换配置，避免 libmpv decoder / texture 状态混乱。
+/// 父级 [AspectRatio] 已约束 16:9，[Video] 自身不再重复设置 aspectRatio，防止
+/// 内部纹理尺寸计算错乱。
 ///
 /// 预览默认 setVolume(0) 静音, 避免一进首页就出声; 全屏播放页用共享 Player
 /// 以正常音量播放. libmpv 不可用 / 取流失败时, 自动降级到静态台标 + 播放键
@@ -306,6 +308,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   bool _previewReady = false;
   bool _previewFailed = false;
   String? _openedChannelId;
+  int _previewKey = 0;
   Player? _player;
   VideoController? _controller;
 
@@ -319,7 +322,10 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   @override
   void didUpdateWidget(covariant _TvHero old) {
     super.didUpdateWidget(old);
-    if (old.channel?.id != widget.channel?.id) _startPreview();
+    if (old.channel?.id != widget.channel?.id) {
+      _previewKey++;
+      _startPreview();
+    }
   }
 
   Future<void> _startPreview() async {
@@ -329,8 +335,8 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     if (_openedChannelId == ch.id && (_previewReady || _previewFailed)) return;
 
     // 首页 Hero 预览使用独立 Player / VideoController，与全屏播放页彻底隔离。
-    // 独立实例让小窗口预览固定保持硬解优先 (auto-safe)，不受播放页软解/去隔行
-    // 配置污染，也避免运行时 setProperty 切换 hwdec 导致绿屏。
+    // 预览 Player / VideoController 创建时已固定软解 + bwdif 去隔行，运行时不再
+    // setProperty 切换配置，避免 libmpv texture 状态混乱而花屏/绿屏。
     final player = ref.read(heroPreviewPlayerProvider);
     final controller = ref.read(heroPreviewVideoControllerProvider);
     if (player == null || controller == null) {
@@ -346,9 +352,14 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _player = player;
     _controller = controller;
     _openedChannelId = ch.id;
-    if (mounted) setState(() => _previewReady = false);
+    if (mounted) {
+      setState(() {
+        _previewReady = false;
+        _previewFailed = false;
+      });
+    }
     try {
-      // 独立预览 Player 初始化时已固定 auto-safe，不再运行时改配置。
+      // 预览 Player 创建时已固定软解 + bwdif 去隔行；这里不再 setProperty 切换。
       // 首页预览默认静音 — 进播放页时 PlayerService.play() 会恢复音量 (setVolume(100)).
       await player.setVolume(0);
       await player.open(Media(sources.first));
@@ -401,12 +412,13 @@ class _TvHeroState extends ConsumerState<_TvHero> {
                 if (showVideo)
                   SizedBox.expand(
                     child: Video(
-                      // Key 含频道 id: 切换精选频道时强制 Video 与 texture 重建,
-                      // 避免复用旧 surface 尺寸导致花屏/灰屏.
-                      key: ValueKey('hero-${channel?.id}'),
+                      // Key 含频道 id 与自增 previewKey: 切频道/重开流时强制
+                      // Video widget 与 texture 重建，避免复用旧 surface 尺寸。
+                      key: ValueKey('hero-${channel?.id}-$_previewKey'),
                       controller: _controller!,
                       fit: BoxFit.cover,
-                      aspectRatio: 16 / 9,
+                      // 父级 AspectRatio 已约束 16:9，此处不再重复设置，防止
+                      // media_kit 内部纹理尺寸计算错乱导致花屏/灰屏。
                     ),
                   )
                 else

@@ -35,8 +35,9 @@ final libmpvAvailableProvider = Provider<bool>((ref) => true);
 /// 消除梳状纹。注意: 软件去隔行只对**软件解码**帧生效, 所以全屏播放前会由
 /// [MediaKitStreamOpener] 把 player 的 hwdec 切到 'no'。
 ///
-/// 首页 Hero 小窗口预览使用独立的 [heroPreviewPlayerProvider]，不走此实例，
-/// 避免运行时 setProperty 切换 hwdec / deinterlace 导致 texture 状态混乱。
+/// 首页 Hero 小窗口预览**复用此共享实例**（与全屏播放页同一 Player）。历史
+/// 上 `d4c3acc` 用这套默认配置能正常出画面；独立 Preview Player 反而在本
+/// 设备上渲染异常。
 final mediaKitPlayerProvider = Provider<Player?>((ref) {
   final available = ref.read(libmpvAvailableProvider);
   if (!available) {
@@ -75,65 +76,6 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     debugPrint(
         'mediaKitVideoControllerProvider: VideoController() threw: $e\n$st');
     unawaited(CrashLogger.log('VideoController() construction failed: $e'));
-    return null;
-  }
-});
-
-/// 首页 Hero 预览专用 [Player]。
-///
-/// 必须与 [mediaKitPlayerProvider] 隔离：
-/// 1. media_kit 单个 [Player] 同时只能输出到一个 [Video] widget，而首页预览与
-///    全屏播放页可能因导航状态快速切换导致纹理争用。
-/// 2. 全屏播放 1080i 隔行源需要强制软解 + bwdif 去隔行；这套配置若污染到
-///    首页小窗口预览会导致花屏/灰屏，所以预览必须独立一个 Player。
-/// 3. 经过 +204~+208 反复验证：本设备小窗口预览对 `auto-safe` 硬解、强制软解
-///    `no`、软解+bwdif 都会渲染异常；只有 media_kit 默认配置（不指定 hwdec）
-///    才能正常出画面。因此这里创建 Player 后**不设置任何 mpv 属性**。
-///
-/// 预览默认静音 (在 [_TvHeroState._startPreview] 里 setVolume(0))；离开首页
-/// 时由 Riverpod onDispose 释放，不泄漏 native 资源/声音。
-final heroPreviewPlayerProvider = Provider<Player?>((ref) {
-  final available = ref.read(libmpvAvailableProvider);
-  if (!available) {
-    debugPrint('heroPreviewPlayerProvider: libmpv 不可用, 不走预览');
-    return null;
-  }
-  try {
-    MediaKit.ensureInitialized();
-    final player = Player();
-    // +209: 不设置任何 hwdec/deinterlace/vf。默认配置是唯一能正常出画的。
-    ref.onDispose(() async {
-      try {
-        await player.dispose();
-      } catch (e) {
-        debugPrint('heroPreviewPlayerProvider dispose failed: $e');
-      }
-    });
-    return player;
-  } catch (e, st) {
-    debugPrint('heroPreviewPlayerProvider: failed: $e\n$st');
-    unawaited(CrashLogger.log('Hero preview player init failed: $e'));
-    return null;
-  }
-});
-
-/// 首页 Hero 预览专用视频渲染控制器。
-///
-/// 使用 [VideoControllerConfiguration] 默认配置（不指定 hwdec），与
-/// [heroPreviewPlayerProvider] 一起保持 media_kit 默认路径，避免在本设备上
-/// 触发 `auto-safe`/`no` 带来的花屏/灰屏问题。
-final heroPreviewVideoControllerProvider = Provider<VideoController?>((ref) {
-  final player = ref.watch(heroPreviewPlayerProvider);
-  if (player == null) return null;
-  try {
-    return VideoController(
-      player,
-      configuration: const VideoControllerConfiguration(),
-    );
-  } catch (e, st) {
-    debugPrint(
-        'heroPreviewVideoControllerProvider: VideoController() threw: $e\n$st');
-    unawaited(CrashLogger.log('Hero preview VideoController failed: $e'));
     return null;
   }
 });

@@ -293,13 +293,36 @@ class AppUpdateCore {
 
   /// 版本比较. >0 = a 比 b 新, 0 = 相同, <0 = a 更旧.
   ///
-  /// 规则: 去前导 v/V → 在首个 `+` / `-` 处截断 (忽略 build / prerelease 后缀)
-  /// → 按 "." 切成数字段逐位比较, 位数不足补 0.
-  ///   v0.3.12.174 vs 0.3.12.173      → 1
-  ///   0.3.12.173+2173 vs 0.3.12.173  → 0
+  /// 规则 (sanyelive 在 v0.3.12+195 增强, 兼容 Beta tag):
+  /// 1. 去前导 v/V.
+  /// 2. 跳过形如 "beta-" / "rc-" 这类非版本前缀: 首字符非数字且含 '-' 时,
+  ///    截到首个 '-' 之后 (例: "beta-0.3.12+194-323" → "0.3.12+194-323").
+  /// 3. 去掉末尾发布序号 "…-323": 末段纯数字则视为序号, 不参与比较.
+  /// 4. build 标记 '+' 当 '.' 处理, 让 "0.3.12+194" 与 "0.3.12.194" 等价.
+  /// 5. 其余 '+' / '-' 视为分隔符, 截断到首个为止 (兼容 "v0.3.12.194-beta").
+  /// 6. 按 "." 切成数字段逐位比较, 位数不足补 0.
+  ///   v0.3.12.174 vs 0.3.12.173              → 1
+  ///   0.3.12.173+2173 vs 0.3.12.173          → 0
+  ///   beta-0.3.12+194-323 vs 0.3.12.194      → 0  (同版本)
+  ///   beta-0.3.12+195-324 vs 0.3.12.194      → 1  (Beta 更新)
   static int compareVersions(String a, String b) {
     List<int> release(String v) {
       var s = _normalizeVersion(v);
+      // 2) 跳过非版本前缀 (beta-/rc-…).
+      if (s.isNotEmpty && !_isDigit(s.codeUnitAt(0)) && s.contains('-')) {
+        s = _normalizeVersion(s.substring(s.indexOf('-') + 1));
+      }
+      // 3) 去掉末尾发布序号 "…-323".
+      final dash = s.lastIndexOf('-');
+      if (dash > 0) {
+        final tail = s.substring(dash + 1);
+        if (tail.isNotEmpty && tail.runes.every((r) => _isDigit(r))) {
+          s = s.substring(0, dash);
+        }
+      }
+      // 4) build 标记 '+' → '.'
+      s = s.replaceAll('+', '.');
+      // 5) 剩余 '+'/'-' 截断.
       final cut = s.indexOf(RegExp(r'[+\-]'));
       if (cut >= 0) s = s.substring(0, cut);
       return s.split('.').map((e) => int.tryParse(e.trim()) ?? 0).toList();
@@ -315,6 +338,9 @@ class AppUpdateCore {
     }
     return 0;
   }
+
+  /// 单个字符是否为 ASCII 数字 (0-9).
+  static bool _isDigit(int codeUnit) => codeUnit >= 0x30 && codeUnit <= 0x39;
 
   /// release 正文首非空行含 "**P0**" / "**critical**" (大小写不敏感) → 重要更新,
   /// 调用方应强制升级 (不显示"稍后").

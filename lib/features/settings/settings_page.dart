@@ -18,7 +18,8 @@ import '../../services/version_checker.dart'
         VersionCheckUpToDate,
         VersionCheckOutdated,
         VersionCheckFailed,
-        autoCheckUpdateProvider;
+        autoCheckUpdateProvider,
+        betaChannelProvider;
 import '../update/force_update_dialog.dart' show ForceUpdateDialog;
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
@@ -165,6 +166,20 @@ class SettingsPage extends ConsumerWidget {
                     value: auto,
                     onChanged: (v) =>
                         ref.read(autoCheckUpdateProvider.notifier).set(v),
+                  );
+                },
+              ),
+              const _SettingsGap(),
+              Consumer(
+                builder: (context, ref, _) {
+                  final beta = ref.watch(betaChannelProvider);
+                  return SwitchListTile(
+                    secondary: const Icon(Icons.new_releases_outlined),
+                    title: const Text('接收 Beta 版更新'),
+                    subtitle: const Text('开启后检测 Beta 预发布版本（本应用仅有 Beta 版）'),
+                    value: beta,
+                    onChanged: (v) =>
+                        ref.read(betaChannelProvider.notifier).set(v),
                   );
                 },
               ),

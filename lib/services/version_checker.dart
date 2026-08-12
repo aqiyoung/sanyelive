@@ -78,6 +78,12 @@ const String kEndpointPrefsKey = 'version_checker.endpoint_url';
 /// 「启动时自动检查更新」开关持久化键 (默认开启).
 const String kAutoCheckUpdateKey = 'version_checker.auto_check_update';
 
+/// 「接收 Beta 版更新」开关持久化键 (默认开启).
+/// sanyelive 所有 Release 都是 Pre-release (tag 形如 `beta-0.3.12+194-323`),
+/// 关闭后走 stable 通道 (releases/latest) 因无稳定版会 404, 检测不到任何更新;
+/// 开启后走 beta 通道 (/releases 列表首个 prerelease), 才能正常检测 Beta 更新.
+const String kBetaChannelKey = 'version_checker.beta_channel';
+
 /// 当前 APP versionCode —— 由 main.dart 在 ProviderContainer 初始化时
 /// 注入.  编译期 const (来自 pubspec.yaml),  单元测试可 mock.
 final currentVersionCodeProvider = Provider<int>((ref) {
@@ -335,7 +341,12 @@ class VersionCheckerNotifier extends Notifier<VersionCheckState> {
   /// 返回 (_ParsedRelease) 或 null (全部数据源失败).
   Future<_ParsedRelease?> _fetchLatestRelease() async {
     final current = ref.read(currentVersionStringProvider);
-    final result = await appUpdateCore.check(dioUpdateFetch(_dio), current);
+    final channel = ref.read(betaChannelProvider) ? 'beta' : 'stable';
+    final result = await appUpdateCore.check(
+      dioUpdateFetch(_dio),
+      current,
+      channel: channel,
+    );
     if (result == null) return null;
     return _ParsedRelease(
       tagName: result.tagName,
@@ -430,3 +441,29 @@ class AutoCheckUpdateNotifier extends Notifier<bool> {
 
 final autoCheckUpdateProvider =
     NotifierProvider<AutoCheckUpdateNotifier, bool>(AutoCheckUpdateNotifier.new);
+
+/// 「接收 Beta 版更新」开关 —— 默认开启 (sanyelive 仅有 Beta 预发布版本).
+///
+/// - 开启: 更新检测走 beta 通道 (`/releases` 列表取首个 prerelease), 能正常
+///   发现 Beta 更新.
+/// - 关闭: 走 stable 通道 (`releases/latest`), 因仓库无稳定版会 404,
+///   检测不到任何更新 (即退回「检测不到」的旧行为).
+///
+/// 状态变化会在下次「检查更新」/ 启动检查生效; 手动点「检查更新」可立即验证.
+class BetaChannelNotifier extends Notifier<bool> {
+  late final SharedPreferences _prefs;
+
+  @override
+  bool build() {
+    _prefs = ref.read(sharedPreferencesProvider);
+    return _prefs.getBool(kBetaChannelKey) ?? true;
+  }
+
+  Future<void> set(bool value) async {
+    await _prefs.setBool(kBetaChannelKey, value);
+    state = value;
+  }
+}
+
+final betaChannelProvider =
+    NotifierProvider<BetaChannelNotifier, bool>(BetaChannelNotifier.new);

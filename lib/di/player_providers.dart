@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
-import 'package:media_kit_video/media_kit_video.dart' hide PlayerState;
+import 'package:media_kit_video/media_kit_video.dart';
 
 import '../features/settings/theme_provider.dart';
 import '../services/platform/mdk_opener.dart';

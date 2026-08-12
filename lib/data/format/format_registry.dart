@@ -11,6 +11,7 @@ library;
 import 'channel_format.dart';
 import 'iptv_org_json_format.dart';
 import 'm3u_format.dart';
+import '../models/channel.dart';
 
 class ChannelFormatRegistry {
   ChannelFormatRegistry([List<ChannelFormat>? formats])

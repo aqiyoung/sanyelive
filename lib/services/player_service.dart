@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 
-import '../data/cctv_source.dart';
 import '../data/models/channel.dart';
 import '../data/source_dispatcher.dart';
 import '../services/platform/fallback_player.dart';

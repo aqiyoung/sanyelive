@@ -122,7 +122,11 @@ publish_to: "none"
 # 0.3.12+189 (8/12): 修 +187 构建失败 (CI 抓到) — di/player_providers.dart 缺
 #   dart:async (unawaited 找不到) + media_kit 的 PlayerState 与本项目同名冲突,
 #   给 media_kit / media_kit_video import 加 hide PlayerState 解决.
-version: 0.3.12+189
+# 0.3.12+190 (8/12): 修 +189 构建失败 (CI 抓到) — format_registry.dart 漏
+#   import '../models/channel.dart' (Channel 未定义). 顺手清 lint: 去掉 media_kit_video
+#   多余 hide PlayerState、m3u 3 处多余 !、video_area/main/player_service 3 处冗余 import.
+#   本机 flutter analyze 验证 lib 零 error (CI 不跑 test, 4 个预存 test 错误无关构建).
+version: 0.3.12+190
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

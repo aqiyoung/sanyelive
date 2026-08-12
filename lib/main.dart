@@ -37,7 +37,6 @@ import 'services/vod_source_registry.dart';
 import 'features/splash/splash_logo.dart';
 import 'features/update/force_update_dialog.dart';
 import 'di/player_providers.dart';
-import 'services/player_service.dart';
 import 'services/version_checker.dart';
 // adb pull /sdcard/Android/data/com.threelive.tv/files/crash.log 看错误.
 import 'utils/crash_logger.dart';

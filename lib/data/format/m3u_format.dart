@@ -85,18 +85,18 @@ class M3uFormat implements ChannelFormat {
       final url = line;
       final id = _makeId(
         pendingTvgId,
-        pendingName!,
+        pendingName,
         seenIds,
       );
       channels.add(
         Channel(
           id: id,
-          name: pendingName!,
+          name: pendingName,
           country: '',
           categories: pendingGroups ?? const ['未分类'],
           altNames: const [],
           logoUrl:
-              (pendingLogo != null && pendingLogo!.isNotEmpty) ? pendingLogo : null,
+              (pendingLogo != null && pendingLogo.isNotEmpty) ? pendingLogo : null,
           sources: [url],
         ),
       );

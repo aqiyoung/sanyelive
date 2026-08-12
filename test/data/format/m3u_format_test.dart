@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sanyelive/data/format/format_registry.dart';
 import 'package:sanyelive/data/format/m3u_format.dart';
-import 'package:sanyelive/data/models/channel.dart';
 
 void main() {
   group('M3uFormat.canParse', () {

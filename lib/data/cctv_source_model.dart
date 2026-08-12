@@ -73,3 +73,18 @@ class CctvSourceStats {
     return '$channelId: $sourceCount 源, 平均健康 $pct%';
   }
 }
+
+/// 按健康分(降序)对 CCTV 源排序; 同分保持稳定顺序 (stable sort).
+///
+/// 原为 [cctv_source.dart] 顶层函数, 模块化拆分 (+187) 时被漏带,
+/// 这里收归到模型层. [CctvSourcePicker] 内部按 URL 健康分选源,
+/// 此函数按 [CctvSource.score] 字段排序, 用于单测与显式预排序.
+List<CctvSource> sortByHealthScore(List<CctvSource> sources) {
+  final indexed = sources.asMap().entries.toList();
+  indexed.sort((a, b) {
+    final cmp = b.value.score.compareTo(a.value.score);
+    if (cmp != 0) return cmp;
+    return a.key.compareTo(b.key); // 同分保序
+  });
+  return indexed.map((e) => e.value).toList();
+}

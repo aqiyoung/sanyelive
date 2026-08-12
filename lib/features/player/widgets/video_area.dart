@@ -9,7 +9,6 @@ import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../data/models/channel.dart';
 import '../../../di/player_providers.dart';
-import '../../../services/player_service.dart';
 import 'source_picker_sheet.dart';
 
 /// 视频区: media_kit + loading/error overlay.

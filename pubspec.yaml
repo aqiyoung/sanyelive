@@ -126,7 +126,7 @@ publish_to: "none"
 #   import '../models/channel.dart' (Channel 未定义). 顺手清 lint: 去掉 media_kit_video
 #   多余 hide PlayerState、m3u 3 处多余 !、video_area/main/player_service 3 处冗余 import.
 #   本机 flutter analyze 验证 lib 零 error (CI 不跑 test, 4 个预存 test 错误无关构建).
-version: 0.3.12+190
+version: 0.3.12+191
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -209,6 +209,8 @@ flutter:
     - assets/data/iptv_fast_sources.json
     # v0.3.12+176: CCTV 分运营商健康分源 (国内腾讯云/移动 CDN 优先, 根治移动宽带加载不出)
     - assets/data/cctv_sources.json
+    # v0.3.12+190: 首页「特别专区」远程推送 hero 视频 (运营改 JSON 即推送, 本地兜底 [])
+    - assets/data/hero_videos.json
     # v0.3.12+127: 离线台标 (CI 构建前由 scripts/fetch_tv_logos.py 生成
     #   assets/logos/<channel_id>.png + manifest.json).  TV 模式优先离线渲染,
     #   不再依赖设备端网络拉台标, 根治 70% 频道 logo 为 null 显示字母的问题.

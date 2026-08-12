@@ -13,6 +13,7 @@ import 'core/router/router.dart';
 import 'core/theme/colors.dart';
 import 'core/theme/theme.dart';
 import 'data/remote_channels_source.dart';
+import 'data/remote_hero_videos_source.dart';
 // sources/known.json.  main.dart 预热用.
 import 'data/sources/remote_sources_source.dart';
 //  预热 ChannelRepository — loadBundled 第一次 1-2s 读 + parse assets/data,
@@ -122,6 +123,7 @@ void main() async {
     unawaited(DnsWarmup.warmup(_warmupHostnames()));
     unawaited(_prewarmRemoteChannels());
     unawaited(_prewarmRemoteSources());
+    unawaited(_prewarmHeroVideos());
     ErrorWidget.builder =
         (FlutterErrorDetails details) => _CrashScreen(details: details);
     String runtimeVersion;
@@ -262,6 +264,22 @@ Future<void> _prewarmRemoteSources() async {
     }
   } catch (e) {
     debugPrint('_prewarmRemoteSources: failed (will use local fallback): $e');
+  }
+}
+
+/// 失败静默,  heroVideosProvider 会自动 fallback 本地 assets/data (默认 [] → 专区隐藏).
+/// 用独立 short-lived container — 不污染 main() 主 container 状态.
+Future<void> _prewarmHeroVideos() async {
+  try {
+    final warmContainer = ProviderContainer();
+    try {
+      await warmContainer.read(heroVideosProvider.future);
+      debugPrint('_prewarmHeroVideos: remote fetched OK');
+    } finally {
+      warmContainer.dispose();
+    }
+  } catch (e) {
+    debugPrint('_prewarmHeroVideos: failed (will use local fallback): $e');
   }
 }
 

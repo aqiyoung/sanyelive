@@ -20,6 +20,7 @@ import '../../../features/settings/province_provider.dart'
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
 import '../../../di/player_providers.dart';
+import 'widgets/special_zone_section.dart';
 
 /// 视界 海报墙首页
 class PosterWallPage extends ConsumerWidget {
@@ -60,9 +61,11 @@ class PosterWallPage extends ConsumerWidget {
                           children: [
                             const _HeroBanner(),
                             const SizedBox(height: 18),
-                            const _CategoryShortcutBar(),
-                            const SizedBox(height: 18),
-                            _LiveTvModule(
+            const _CategoryShortcutBar(),
+            const SizedBox(height: 18),
+            const SpecialZoneSection(),
+            const SizedBox(height: 20),
+            _LiveTvModule(
                               isLoading: isLoading,
                               channels: displayChannels.take(4).toList(),
                               error: snapshot.error,
@@ -249,6 +252,8 @@ class _TvLeanbackHome extends ConsumerWidget {
         const SizedBox(height: 18),
         const _ChannelChips(),
         const SizedBox(height: 22),
+        const SpecialZoneSection(),
+        const SizedBox(height: 20),
         // 优选热门频道 (央视 + 头部卫视), 不再铺全量 198 个频道
         _ChannelRow(title: '正在直播', channels: hotList),
         const SizedBox(height: 20),
@@ -297,6 +302,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   bool _previewReady = false;
   bool _previewFailed = false;
   String? _openedChannelId;
+  int _previewKey = 0;
   Player? _player;
   VideoController? _controller;
 
@@ -313,7 +319,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     if (old.channel?.id != widget.channel?.id) _startPreview();
   }
 
-  void _startPreview() {
+  Future<void> _startPreview() async {
     final ch = widget.channel;
     if (ch == null) return;
     // 同一频道已尝试过 (成功或失败) 不再重复开流.
@@ -334,33 +340,39 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _player = player;
     _controller = controller;
     _openedChannelId = ch.id;
-    if (mounted) setState(() => _previewReady = false);
-    // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
-    // 会恢复音量 (setVolume(100)).
-    unawaited(player.setVolume(0));
-    // 直接对共享 Player 开流做预览, 不碰 PlayerService (避开其 _playing 守卫).
-    unawaited(
-      player
-          .open(Media(sources.first))
-          .then((_) {
-            if (mounted && _openedChannelId == ch.id) {
-              setState(() => _previewReady = true);
-            }
-          })
-          .catchError((_) {
-            if (mounted && _openedChannelId == ch.id) {
-              setState(() => _previewFailed = true);
-            }
-          }),
-    );
+    if (mounted) {
+      setState(() {
+        _previewReady = false;
+        _previewKey++;
+      });
+    }
+
+    try {
+      // 关键：先停掉旧流 / 旧帧，重置 decoder / texture。
+      // 共享 Player 在播放页和首页之间复用，直接 open 覆盖上一路流容易
+      // 残留花屏帧；stop 后再 open 能让预览首帧干净。
+      await player.stop();
+      // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
+      // 会恢复音量 (setVolume(100)).
+      await player.setVolume(0);
+      await player.open(Media(sources.first));
+      if (mounted && _openedChannelId == ch.id) {
+        setState(() => _previewReady = true);
+      }
+    } catch (_) {
+      if (mounted && _openedChannelId == ch.id) {
+        setState(() => _previewFailed = true);
+      }
+    }
   }
 
   @override
   void dispose() {
-    // 离开首页: 暂停共享 Player, 避免预览声音在其他页面或后台继续播放.
+    // 离开首页: 彻底停止共享 Player 的预览流，避免把花屏帧带到播放页，
+    // 也避免预览声音在其他页面或后台继续播放。
     // 不 dispose 共享 Player — 其生命周期由 PlayerService 管理.
     try {
-      _player?.pause();
+      _player?.stop();
     } catch (_) {
       // 共享 player 可能已被释放, 静默忽略.
     }
@@ -393,7 +405,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
                 if (showVideo)
                   SizedBox.expand(
                     child: Video(
-                      key: ValueKey(channel?.id ?? 'hero'),
+                      // 每次重新开流都换 Key，强制 Video widget 重建 texture，
+                      // 避免共享 controller 复用旧 surface 尺寸导致花屏/灰屏。
+                      key: ValueKey('hero-${channel?.id}-$_previewKey'),
                       controller: _controller!,
                       fit: BoxFit.cover,
                       aspectRatio: 16 / 9,

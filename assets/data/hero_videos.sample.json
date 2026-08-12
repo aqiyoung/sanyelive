@@ -1,0 +1,21 @@
+[
+  {
+    "id": "spring-festival-2026",
+    "title": "春晚 2026 独家直播",
+    "subtitle": "大年三十 20:00 准时开播",
+    "cover": "https://example.com/covers/spring2026.jpg",
+    "url": "https://example.com/live/spring2026.m3u8",
+    "type": "live",
+    "expiry": "2026-02-17T23:59:59Z",
+    "sort": 100
+  },
+  {
+    "id": "newyear-promo",
+    "title": "开年大片宣发",
+    "subtitle": "限时免费观看",
+    "cover": "https://example.com/covers/promo.jpg",
+    "url": "https://example.com/vod/promo.mp4",
+    "type": "vod",
+    "sort": 90
+  }
+]

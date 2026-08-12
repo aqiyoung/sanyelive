@@ -28,6 +28,16 @@ import 'package:sanyelive/services/version_checker.dart';
 const Color _kUpdateAccent = Color(0xFF2A9D8F);
 const Color _kUpdateAccentContainer = Color(0xFFE6F4F2);
 
+/// 把冗长的 release tag 格式化成更紧凑的版本显示.
+///
+/// 例如 `beta-0.3.12+202-332` → `0.3.12+202`
+/// `v0.3.12.201` 保持原样.
+String _formatVersionLabel(String version) {
+  return version
+      .replaceFirst(RegExp(r'^beta-'), '')
+      .replaceFirst(RegExp(r'-\d+$'), '');
+}
+
 /// 公开入口: main.dart 在 VersionCheckOutdated 时调.
 /// 用 ProviderScope.containerOf(context) 拿 ref, 避免外部传 ref.
 class ForceUpdateDialog {
@@ -145,7 +155,12 @@ class _ForceUpdateDialogContentState
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _VersionChip(label: s.currentVersion, dim: true),
+                  Flexible(
+                    child: _VersionChip(
+                      label: s.currentVersion,
+                      dim: true,
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Icon(
@@ -154,7 +169,12 @@ class _ForceUpdateDialogContentState
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
-                  _VersionChip(label: s.latestVersion, dim: false),
+                  Flexible(
+                    child: _VersionChip(
+                      label: _formatVersionLabel(s.latestVersion),
+                      dim: false,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -285,6 +305,9 @@ class _VersionChip extends StatelessWidget {
       ),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,

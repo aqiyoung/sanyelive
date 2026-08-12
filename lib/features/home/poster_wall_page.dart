@@ -316,7 +316,10 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   @override
   void didUpdateWidget(covariant _TvHero old) {
     super.didUpdateWidget(old);
-    if (old.channel?.id != widget.channel?.id) _startPreview();
+    if (old.channel?.id != widget.channel?.id) {
+      _previewKey++;
+      _startPreview();
+    }
   }
 
   Future<void> _startPreview() async {
@@ -343,19 +346,23 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     if (mounted) {
       setState(() {
         _previewReady = false;
-        _previewKey++;
+        _previewFailed = false;
       });
     }
 
     try {
-      // 关键：先停掉旧流 / 旧帧，重置 decoder / texture。
-      // 共享 Player 在播放页和首页之间复用，直接 open 覆盖上一路流容易
-      // 残留花屏帧；stop 后再 open 能让预览首帧干净。
-      await player.stop();
       // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
       // 会恢复音量 (setVolume(100)).
       await player.setVolume(0);
       await player.open(Media(sources.first));
+      // 关键：不能等 open() 返回就显示 Video —— open() 只代表文件已打开，
+      // 视频轨道可能还没就绪，此时 Video widget 会渲染到未初始化的 texture，
+      // 呈现灰色/花屏。必须等到视频参数（宽高）真正 emitted 才认为准备就绪。
+      await player.stream.videoParams
+          .firstWhere(
+            (p) => p != null && (p.w ?? 0) > 0 && (p.h ?? 0) > 0,
+          )
+          .timeout(const Duration(seconds: 6));
       if (mounted && _openedChannelId == ch.id) {
         setState(() => _previewReady = true);
       }
@@ -368,13 +375,11 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
   @override
   void dispose() {
-    // 离开首页: 彻底停止共享 Player 的预览流，避免把花屏帧带到播放页，
-    // 也避免预览声音在其他页面或后台继续播放。
-    // 不 dispose 共享 Player — 其生命周期由 PlayerService 管理.
+    // 离开首页: 彻底停止预览 Player 的流，避免声音泄露到其他页面。
     try {
       _player?.stop();
     } catch (_) {
-      // 共享 player 可能已被释放, 静默忽略.
+      // player 可能已被释放, 静默忽略.
     }
     super.dispose();
   }
@@ -389,7 +394,11 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
     final channel = widget.channel;
     final onTap = channel == null ? null : () => context.go('/player/${channel.id}');
-    final showVideo = _controller != null && !_previewFailed;
+    final canShowVideo = _controller != null && !_previewFailed;
+    final screenSize = MediaQuery.of(context).size;
+    final isTablet = screenSize.shortestSide >= 600;
+    // 与播放页保持一致：手机 contain（完整画面），平板/TV cover（铺满）。
+    final fit = isTablet ? BoxFit.cover : BoxFit.contain;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -402,26 +411,30 @@ class _TvHeroState extends ConsumerState<_TvHero> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (showVideo)
-                  SizedBox.expand(
-                    child: Video(
-                      // 每次重新开流都换 Key，强制 Video widget 重建 texture，
-                      // 避免复用旧 surface 尺寸导致花屏/灰屏。
-                      key: ValueKey('hero-${channel?.id}-$_previewKey'),
-                      controller: _controller!,
-                      fit: BoxFit.cover,
-                      // 不再在 Video 上设 aspectRatio：父级 AspectRatio(16/9)
-                      // 已约束尺寸，重复设置会让内部纹理尺寸错乱 → 灰屏/花屏。
+                // 底层：频道台标/渐变兜底，避免任何透明区域透出页面背景。
+                _HeroBackdrop(
+                  channel: channel,
+                  isLoading: widget.isLoading,
+                  failed: _previewFailed,
+                ),
+                // 视频层：黑色背景 + Video widget，仅在收到真实视频参数后显示。
+                // 黑色兜底防止 Video 初始化前透出底层渐变。
+                if (canShowVideo && _previewReady)
+                  ColoredBox(
+                    color: Colors.black,
+                    child: SizedBox.expand(
+                      child: Video(
+                        // 切频道时换 Key，强制 Video widget 与 texture 重建，
+                        // 避免复用旧 surface 尺寸导致花屏/灰屏。
+                        key: ValueKey('hero-${channel?.id}-$_previewKey'),
+                        controller: _controller!,
+                        fit: fit,
+                        aspectRatio: 16 / 9,
+                      ),
                     ),
-                  )
-                else
-                  _HeroBackdrop(
-                    channel: channel,
-                    isLoading: widget.isLoading,
-                    failed: _previewFailed,
                   ),
-                // 开流完成前显示加载圈 (盖在黑色视频面上).
-                if (showVideo && !_previewReady)
+                // 开流完成前显示加载圈 (盖在兜底/黑色视频面上).
+                if (canShowVideo && !_previewReady)
                   const ColoredBox(
                     color: Color(0x66000000),
                     child: Center(

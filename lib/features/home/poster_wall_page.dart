@@ -16,7 +16,7 @@ import '../../../data/channel_filter.dart';
 import '../../../data/province_util.dart' show sortSatelliteByProvince;
 import '../../../features/settings/province_provider.dart'
     show provinceProvider;
-import '../../../services/platform/mdk_opener.dart' show configureDeinterlace;
+import '../../../services/platform/mdk_opener.dart' show configurePreview;
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
 import '../../../di/player_providers.dart';
@@ -345,9 +345,10 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _openedChannelId = ch.id;
     if (mounted) setState(() => _previewReady = false);
     try {
-      // 央视 1080i 隔行源必须软件去隔行 (bwdif), 否则预览出梳状隔行纹/花屏.
-      // 等价于全屏播放页 MediaKitStreamOpener 的处理, 不能省.
-      await configureDeinterlace(player);
+      // 首页 Hero 小窗口预览走硬解优先 (auto-safe), 不强制软解/去隔行。
+      // 本设备上强制软解 + bwdif 会导致小窗口花屏/灰屏; 全屏播放才需要 deinterlace。
+      // 同时清理从播放页带回来的软解状态, 保证每次预览都干净。
+      await configurePreview(player);
       // 首页预览默认静音 — 进播放页时 PlayerService.play() 会恢复音量 (setVolume(100)).
       await player.setVolume(0);
       await player.open(Media(sources.first));

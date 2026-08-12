@@ -5,14 +5,14 @@ import 'package:media_kit/media_kit.dart';
 
 import '../source_failover.dart';
 
-/// 对 [player] 应用央视 1080i 隔行源的去隔行配置。
+/// 对 [player] 应用央视 1080i 隔行源的去隔行配置 (全屏播放路径).
 ///
-/// 央视/卫视是 1080i 隔行广播, 必须软件去隔行 (bwdif) 才能消除预览/播放的
+/// 央视/卫视是 1080i 隔行广播, 必须软件去隔行 (bwdif) 才能消除全屏播放的
 /// 梳状隔行纹。同时强制 hwdec=no: Android media_kit_video 默认走
 /// mediacodec_embed VO, 该 VO 不支持 mpv 滤镜链, 因此关掉硬解让 deinterlace 生效。
 ///
-/// 幂等: 不会因重复调用而出错。供 [MediaKitStreamOpener] 与首页 Hero 静音预览
-/// 复用, 保证两条播放路径的去隔行处理一致 —— 否则首页预览会出花屏/隔行纹。
+/// 仅供 [MediaKitStreamOpener] 调用。首页 Hero 小窗口预览不走此配置，而是走
+/// [configurePreview] 恢复硬解优先，避免强制软解导致小窗口花屏/灰屏。
 Future<void> configureDeinterlace(Player player) async {
   final platform = player.platform;
   if (platform is! NativePlayer) return;
@@ -22,6 +22,23 @@ Future<void> configureDeinterlace(Player player) async {
     await platform.setProperty('vf', 'bwdif');
   } catch (e, st) {
     debugPrint('configureDeinterlace failed: $e\n$st');
+  }
+}
+
+/// 恢复 [player] 到适合首页 Hero 小窗口预览的配置。
+///
+/// 首页预览对隔行梳状纹不敏感, 强制软解反而在本设备上渲染异常。因此预览前
+/// 把 player 切回硬解优先 (auto-safe) 并关闭去隔行滤镜。该函数也用于从全屏
+/// 播放页返回首页时, 清理继承自 [configureDeinterlace] 的软解状态。
+Future<void> configurePreview(Player player) async {
+  final platform = player.platform;
+  if (platform is! NativePlayer) return;
+  try {
+    await platform.setProperty('deinterlace', 'no');
+    await platform.setProperty('hwdec', 'auto-safe');
+    await platform.setProperty('vf', '');
+  } catch (e, st) {
+    debugPrint('configurePreview failed: $e\n$st');
   }
 }
 

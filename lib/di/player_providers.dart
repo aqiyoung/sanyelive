@@ -31,10 +31,13 @@ final libmpvAvailableProvider = Provider<bool>((ref) => true);
 
 /// 全局唯一 [Player] 实例。
 ///
-/// 央视/卫视是 1080i 隔行广播, 必须开 mpv 软件去隔行 (yadif) 才能消除花屏。
-/// 注意: 软件去隔行 (yadif) 只对**软件解码**帧生效, 所以 VideoController 的
-/// hwdec 必须配成 'no' (见 [mediaKitVideoControllerProvider]) —— 走硬解时
-/// deinterlace 是空操作, 这正是之前开了 deinterlace 仍花屏的根因。
+/// 央视/卫视是 1080i 隔行广播, 全屏播放时必须开 mpv 软件去隔行 (bwdif) 才能
+/// 消除梳状纹。注意: 软件去隔行只对**软件解码**帧生效, 所以全屏播放前会由
+/// [MediaKitStreamOpener] 把 player 的 hwdec 切到 'no'。
+///
+/// 首页 Hero 小窗口预览则走硬解优先 (auto-safe): 小窗口对隔行不敏感, 而
+/// 强制软解在本设备上反而导致花屏/灰屏。预览前会由 [configurePreview]
+/// 恢复 hwdec=auto-safe, 避免从播放页返回后继承软解状态。
 final mediaKitPlayerProvider = Provider<Player?>((ref) {
   final available = ref.read(libmpvAvailableProvider);
   if (!available) {
@@ -57,9 +60,10 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// hwdec: 'no' = 强制软件解码, 让 [mediaKitPlayerProvider] 的 deinterlace 生效,
-/// 同时完全避开 TV box MediaCodec 的 SIGSEGV。代价: 1080i50 软解更吃 CPU,
-/// 老旧电视盒可能掉帧。
+/// hwdec: 'auto-safe' = 优先硬解, 不支持时自动 fallback 软解。这是首页 Hero
+/// 小窗口预览能正常出画面的关键: 强制软解 ('no') 在本设备上预览会花屏/灰屏。
+/// 全屏播放 1080i 隔行源前, [MediaKitStreamOpener] 会运行时把 player 切到
+/// hwdec=no + deinterlace=bwdif, 不受此处配置影响。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);
   if (player == null) return null;
@@ -67,7 +71,7 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'no',
+        hwdec: 'auto-safe',
       ),
     );
   } catch (e, st) {

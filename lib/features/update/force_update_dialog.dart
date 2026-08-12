@@ -206,80 +206,60 @@ class _ForceUpdateDialogContentState
       );
     }
 
-    final actions = <Widget>[];
+    // ── 主操作: 前往下载 (整行铺满, 视觉权重最高) ──
+    final downloadBtn = FilledButton.icon(
+      onPressed: () => _open(kUpdateConfig.releaseTagUrl(s.latestVersion)),
+      icon: const Icon(Icons.download_rounded, size: 18),
+      label: const Text('前往下载'),
+      style: FilledButton.styleFrom(
+        backgroundColor: _kUpdateAccent,
+        foregroundColor: Colors.white,
+        minimumSize: const Size.fromHeight(46),
+      ),
+    );
 
-    // P0/critical: 不显示"稍后"按钮. 强制更新.
-    if (!s.isCritical) {
-      actions.add(
-        Flexible(
-          flex: 1,
-          fit: FlexFit.tight,
-          child: OutlinedButton(
+    // ── 次级操作行: 稍后 (左) + 代理下载 (右), 低视觉重量文字按钮 ──
+    final secondary = Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (!s.isCritical) ...[
+          TextButton(
             onPressed: () async {
               final navigator = Navigator.of(context);
               await ref.read(versionCheckerProvider.notifier).markDismissed();
               if (mounted) navigator.pop();
             },
-            style: OutlinedButton.styleFrom(
+            style: TextButton.styleFrom(
               foregroundColor: scheme.onSurfaceVariant,
-              side: BorderSide(color: scheme.outline.withValues(alpha: 0.5)),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             child: const Text('稍后'),
           ),
-        ),
-      );
-      actions.add(const SizedBox(width: 10));
-    }
-
-    // 代理下载
-    actions.add(
-      Flexible(
-        flex: 1,
-        fit: FlexFit.tight,
-        child: OutlinedButton(
+          const SizedBox(width: 8),
+        ],
+        TextButton.icon(
           onPressed: () => _open(
             appUpdateCore.proxyUrl(
               kUpdateConfig.releaseTagUrl(s.latestVersion),
             ),
           ),
-          style: OutlinedButton.styleFrom(
+          icon: const Icon(Icons.cloud_outlined, size: 16),
+          label: const Text('代理下载'),
+          style: TextButton.styleFrom(
             foregroundColor: _kUpdateAccent,
-            side: BorderSide(color: _kUpdateAccent.withValues(alpha: 0.5)),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          ),
-          child: const Text('代理下载'),
-        ),
-      ),
-    );
-
-    actions.add(const SizedBox(width: 10));
-
-    // 主操作: 前往下载 (占 2 份, 让带图标的文字有充足余量).
-    actions.add(
-      Flexible(
-        flex: 2,
-        fit: FlexFit.tight,
-        child: FilledButton.icon(
-          onPressed: () =>
-              _open(kUpdateConfig.releaseTagUrl(s.latestVersion)),
-          icon: const Icon(Icons.download_rounded, size: 18),
-          label: const Text('前往下载'),
-          style: FilledButton.styleFrom(
-            backgroundColor: _kUpdateAccent,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
         ),
-      ),
+      ],
     );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: actions,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        downloadBtn,
+        const SizedBox(height: 4),
+        secondary,
+      ],
     );
   }
 }

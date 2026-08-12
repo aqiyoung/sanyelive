@@ -1,10 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:sanyelive/widgets/channel_logo.dart';
 import 'package:sanyelive/widgets/liquid_glass_container.dart';
 
@@ -18,8 +14,6 @@ import '../../../data/province_util.dart' show sortSatelliteByProvince;
 import '../../../features/settings/province_provider.dart'
     show provinceProvider;
 import '../../../data/repositories/channel_repository.dart';
-import '../../../data/source_dispatcher.dart';
-import '../../../di/player_providers.dart';
 import 'widgets/special_zone_section.dart';
 
 /// 视界 海报墙首页
@@ -288,117 +282,15 @@ class _TvLeanbackHome extends ConsumerWidget {
 ///
 /// libmpv 不可用 (TV box 上 dlopen 失败) 或取流失败时, 自动降级到静态
 /// 台标 + 播放键兜底 (_HeroBackdrop), 不会崩.
-class _TvHero extends ConsumerStatefulWidget {
+class _TvHero extends ConsumerWidget {
   const _TvHero({required this.channel, required this.isLoading});
 
   final Channel? channel;
   final bool isLoading;
 
   @override
-  ConsumerState<_TvHero> createState() => _TvHeroState();
-}
-
-class _TvHeroState extends ConsumerState<_TvHero> {
-  bool _previewReady = false;
-  bool _previewFailed = false;
-  String? _openedChannelId;
-  int _previewKey = 0;
-  Player? _player;
-  VideoController? _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    // 首帧后再开流 — 避免 build 期间触发 Riverpod "modify during build".
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startPreview());
-  }
-
-  @override
-  void didUpdateWidget(covariant _TvHero old) {
-    super.didUpdateWidget(old);
-    if (old.channel?.id != widget.channel?.id) {
-      _previewKey++;
-      _startPreview();
-    }
-  }
-
-  Future<void> _startPreview() async {
-    final ch = widget.channel;
-    if (ch == null) return;
-    // 同一频道已尝试过 (成功或失败) 不再重复开流.
-    if (_openedChannelId == ch.id && (_previewReady || _previewFailed)) return;
-
-    final player = ref.read(heroPreviewPlayerProvider);
-    final controller = ref.read(heroPreviewVideoControllerProvider);
-    if (player == null || controller == null) {
-      // libmpv 不可用 → 静态兜底.
-      if (mounted) setState(() => _previewFailed = true);
-      return;
-    }
-    final sources = SourceDispatcher.dispatch(ch);
-    if (sources.isEmpty) {
-      if (mounted) setState(() => _previewFailed = true);
-      return;
-    }
-    _player = player;
-    _controller = controller;
-    _openedChannelId = ch.id;
-    if (mounted) {
-      setState(() {
-        _previewReady = false;
-        _previewFailed = false;
-      });
-    }
-
-    try {
-      // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
-      // 会恢复音量 (setVolume(100)).
-      await player.setVolume(0);
-      await player.open(Media(sources.first));
-      // 关键：不能等 open() 返回就显示 Video —— open() 只代表文件已打开，
-      // 视频轨道可能还没就绪，此时 Video widget 会渲染到未初始化的 texture，
-      // 呈现灰色/花屏。必须等到视频参数（宽高）真正 emitted 才认为准备就绪。
-      await player.stream.videoParams
-          .firstWhere(
-            (p) => p != null && (p.w ?? 0) > 0 && (p.h ?? 0) > 0,
-          )
-          .timeout(const Duration(seconds: 6));
-      if (mounted && _openedChannelId == ch.id) {
-        setState(() => _previewReady = true);
-      }
-    } catch (_) {
-      if (mounted && _openedChannelId == ch.id) {
-        setState(() => _previewFailed = true);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    // 离开首页: 彻底停止预览 Player 的流，避免声音泄露到其他页面。
-    try {
-      _player?.stop();
-    } catch (_) {
-      // player 可能已被释放, 静默忽略.
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // watch 保持预览专用 Player / controller 在首页期间存活 (独立于全屏播放 Player).
-    final player = ref.watch(heroPreviewPlayerProvider);
-    final controller = ref.watch(heroPreviewVideoControllerProvider);
-    _player ??= player;
-    _controller ??= controller;
-
-    final channel = widget.channel;
-    final onTap = channel == null ? null : () => context.go('/player/${channel.id}');
-    final canShowVideo = _controller != null && !_previewFailed;
-    final screenSize = MediaQuery.of(context).size;
-    final isTablet = screenSize.shortestSide >= 600;
-    // 与播放页保持一致：手机 contain（完整画面），平板/TV cover（铺满）。
-    final fit = isTablet ? BoxFit.cover : BoxFit.contain;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final onTap = channel == null ? null : () => context.go('/player/${channel!.id}');
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -411,43 +303,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // 底层：频道台标/渐变兜底，避免任何透明区域透出页面背景。
-                _HeroBackdrop(
-                  channel: channel,
-                  isLoading: widget.isLoading,
-                  failed: _previewFailed,
-                ),
-                // 视频层：黑色背景 + Video widget，仅在收到真实视频参数后显示。
-                // 黑色兜底防止 Video 初始化前透出底层渐变。
-                if (canShowVideo && _previewReady)
-                  ColoredBox(
-                    color: Colors.black,
-                    child: SizedBox.expand(
-                      child: Video(
-                        // 切频道时换 Key，强制 Video widget 与 texture 重建，
-                        // 避免复用旧 surface 尺寸导致花屏/灰屏。
-                        key: ValueKey('hero-${channel?.id}-$_previewKey'),
-                        controller: _controller!,
-                        fit: fit,
-                        aspectRatio: 16 / 9,
-                      ),
-                    ),
-                  ),
-                // 开流完成前显示加载圈 (盖在兜底/黑色视频面上).
-                if (canShowVideo && !_previewReady)
-                  const ColoredBox(
-                    color: Color(0x66000000),
-                    child: Center(
-                      child: SizedBox(
-                        width: 30,
-                        height: 30,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
+                _HeroCard(channel: channel, isLoading: isLoading),
                 const Positioned(left: 16, top: 16, child: _Badge(label: '直播中', color: Color(0xFFE53935))),
                 Positioned(
                   right: 16,
@@ -508,13 +364,13 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   }
 }
 
-/// Hero 静态兜底背景 — libmpv 不可用 / 取流失败 / 加载中时显示 (台标 + 播放键).
-class _HeroBackdrop extends StatelessWidget {
-  const _HeroBackdrop({required this.channel, required this.isLoading, required this.failed});
+/// Hero 主卡片 — 使用频道台标 + 渐变背景 + 播放键。
+/// 不播放实时视频，彻底避免 media_kit 小窗口花屏/灰屏问题。
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({required this.channel, required this.isLoading});
 
   final Channel? channel;
   final bool isLoading;
-  final bool failed;
 
   @override
   Widget build(BuildContext context) {

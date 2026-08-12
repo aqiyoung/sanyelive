@@ -325,8 +325,8 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     // 同一频道已尝试过 (成功或失败) 不再重复开流.
     if (_openedChannelId == ch.id && (_previewReady || _previewFailed)) return;
 
-    final player = ref.read(mediaKitPlayerProvider);
-    final controller = ref.read(mediaKitVideoControllerProvider);
+    final player = ref.read(heroPreviewPlayerProvider);
+    final controller = ref.read(heroPreviewVideoControllerProvider);
     if (player == null || controller == null) {
       // libmpv 不可用 → 静态兜底.
       if (mounted) setState(() => _previewFailed = true);
@@ -381,9 +381,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
   @override
   Widget build(BuildContext context) {
-    // watch 保持共享 Player / controller 在首页期间存活.
-    final player = ref.watch(mediaKitPlayerProvider);
-    final controller = ref.watch(mediaKitVideoControllerProvider);
+    // watch 保持预览专用 Player / controller 在首页期间存活 (独立于全屏播放 Player).
+    final player = ref.watch(heroPreviewPlayerProvider);
+    final controller = ref.watch(heroPreviewVideoControllerProvider);
     _player ??= player;
     _controller ??= controller;
 
@@ -406,11 +406,12 @@ class _TvHeroState extends ConsumerState<_TvHero> {
                   SizedBox.expand(
                     child: Video(
                       // 每次重新开流都换 Key，强制 Video widget 重建 texture，
-                      // 避免共享 controller 复用旧 surface 尺寸导致花屏/灰屏。
+                      // 避免复用旧 surface 尺寸导致花屏/灰屏。
                       key: ValueKey('hero-${channel?.id}-$_previewKey'),
                       controller: _controller!,
                       fit: BoxFit.cover,
-                      aspectRatio: 16 / 9,
+                      // 不再在 Video 上设 aspectRatio：父级 AspectRatio(16/9)
+                      // 已约束尺寸，重复设置会让内部纹理尺寸错乱 → 灰屏/花屏。
                     ),
                   )
                 else

@@ -80,6 +80,48 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   }
 });
 
+/// 首页 Hero 预览专用 [Player]。
+///
+/// 必须**独立于** [mediaKitPlayerProvider]：media_kit 的单个 [Player] 只能把视频
+/// 纹理输出到一个 [Video] widget。首页预览和全屏播放页若共用同一个
+/// Player/VideoController，两个 [Video] widget 会争用同一纹理，导致预览花屏、
+/// 全屏页抢到纹理后正常 —— 这正是「预览花屏、点进去正常」的根因。
+/// 给预览一个独立 Player 后，两套渲染表面彻底隔离，互不干扰。
+final heroPreviewPlayerProvider = Provider<Player?>((ref) {
+  final available = ref.read(libmpvAvailableProvider);
+  if (!available) return null;
+  try {
+    MediaKit.ensureInitialized();
+    final player = Player();
+    final platform = player.platform;
+    if (platform is NativePlayer) {
+      // 复用与全局播放一致的去隔行配置，避免 1080i 隔行源在预览里花屏。
+      unawaited(platform.setProperty('deinterlace', 'yes'));
+    }
+    return player;
+  } catch (e, st) {
+    debugPrint('heroPreviewPlayerProvider: failed: $e\n$st');
+    unawaited(CrashLogger.log('hero preview Player init failed: $e'));
+    return null;
+  }
+});
+
+/// 首页 Hero 预览专用 [VideoController] (hwdec: no, 与全局一致)。
+final heroPreviewVideoControllerProvider = Provider<VideoController?>((ref) {
+  final player = ref.watch(heroPreviewPlayerProvider);
+  if (player == null) return null;
+  try {
+    return VideoController(
+      player,
+      configuration: const VideoControllerConfiguration(hwdec: 'no'),
+    );
+  } catch (e, st) {
+    debugPrint('heroPreviewVideoControllerProvider failed: $e\n$st');
+    unawaited(CrashLogger.log('hero preview VideoController() failed: $e'));
+    return null;
+  }
+});
+
 /// 把 URL 打开到 player 的抽象实现。
 final streamOpenerProvider = Provider<StreamOpener>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);

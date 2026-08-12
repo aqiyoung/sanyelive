@@ -126,7 +126,7 @@ publish_to: "none"
 #   import '../models/channel.dart' (Channel 未定义). 顺手清 lint: 去掉 media_kit_video
 #   多余 hide PlayerState、m3u 3 处多余 !、video_area/main/player_service 3 处冗余 import.
 #   本机 flutter analyze 验证 lib 零 error (CI 不跑 test, 4 个预存 test 错误无关构建).
-version: 0.3.12+191
+version: 0.3.12+192
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

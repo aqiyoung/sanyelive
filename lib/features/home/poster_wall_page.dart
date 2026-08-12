@@ -286,10 +286,10 @@ class _TvLeanbackHome extends ConsumerWidget {
 /// (首页专用独立 Player + VideoController, 与全屏播放页的 Player 隔离, 互不争用
 /// 纹理). 叠加 LIVE 徽标 + 节目信息条. 点击进入全屏播放页 (带声音).
 ///
-/// 预览 Player / VideoController 创建时即固定 `hwdec=no + deinterlace=yes + vf=bwdif`，
-/// 绝不在运行时用 setProperty 切换配置，避免 libmpv decoder / texture 状态混乱。
-/// 父级 [AspectRatio] 已约束 16:9，[Video] 自身不再重复设置 aspectRatio，防止
-/// 内部纹理尺寸计算错乱。
+/// 预览 Player / VideoController 使用 media_kit 默认配置（不指定 hwdec、不去隔行）。
+/// 这是本设备上唯一能正常出画的配置：+204 的强制软解+bwdif、+206 的 auto-safe
+/// 运行时切换、+207 的 auto-safe 独立 Player、+208 的 no+bwdif 独立 Player 在本设备
+/// 上均花屏/灰屏。默认配置保持与最早能正常工作的 `d4c3acc` 一致。
 ///
 /// 预览默认 setVolume(0) 静音, 避免一进首页就出声; 全屏播放页用共享 Player
 /// 以正常音量播放. libmpv 不可用 / 取流失败时, 自动降级到静态台标 + 播放键
@@ -359,7 +359,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
       });
     }
     try {
-      // 预览 Player 创建时已固定软解 + bwdif 去隔行；这里不再 setProperty 切换。
+      // 预览 Player 保持默认配置（不设置 hwdec/deinterlace/vf）。
       // 首页预览默认静音 — 进播放页时 PlayerService.play() 会恢复音量 (setVolume(100)).
       await player.setVolume(0);
       await player.open(Media(sources.first));
@@ -417,8 +417,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
                       key: ValueKey('hero-${channel?.id}-$_previewKey'),
                       controller: _controller!,
                       fit: BoxFit.cover,
-                      // 父级 AspectRatio 已约束 16:9，此处不再重复设置，防止
-                      // media_kit 内部纹理尺寸计算错乱导致花屏/灰屏。
+                      aspectRatio: 16 / 9,
                     ),
                   )
                 else

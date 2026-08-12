@@ -84,12 +84,11 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
 /// 必须与 [mediaKitPlayerProvider] 隔离：
 /// 1. media_kit 单个 [Player] 同时只能输出到一个 [Video] widget，而首页预览与
 ///    全屏播放页可能因导航状态快速切换导致纹理争用。
-/// 2. 运行时通过 setProperty 在硬解/软解之间切换，容易让 libmpv 的 decoder /
-///    texture 状态混乱，从而出现绿屏/花屏。独立 Player + 创建时固定配置彻底
-///    避开此问题。
-/// 3. 央视/卫视是 1080i 隔行广播，预览窗口虽小，但仍需软件去隔行 (bwdif) 才能
-///    避免梳状隔行纹。软件去隔行只对软件解码帧生效，故 Player 与
-///    [VideoController] 均固定 `hwdec=no`。
+/// 2. 全屏播放 1080i 隔行源需要强制软解 + bwdif 去隔行；这套配置若污染到
+///    首页小窗口预览会导致花屏/灰屏，所以预览必须独立一个 Player。
+/// 3. 经过 +204~+208 反复验证：本设备小窗口预览对 `auto-safe` 硬解、强制软解
+///    `no`、软解+bwdif 都会渲染异常；只有 media_kit 默认配置（不指定 hwdec）
+///    才能正常出画面。因此这里创建 Player 后**不设置任何 mpv 属性**。
 ///
 /// 预览默认静音 (在 [_TvHeroState._startPreview] 里 setVolume(0))；离开首页
 /// 时由 Riverpod onDispose 释放，不泄漏 native 资源/声音。
@@ -102,13 +101,7 @@ final heroPreviewPlayerProvider = Provider<Player?>((ref) {
   try {
     MediaKit.ensureInitialized();
     final player = Player();
-    final platform = player.platform;
-    if (platform is NativePlayer) {
-      // 创建时即固定软解 + 软件去隔行，绝不在运行时再 setProperty 切换。
-      unawaited(platform.setProperty('deinterlace', 'yes'));
-      unawaited(platform.setProperty('hwdec', 'no'));
-      unawaited(platform.setProperty('vf', 'bwdif'));
-    }
+    // +209: 不设置任何 hwdec/deinterlace/vf。默认配置是唯一能正常出画的。
     ref.onDispose(() async {
       try {
         await player.dispose();
@@ -126,17 +119,16 @@ final heroPreviewPlayerProvider = Provider<Player?>((ref) {
 
 /// 首页 Hero 预览专用视频渲染控制器。
 ///
-/// 与 [heroPreviewPlayerProvider] 一致，固定强制软件解码 (`hwdec: 'no'`)，让
-/// bwdif 去隔行滤镜对预览帧生效。
+/// 使用 [VideoControllerConfiguration] 默认配置（不指定 hwdec），与
+/// [heroPreviewPlayerProvider] 一起保持 media_kit 默认路径，避免在本设备上
+/// 触发 `auto-safe`/`no` 带来的花屏/灰屏问题。
 final heroPreviewVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(heroPreviewPlayerProvider);
   if (player == null) return null;
   try {
     return VideoController(
       player,
-      configuration: const VideoControllerConfiguration(
-        hwdec: 'no',
-      ),
+      configuration: const VideoControllerConfiguration(),
     );
   } catch (e, st) {
     debugPrint(

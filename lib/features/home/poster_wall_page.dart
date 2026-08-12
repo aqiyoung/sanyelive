@@ -350,17 +350,13 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     }
 
     try {
-      // 首页预览默认静音 — 避免一进首页就出声; 进播放页时独立 Player 以正常音量播放.
+      // 先停掉旧流/旧帧, 重置 decoder/texture, 让预览首帧干净.
+      await player.stop();
+      // 首页预览默认静音 — 进播放页时独立 Player 以正常音量播放, 互不干扰.
       await player.setVolume(0);
       await player.open(Media(sources.first));
-      // 关键：不能等 open() 返回就显示 Video —— open() 只代表文件已打开，
-      // 视频轨道可能还没就绪，此时 Video widget 会渲染到未初始化的 texture，
-      // 呈现灰色/花屏。必须等到视频参数（宽高）真正 emitted 才认为准备就绪。
-      await player.stream.videoParams
-          .firstWhere(
-            (p) => (p.w ?? 0) > 0 && (p.h ?? 0) > 0,
-          )
-          .timeout(const Duration(seconds: 6));
+      // 立即挂上 Video widget (build 里 showVideo 已为 true),
+      // 不等待 videoParams —— 早挂纹理, 首帧一到就显示实时画面.
       if (mounted && _openedChannelId == ch.id) {
         setState(() => _previewReady = true);
       }
@@ -392,7 +388,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
     final channel = widget.channel;
     final onTap = channel == null ? null : () => context.go('/player/${channel.id}');
-    final canShowVideo = _controller != null && !_previewFailed;
+    final showVideo = _controller != null && !_previewFailed;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -405,29 +401,26 @@ class _TvHeroState extends ConsumerState<_TvHero> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // 底层：频道台标/渐变兜底，避免任何透明区域透出页面背景。
-                _HeroBackdrop(
-                  channel: channel,
-                  isLoading: widget.isLoading,
-                ),
-                // 视频层：黑色背景 + Video widget，仅在收到真实视频参数后显示。
-                // 黑色兜底防止 Video 初始化前透出底层渐变。
-                if (canShowVideo && _previewReady)
-                  ColoredBox(
-                    color: Colors.black,
-                    child: SizedBox.expand(
-                      child: Video(
-                        // 切频道时换 Key，强制 Video widget 与 texture 重建，
-                        // 避免复用旧 surface 尺寸导致花屏/灰屏。
-                        key: ValueKey('hero-${channel?.id}-$_previewKey'),
-                        controller: _controller!,
-                        fit: BoxFit.cover,
-                      ),
+                // 预览就绪即挂 Video (立即, 不等 videoParams) — 首帧一到就显示实时画面.
+                if (showVideo)
+                  SizedBox.expand(
+                    child: Video(
+                      // 切频道时换 Key, 强制 Video widget 与 texture 重建,
+                      // 避免复用旧 surface 尺寸导致花屏/灰屏.
+                      key: ValueKey('hero-${channel?.id}-$_previewKey'),
+                      controller: _controller!,
+                      fit: BoxFit.cover,
+                      aspectRatio: 16 / 9,
                     ),
+                  )
+                else
+                  // 兜底: libmpv 不可用 / 取流失败 / 加载中 — 不显示台标, 只给通用图标.
+                  _HeroBackdrop(
+                    channel: channel,
+                    isLoading: widget.isLoading,
                   ),
-                // 开流完成前显示加载圈 (盖在兜底/黑色视频面上).
-                // 用纯黑兜底, 避免渐变/通用图标从预览画面中透出来.
-                if (canShowVideo && !_previewReady)
+                // 首帧未到前显示加载圈 (盖在 Video 上); 一旦 _previewReady 即消失.
+                if (showVideo && !_previewReady)
                   const ColoredBox(
                     color: Colors.black,
                     child: Center(

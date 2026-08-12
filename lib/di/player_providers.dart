@@ -60,8 +60,6 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// hwdec: 'auto-safe' = 优先硬解, 不支持时自动 fallback 软解。这是首页 Hero
-/// 小窗口预览能正常出画面的关键: 强制软解 ('no') 在本设备上预览会花屏/灰屏。
 /// 全屏播放 1080i 隔行源前, [MediaKitStreamOpener] 会运行时把 player 切到
 /// hwdec=no + deinterlace=bwdif, 不受此处配置影响。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
@@ -78,6 +76,65 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     debugPrint(
         'mediaKitVideoControllerProvider: VideoController() threw: $e\n$st');
     unawaited(CrashLogger.log('VideoController() construction failed: $e'));
+    return null;
+  }
+});
+
+/// 首页 Hero 预览专用 [Player]。
+///
+/// 必须与 [mediaKitPlayerProvider] 隔离：
+/// 1. media_kit 单个 [Player] 同时只能输出到一个 [Video] widget，而首页预览与
+///    全屏播放页可能因导航状态快速切换导致纹理争用。
+/// 2. 全屏播放需要强制软解 + 软件去隔行 (bwdif)，该配置在本设备的小窗口预览
+///    上反而花屏/灰屏；预览单独一个 Player 后，两端配置互不干扰。
+/// 3. 运行时通过 setProperty 在硬解/软解之间切换，容易让 libmpv 的 decoder /
+///    texture 状态混乱，从而出现绿屏。独立 Player + 固定 auto-safe 彻底避开此
+///    问题。
+///
+/// 预览默认静音 (在 [_TvHeroState._startPreview] 里 setVolume(0))；离开首页
+/// 时由 Riverpod onDispose 释放，不泄漏 native 资源/声音。
+final heroPreviewPlayerProvider = Provider<Player?>((ref) {
+  final available = ref.read(libmpvAvailableProvider);
+  if (!available) {
+    debugPrint('heroPreviewPlayerProvider: libmpv 不可用, 不走预览');
+    return null;
+  }
+  try {
+    MediaKit.ensureInitialized();
+    final player = Player();
+    ref.onDispose(() async {
+      try {
+        await player.dispose();
+      } catch (e) {
+        debugPrint('heroPreviewPlayerProvider dispose failed: $e');
+      }
+    });
+    return player;
+  } catch (e, st) {
+    debugPrint('heroPreviewPlayerProvider: failed: $e\n$st');
+    unawaited(CrashLogger.log('Hero preview player init failed: $e'));
+    return null;
+  }
+});
+
+/// 首页 Hero 预览专用视频渲染控制器。
+///
+/// 固定硬解优先 (auto-safe)，不强制软解，也不设置 deinterlace。这是本设备
+/// 小窗口预览能正常出画面的关键配置。
+final heroPreviewVideoControllerProvider = Provider<VideoController?>((ref) {
+  final player = ref.watch(heroPreviewPlayerProvider);
+  if (player == null) return null;
+  try {
+    return VideoController(
+      player,
+      configuration: const VideoControllerConfiguration(
+        hwdec: 'auto-safe',
+      ),
+    );
+  } catch (e, st) {
+    debugPrint(
+        'heroPreviewVideoControllerProvider: VideoController() threw: $e\n$st');
+    unawaited(CrashLogger.log('Hero preview VideoController failed: $e'));
     return null;
   }
 });

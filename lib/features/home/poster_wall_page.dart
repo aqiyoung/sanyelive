@@ -16,10 +16,10 @@ import '../../../data/channel_filter.dart';
 import '../../../data/province_util.dart' show sortSatelliteByProvince;
 import '../../../features/settings/province_provider.dart'
     show provinceProvider;
-import '../../../services/platform/mdk_opener.dart' show configurePreview;
+import '../../../di/player_providers.dart'
+    show heroPreviewPlayerProvider, heroPreviewVideoControllerProvider;
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
-import '../../../di/player_providers.dart';
 import 'widgets/special_zone_section.dart';
 
 /// 视界 海报墙首页
@@ -286,7 +286,10 @@ class _TvLeanbackHome extends ConsumerWidget {
 /// (首页专用独立 Player + VideoController, 与全屏播放页的 Player 隔离, 互不争用
 /// 纹理). 叠加 LIVE 徽标 + 节目信息条. 点击进入全屏播放页 (带声音).
 ///
-/// 预览默认 setVolume(0) 静音, 避免一进首页就出声; 全屏播放页用独立 Player
+/// 预览固定走硬解优先 (auto-safe) 且不去隔行；全屏播放页强制软解 + bwdif 去隔行。
+/// 两者配置互不干扰，避免运行时切换 hwdec 导致 libmpv texture 状态混乱而绿屏。
+///
+/// 预览默认 setVolume(0) 静音, 避免一进首页就出声; 全屏播放页用共享 Player
 /// 以正常音量播放. libmpv 不可用 / 取流失败时, 自动降级到静态台标 + 播放键
 /// 兜底 (_HeroBackdrop), 不会崩.
 class _TvHero extends ConsumerStatefulWidget {
@@ -325,11 +328,11 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     // 同一频道已尝试过 (成功或失败) 不再重复开流.
     if (_openedChannelId == ch.id && (_previewReady || _previewFailed)) return;
 
-    // 复用全局共享 Player / VideoController —— 与全屏播放页共用同一实例.
-    // 首页与播放页是不同路由, 两个 Video widget 不会同时挂载, 不存在纹理争用;
-    // 这正是历史上能正常出画面的实现. 独立 Player 方案在本设备反而花屏.
-    final player = ref.read(mediaKitPlayerProvider);
-    final controller = ref.read(mediaKitVideoControllerProvider);
+    // 首页 Hero 预览使用独立 Player / VideoController，与全屏播放页彻底隔离。
+    // 独立实例让小窗口预览固定保持硬解优先 (auto-safe)，不受播放页软解/去隔行
+    // 配置污染，也避免运行时 setProperty 切换 hwdec 导致绿屏。
+    final player = ref.read(heroPreviewPlayerProvider);
+    final controller = ref.read(heroPreviewVideoControllerProvider);
     if (player == null || controller == null) {
       // libmpv 不可用 → 静态兜底.
       if (mounted) setState(() => _previewFailed = true);
@@ -345,10 +348,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _openedChannelId = ch.id;
     if (mounted) setState(() => _previewReady = false);
     try {
-      // 首页 Hero 小窗口预览走硬解优先 (auto-safe), 不强制软解/去隔行。
-      // 本设备上强制软解 + bwdif 会导致小窗口花屏/灰屏; 全屏播放才需要 deinterlace。
-      // 同时清理从播放页带回来的软解状态, 保证每次预览都干净。
-      await configurePreview(player);
+      // 独立预览 Player 初始化时已固定 auto-safe，不再运行时改配置。
       // 首页预览默认静音 — 进播放页时 PlayerService.play() 会恢复音量 (setVolume(100)).
       await player.setVolume(0);
       await player.open(Media(sources.first));
@@ -364,21 +364,21 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
   @override
   void dispose() {
-    // 离开首页: 暂停共享 Player, 避免预览声音在其他页面或后台继续播放.
-    // 不 dispose 共享 Player — 其生命周期由 PlayerService 管理.
+    // 离开首页: 释放首页预览专用 Player, 避免声音/视频在其他页面或后台继续.
+    // 共享 Player 由 PlayerService 管理, 此处只释放独立的预览实例.
     try {
-      _player?.pause();
+      _player?.dispose();
     } catch (_) {
-      // 共享 player 可能已被释放, 静默忽略.
+      // Player 可能已被 Riverpod onDispose 释放, 静默忽略.
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // watch 保持共享 Player / controller 在首页期间存活 (与全屏播放页同一实例).
-    final player = ref.watch(mediaKitPlayerProvider);
-    final controller = ref.watch(mediaKitVideoControllerProvider);
+    // watch 保持首页预览专用 Player / controller 在首页期间存活.
+    final player = ref.watch(heroPreviewPlayerProvider);
+    final controller = ref.watch(heroPreviewVideoControllerProvider);
     _player ??= player;
     _controller ??= controller;
 

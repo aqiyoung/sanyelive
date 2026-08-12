@@ -18,6 +18,7 @@ import '../../../features/settings/province_provider.dart'
     show provinceProvider;
 import '../../../di/player_providers.dart'
     show mediaKitPlayerProvider, mediaKitVideoControllerProvider;
+import '../../../services/platform/mdk_opener.dart' show configurePreview;
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
 import 'widgets/special_zone_section.dart';
@@ -286,6 +287,10 @@ class _TvLeanbackHome extends ConsumerWidget {
 /// Player + VideoController, 不新建第二个 native player). 叠加 LIVE 徽标 +
 /// 节目信息条. 点击进入全屏播放页.
 ///
+/// 每次开预览前调用 [configurePreview] 把共享 Player 切到
+/// hwdec=no + deinterlace=no, 避免从全屏播放页带回来的硬解/去隔行状态
+/// 污染小窗口预览 (Android 16 上表现为灰屏/彩块马赛克)。
+///
 /// libmpv 不可用 (TV box 上 dlopen 失败) 或取流失败时, 自动降级到静态
 /// 台标 + 播放键兜底 (_HeroBackdrop), 不会崩.
 class _TvHero extends ConsumerStatefulWidget {
@@ -315,10 +320,12 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   @override
   void didUpdateWidget(covariant _TvHero old) {
     super.didUpdateWidget(old);
-    if (old.channel?.id != widget.channel?.id) _startPreview();
+    if (old.channel?.id != widget.channel?.id) {
+      unawaited(_startPreview());
+    }
   }
 
-  void _startPreview() {
+  Future<void> _startPreview() async {
     final ch = widget.channel;
     if (ch == null) return;
     // 同一频道已尝试过 (成功或失败) 不再重复开流.
@@ -340,24 +347,23 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _controller = controller;
     _openedChannelId = ch.id;
     if (mounted) setState(() => _previewReady = false);
-    // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
-    // 会恢复音量 (setVolume(100)).
-    unawaited(player.setVolume(0));
-    // 直接对共享 Player 开流做预览, 不碰 PlayerService (避开其 _playing 守卫).
-    unawaited(
-      player
-          .open(Media(sources.first))
-          .then((_) {
-            if (mounted && _openedChannelId == ch.id) {
-              setState(() => _previewReady = true);
-            }
-          })
-          .catchError((_) {
-            if (mounted && _openedChannelId == ch.id) {
-              setState(() => _previewFailed = true);
-            }
-          }),
-    );
+    try {
+      // 先把共享 Player 从全屏的硬解/去隔行状态切回适合小窗预览的软件解码。
+      // 仅改 VideoController.hwdec 不够: 必须直接设置 player 的 mpv 属性。
+      await configurePreview(player);
+      // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
+      // 会恢复音量 (setVolume(100)).
+      await player.setVolume(0);
+      // 直接对共享 Player 开流做预览, 不碰 PlayerService (避开其 _playing 守卫).
+      await player.open(Media(sources.first));
+      if (mounted && _openedChannelId == ch.id) {
+        setState(() => _previewReady = true);
+      }
+    } catch (_) {
+      if (mounted && _openedChannelId == ch.id) {
+        setState(() => _previewFailed = true);
+      }
+    }
   }
 
   @override

@@ -426,9 +426,10 @@ class _TvHeroState extends ConsumerState<_TvHero> {
                     ),
                   ),
                 // 开流完成前显示加载圈 (盖在兜底/黑色视频面上).
+                // 用纯黑兜底, 避免渐变/通用图标从预览画面中透出来.
                 if (canShowVideo && !_previewReady)
                   const ColoredBox(
-                    color: Color(0x66000000),
+                    color: Colors.black,
                     child: Center(
                       child: SizedBox(
                         width: 30,
@@ -500,8 +501,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   }
 }
 
-/// Hero 静态兜底背景 — libmpv 不可用 / 取流失败 / 加载中时显示 (台标 + 播放键).
-/// 实时预览就绪后, 视频层会盖在它上面 (BoxFit.cover 铺满), 此处内容不可见.
+/// Hero 静态兜底背景 — libmpv 不可用 / 取流失败 / 加载中时显示.
+/// 直播预览就绪后, 视频层会盖在它上面 (BoxFit.cover 铺满), 此处内容不可见.
+/// 注意：预览场景不显示频道台标, 避免遮挡/干扰真实视频画面.
 class _HeroBackdrop extends StatelessWidget {
   const _HeroBackdrop({required this.channel, required this.isLoading});
 
@@ -541,14 +543,11 @@ class _HeroBackdrop extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (channel != null)
-                  ChannelLogo(channel: channel, size: 76)
-                else
-                  Icon(
-                    isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
-                    color: Colors.white70,
-                    size: 46,
-                  ),
+                Icon(
+                  isLoading ? Icons.hourglass_empty_rounded : Icons.live_tv_rounded,
+                  color: Colors.white70,
+                  size: 46,
+                ),
                 const SizedBox(height: 14),
                 Container(
                   width: 56,

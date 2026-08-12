@@ -26,15 +26,16 @@ import 'package:sanyelive/services/version_checker.dart';
 
 /// 更新流程专用强调色 — 青玉 teal, 与设置页「检查更新」弹窗保持一致.
 const Color _kUpdateAccent = Color(0xFF2A9D8F);
-const Color _kUpdateAccentContainer = Color(0xFFE6F4F2);
 
 /// 把冗长的 release tag 格式化成更紧凑的版本显示.
 ///
-/// 例如 `beta-0.3.12+202-332` → `0.3.12+202`
-/// `v0.3.12.201` 保持原样.
+/// 例如:
+///   `beta-0.3.12+204-334` → `0.3.12+204`
+///   `v0.3.12.203`         → `0.3.12.203`
 String _formatVersionLabel(String version) {
   return version
       .replaceFirst(RegExp(r'^beta-'), '')
+      .replaceFirst(RegExp(r'^v'), '')
       .replaceFirst(RegExp(r'-\d+$'), '');
 }
 
@@ -152,27 +153,29 @@ class _ForceUpdateDialogContentState
               ),
               const SizedBox(height: 20),
               // ── 版本对比 chips ──
+              // 旧版本弱化、新版本主色高亮；右侧用 Flexible + FittedBox，
+              // 即使 tag 很长也会自动缩放，绝不撑出弹窗边界。
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Flexible(
-                    child: _VersionChip(
-                      label: s.currentVersion,
-                      dim: true,
-                    ),
+                  _VersionChip(
+                    label: _formatVersionLabel(s.currentVersion),
+                    style: _ChipStyle.dim,
+                    compact: true,
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                     child: Icon(
                       Icons.arrow_forward_rounded,
-                      size: 18,
-                      color: scheme.onSurfaceVariant,
+                      size: 16,
+                      color: _kUpdateAccent,
                     ),
                   ),
                   Flexible(
                     child: _VersionChip(
                       label: _formatVersionLabel(s.latestVersion),
-                      dim: false,
+                      style: _ChipStyle.accent,
+                      compact: false,
                     ),
                   ),
                 ],
@@ -284,34 +287,54 @@ class _ForceUpdateDialogContentState
   }
 }
 
+enum _ChipStyle { dim, accent }
+
 /// 版本 chip — 当前版本(暗)/最新版本(高亮) 两个药丸.
+///
+/// [compact] 用于旧版本 chip，缩小 padding/字号，把视觉重心让给新版本。
+/// [FittedBox] 保证即使版本号很长也会整体缩放，不会溢出父容器。
 class _VersionChip extends StatelessWidget {
   final String label;
-  final bool dim;
+  final _ChipStyle style;
+  final bool compact;
 
-  const _VersionChip({required this.label, required this.dim});
+  const _VersionChip({
+    required this.label,
+    required this.style,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDim = style == _ChipStyle.dim;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: dim
-            ? scheme.surfaceContainerHighest.withValues(alpha: 0.6)
-            : _kUpdateAccentContainer,
-        borderRadius: BorderRadius.circular(999),
-        border: dim ? null : Border.all(color: _kUpdateAccent.withValues(alpha: 0.4)),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 8 : 12,
+        vertical: compact ? 4 : 6,
       ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: dim ? scheme.onSurfaceVariant : _kUpdateAccent,
+      decoration: BoxDecoration(
+        color: isDim
+            ? scheme.surfaceContainerHighest.withValues(alpha: 0.6)
+            : _kUpdateAccent,
+        borderRadius: BorderRadius.circular(999),
+        border: isDim
+            ? Border.all(color: scheme.outline.withValues(alpha: 0.2))
+            : null,
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: compact ? 12 : 13,
+            fontWeight: FontWeight.w700,
+            color: isDim ? scheme.onSurfaceVariant : Colors.white,
+          ),
         ),
       ),
     );

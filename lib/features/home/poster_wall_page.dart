@@ -15,6 +15,8 @@ import '../../../data/channel_filter.dart';
 import '../../../data/province_util.dart' show sortSatelliteByProvince;
 import '../../../features/settings/province_provider.dart'
     show provinceProvider;
+import '../../../features/settings/home_preview_provider.dart'
+    show homePreviewProvider;
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
 import '../../../di/player_providers.dart';
@@ -309,12 +311,26 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   void initState() {
     super.initState();
     // 首帧后再开流 — 避免 build 期间触发 Riverpod "modify during build".
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startPreview());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(homePreviewProvider)) _startPreview();
+    });
   }
 
   @override
   void didUpdateWidget(covariant _TvHero old) {
     super.didUpdateWidget(old);
+    final enabled = ref.read(homePreviewProvider);
+    if (!enabled) {
+      // 用户在设置页关闭了预览 → 立即停止并回静态卡片.
+      _player?.stop();
+      _previewReady = false;
+      _previewFailed = false;
+      _openedChannelId = null;
+    } else if (_openedChannelId == null && widget.channel != null) {
+      // 开关从关变开且尚未加载过 → 开始预览.
+      _startPreview();
+    }
+
     if (old.channel?.id != widget.channel?.id) {
       _previewKey++;
       _startPreview();
@@ -322,6 +338,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   }
 
   Future<void> _startPreview() async {
+    // 用户在设置里关闭了首页直播预览 → 保持静态卡片, 不请求视频流.
+    if (!ref.read(homePreviewProvider)) return;
+
     final ch = widget.channel;
     if (ch == null) return;
     // 同一频道已尝试过 (成功或失败) 不再重复开流.
@@ -380,6 +399,8 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
   @override
   Widget build(BuildContext context) {
+    final previewEnabled = ref.watch(homePreviewProvider);
+
     // watch 保持预览专用 Player / controller 在首页期间存活 (独立于全屏播放 Player).
     final player = ref.watch(heroPreviewPlayerProvider);
     final controller = ref.watch(heroPreviewVideoControllerProvider);
@@ -388,7 +409,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
     final channel = widget.channel;
     final onTap = channel == null ? null : () => context.go('/player/${channel.id}');
-    final showVideo = _controller != null && !_previewFailed;
+    final showVideo = previewEnabled && _controller != null && !_previewFailed;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

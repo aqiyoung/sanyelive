@@ -20,6 +20,7 @@ import '../../services/version_checker.dart'
         VersionCheckFailed,
         autoCheckUpdateProvider,
         betaChannelProvider;
+import 'home_preview_provider.dart' show homePreviewProvider;
 import '../update/force_update_dialog.dart' show ForceUpdateDialog;
 import '../../../core/theme/colors.dart';
 import '../../../core/theme/typography.dart';
@@ -180,6 +181,22 @@ class SettingsPage extends ConsumerWidget {
                     value: beta,
                     onChanged: (v) =>
                         ref.read(betaChannelProvider.notifier).set(v),
+                  );
+                },
+              ),
+              const _SettingsGap(),
+              Consumer(
+                builder: (context, ref, _) {
+                  final enabled = ref.watch(homePreviewProvider);
+                  return SwitchListTile(
+                    secondary: const Icon(Icons.preview_outlined),
+                    title: const Text('首页直播预览'),
+                    subtitle: const Text(
+                      '关闭后首页顶部只显示静态卡片，可解决部分设备花屏',
+                    ),
+                    value: enabled,
+                    onChanged: (v) =>
+                        ref.read(homePreviewProvider.notifier).set(v),
                   );
                 },
               ),

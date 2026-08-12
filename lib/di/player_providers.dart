@@ -60,8 +60,11 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// 全屏播放 1080i 隔行源前, [MediaKitStreamOpener] 会运行时把 player 切到
-/// hwdec=no + deinterlace=bwdif, 不受此处配置影响。
+/// hwdec: 'no' = 强制软件解码。这是本设备(Android 16 + 新版 libmpv 1.3.8)上
+/// 能正常出画面的关键: 'auto-safe' 硬件解码在小窗预览(surface 尺寸动态变化)下
+/// 会渲染异常(绿屏/彩色块/灰屏); 而软件解码与全屏播放页(同样走 hwdec=no + bwdif)
+/// 行为一致, 已被验证稳定。全屏播放前 [MediaKitStreamOpener] 仍会运行时叠加
+/// deinterlace=bwdif 去隔行, 不受此处固定值影响。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);
   if (player == null) return null;
@@ -69,7 +72,7 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'auto-safe',
+        hwdec: 'no',
       ),
     );
   } catch (e, st) {

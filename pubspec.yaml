@@ -129,7 +129,7 @@ publish_to: "none"
 # 0.3.12+201 (8/12): 再修央视花屏 — 把 deinterlace=yes/hwdec=no/vf=bwdif
 #   的设置从 provider 创建时 unawaited 移到 MediaKitStreamOpener.open 首播前 await,
 #   确保属性真正在解码前生效。
-version: 0.3.12+210
+version: 0.3.12+211
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -145,12 +145,17 @@ dependencies:
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
   # 卡 5: 视频播放 (libmpv based)
+  # 保持 ^ 浮动: Android 15/16 强制 16KB 内存页, 旧版 libmpv(.so) 无法加载,
+  # 必须用 1.2.x 起的 media_kit_libs_android_video(SDK 36 构建)。用户已确认
+  # Android 16, 故不能钉回旧版。Hero 小窗花屏根因是新 libmpv 的**硬件解码
+  # (auto-safe) 在小窗渲染异常**; 已通过将共享 VideoController 改为软件解码
+  # (hwdec='no', 与全屏播放一致) 规避。勿钉死旧版。
   media_kit: ^1.1.10
   # 卡 5: Video 渲染层 (Android/iOS/macOS/Windows/Linux)
-  media_kit_video: 1.2.5
+  media_kit_video: ^1.2.5
   # 卡 7 (6/17 修复): native video dependencies (libmpv .so for Android).
   # 之前 v0.2.0 APK 里没有 libmpv.so, MediaKit.ensureInitialized() 加载失败,
-  # catch 住后 Player() 抛 'ensureInitialized must be called'.
+  # catch 住后 Player() 抛 'ensureInitialized must be called'。
   media_kit_libs_video: ^1.0.7
   # 卡 6: 收藏本地存储
   sqflite: ^2.4.1

@@ -1,0 +1,39 @@
+name: Release Status → Telegram
+
+# 汇总多个仓库的最新发布，每天定时 + 手动推送一条汇总消息到 Telegram。
+# 参照 sanyelive release.yml 的「推送新版本到 Telegram」步骤：
+# 复用同样的 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID 机密与 sendMessage 调用方式，
+# 把「单仓发版推送」扩成「多仓发布状态汇总」。
+#
+# 部署：把本文件放到任一已配置好 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID 机密的仓库的
+# .github/workflows/ 下，并把 scripts/push_release_status.py 一并提交即可。
+# 想调整汇总哪些仓库 / 显示名，改 push_release_status.py 顶部的 PROJECTS 列表。
+
+on:
+  schedule:
+    # 每天北京时间 09:00（= UTC 01:00）汇总一次
+    - cron: '0 1 * * *'
+  workflow_dispatch: {}   # 允许在 Actions 页面手动触发
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 汇总并推送发布状态到 Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN: ${{ github.token }}   # gh api 读 aqiyoung/* 公开仓库用
+        run: |
+          python3 scripts/push_release_status.py

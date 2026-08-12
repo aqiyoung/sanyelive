@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,8 +16,7 @@ import '../../../data/channel_filter.dart';
 import '../../../data/province_util.dart' show sortSatelliteByProvince;
 import '../../../features/settings/province_provider.dart'
     show provinceProvider;
-import '../../../features/settings/home_preview_provider.dart'
-    show homePreviewProvider;
+import '../../../services/platform/mdk_opener.dart' show configureDeinterlace;
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
 import '../../../di/player_providers.dart';
@@ -303,7 +303,6 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   bool _previewReady = false;
   bool _previewFailed = false;
   String? _openedChannelId;
-  int _previewKey = 0;
   Player? _player;
   VideoController? _controller;
 
@@ -311,43 +310,26 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   void initState() {
     super.initState();
     // 首帧后再开流 — 避免 build 期间触发 Riverpod "modify during build".
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ref.read(homePreviewProvider)) _startPreview();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_startPreview()));
   }
 
   @override
   void didUpdateWidget(covariant _TvHero old) {
     super.didUpdateWidget(old);
-    final enabled = ref.read(homePreviewProvider);
-    if (!enabled) {
-      // 用户在设置页关闭了预览 → 立即停止并回静态卡片.
-      _player?.stop();
-      _previewReady = false;
-      _previewFailed = false;
-      _openedChannelId = null;
-    } else if (_openedChannelId == null && widget.channel != null) {
-      // 开关从关变开且尚未加载过 → 开始预览.
-      _startPreview();
-    }
-
-    if (old.channel?.id != widget.channel?.id) {
-      _previewKey++;
-      _startPreview();
-    }
+    if (old.channel?.id != widget.channel?.id) _startPreview();
   }
 
   Future<void> _startPreview() async {
-    // 用户在设置里关闭了首页直播预览 → 保持静态卡片, 不请求视频流.
-    if (!ref.read(homePreviewProvider)) return;
-
     final ch = widget.channel;
     if (ch == null) return;
     // 同一频道已尝试过 (成功或失败) 不再重复开流.
     if (_openedChannelId == ch.id && (_previewReady || _previewFailed)) return;
 
-    final player = ref.read(heroPreviewPlayerProvider);
-    final controller = ref.read(heroPreviewVideoControllerProvider);
+    // 复用全局共享 Player / VideoController —— 与全屏播放页共用同一实例.
+    // 首页与播放页是不同路由, 两个 Video widget 不会同时挂载, 不存在纹理争用;
+    // 这正是历史上能正常出画面的实现. 独立 Player 方案在本设备反而花屏.
+    final player = ref.read(mediaKitPlayerProvider);
+    final controller = ref.read(mediaKitVideoControllerProvider);
     if (player == null || controller == null) {
       // libmpv 不可用 → 静态兜底.
       if (mounted) setState(() => _previewFailed = true);
@@ -361,21 +343,14 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _player = player;
     _controller = controller;
     _openedChannelId = ch.id;
-    if (mounted) {
-      setState(() {
-        _previewReady = false;
-        _previewFailed = false;
-      });
-    }
-
+    if (mounted) setState(() => _previewReady = false);
     try {
-      // 先停掉旧流/旧帧, 重置 decoder/texture, 让预览首帧干净.
-      await player.stop();
-      // 首页预览默认静音 — 进播放页时独立 Player 以正常音量播放, 互不干扰.
+      // 央视 1080i 隔行源必须软件去隔行 (bwdif), 否则预览出梳状隔行纹/花屏.
+      // 等价于全屏播放页 MediaKitStreamOpener 的处理, 不能省.
+      await configureDeinterlace(player);
+      // 首页预览默认静音 — 进播放页时 PlayerService.play() 会恢复音量 (setVolume(100)).
       await player.setVolume(0);
       await player.open(Media(sources.first));
-      // 立即挂上 Video widget (build 里 showVideo 已为 true),
-      // 不等待 videoParams —— 早挂纹理, 首帧一到就显示实时画面.
       if (mounted && _openedChannelId == ch.id) {
         setState(() => _previewReady = true);
       }
@@ -388,28 +363,27 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
   @override
   void dispose() {
-    // 离开首页: 彻底停止预览 Player 的流，避免声音/资源泄露到其他页面。
+    // 离开首页: 暂停共享 Player, 避免预览声音在其他页面或后台继续播放.
+    // 不 dispose 共享 Player — 其生命周期由 PlayerService 管理.
     try {
-      _player?.stop();
+      _player?.pause();
     } catch (_) {
-      // player 可能已被释放, 静默忽略.
+      // 共享 player 可能已被释放, 静默忽略.
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final previewEnabled = ref.watch(homePreviewProvider);
-
-    // watch 保持预览专用 Player / controller 在首页期间存活 (独立于全屏播放 Player).
-    final player = ref.watch(heroPreviewPlayerProvider);
-    final controller = ref.watch(heroPreviewVideoControllerProvider);
+    // watch 保持共享 Player / controller 在首页期间存活 (与全屏播放页同一实例).
+    final player = ref.watch(mediaKitPlayerProvider);
+    final controller = ref.watch(mediaKitVideoControllerProvider);
     _player ??= player;
     _controller ??= controller;
 
     final channel = widget.channel;
     final onTap = channel == null ? null : () => context.go('/player/${channel.id}');
-    final showVideo = previewEnabled && _controller != null && !_previewFailed;
+    final showVideo = _controller != null && !_previewFailed;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -426,9 +400,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
                 if (showVideo)
                   SizedBox.expand(
                     child: Video(
-                      // 切频道时换 Key, 强制 Video widget 与 texture 重建,
+                      // Key 含频道 id: 切换精选频道时强制 Video 与 texture 重建,
                       // 避免复用旧 surface 尺寸导致花屏/灰屏.
-                      key: ValueKey('hero-${channel?.id}-$_previewKey'),
+                      key: ValueKey('hero-${channel?.id}'),
                       controller: _controller!,
                       fit: BoxFit.cover,
                       aspectRatio: 16 / 9,

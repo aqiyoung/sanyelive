@@ -5,6 +5,26 @@ import 'package:media_kit/media_kit.dart';
 
 import '../source_failover.dart';
 
+/// 对 [player] 应用央视 1080i 隔行源的去隔行配置。
+///
+/// 央视/卫视是 1080i 隔行广播, 必须软件去隔行 (bwdif) 才能消除预览/播放的
+/// 梳状隔行纹。同时强制 hwdec=no: Android media_kit_video 默认走
+/// mediacodec_embed VO, 该 VO 不支持 mpv 滤镜链, 因此关掉硬解让 deinterlace 生效。
+///
+/// 幂等: 不会因重复调用而出错。供 [MediaKitStreamOpener] 与首页 Hero 静音预览
+/// 复用, 保证两条播放路径的去隔行处理一致 —— 否则首页预览会出花屏/隔行纹。
+Future<void> configureDeinterlace(Player player) async {
+  final platform = player.platform;
+  if (platform is! NativePlayer) return;
+  try {
+    await platform.setProperty('deinterlace', 'yes');
+    await platform.setProperty('hwdec', 'no');
+    await platform.setProperty('vf', 'bwdif');
+  } catch (e, st) {
+    debugPrint('configureDeinterlace failed: $e\n$st');
+  }
+}
+
 /// media_kit 实现的 [StreamOpener]: 把 URL 真正打开到 [Player]。
 ///
 /// open 不阻塞等到首帧, 而是监听 [Player.stream.playing] 判断是否起播成功,
@@ -36,18 +56,8 @@ class MediaKitStreamOpener implements StreamOpener {
   Future<void> _configurePlayer() async {
     if (_configured) return;
     _configured = true;
-    final platform = _player.platform;
-    if (platform is! NativePlayer) return;
-    try {
-      // 央视/卫视是 1080i 隔行, 必须软件去隔行 (yadif/bwdif)。
-      // Android media_kit_video 默认走 mediacodec_embed VO, 该 VO 不支持
-      // mpv 滤镜链, 因此同时显式关闭 hwdec 并强制软解, 让 deinterlace 生效。
-      await platform.setProperty('deinterlace', 'yes');
-      await platform.setProperty('hwdec', 'no');
-      await platform.setProperty('vf', 'bwdif');
-    } catch (e, st) {
-      debugPrint('MediaKitStreamOpener._configurePlayer failed: $e\n$st');
-    }
+    // 去隔行配置抽成可复用函数, 首页 Hero 预览也用它 (见 [configureDeinterlace]).
+    await configureDeinterlace(_player);
   }
 
   @override

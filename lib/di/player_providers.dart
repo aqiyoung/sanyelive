@@ -45,10 +45,8 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
   try {
     MediaKit.ensureInitialized();
     final player = Player();
-    final platform = player.platform;
-    if (platform is NativePlayer) {
-      unawaited(platform.setProperty('deinterlace', 'yes'));
-    }
+    // 去隔行/软解配置在 [MediaKitStreamOpener.open] 首播前 await 设置,
+    // provider 创建不能阻塞, 这里不再异步 setProperty。
     return player;
   } catch (e, st) {
     debugPrint('mediaKitPlayerProvider: failed: $e\n$st');
@@ -93,11 +91,8 @@ final heroPreviewPlayerProvider = Provider<Player?>((ref) {
   try {
     MediaKit.ensureInitialized();
     final player = Player();
-    final platform = player.platform;
-    if (platform is NativePlayer) {
-      // 复用与全局播放一致的去隔行配置，避免 1080i 隔行源在预览里花屏。
-      unawaited(platform.setProperty('deinterlace', 'yes'));
-    }
+    // 预览播放器的去隔行/软解配置在打开具体源前统一设置,
+    // 与 [MediaKitStreamOpener] 保持一致。
     // 离开首页 (Home 不再 watch) 时自动释放 native player，避免流/声音泄露。
     ref.onDispose(() {
       try {

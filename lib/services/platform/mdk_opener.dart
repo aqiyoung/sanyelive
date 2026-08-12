@@ -22,15 +22,39 @@ class MediaKitStreamOpener implements StreamOpener {
   /// 每次 [open] 自增, 用于识别"当前有效"的那次 open。
   int _generation = 0;
 
+  /// 是否已针对当前 [_player] 配置过去隔行参数。
+  ///
+  /// mpv 属性设置是异步 FFI; provider 创建时不能 await, 所以放到第一次
+  /// [open] 前同步等待, 确保首播前已生效。
+  bool _configured = false;
+
   @override
   Future<void> cancel(String url) async {
     // 不再 stop: 新 open 会替换当前流; 旧切换的 cancel 若 stop 会误杀新流.
+  }
+
+  Future<void> _configurePlayer() async {
+    if (_configured) return;
+    _configured = true;
+    final platform = _player.platform;
+    if (platform is! NativePlayer) return;
+    try {
+      // 央视/卫视是 1080i 隔行, 必须软件去隔行 (yadif/bwdif)。
+      // Android media_kit_video 默认走 mediacodec_embed VO, 该 VO 不支持
+      // mpv 滤镜链, 因此同时显式关闭 hwdec 并强制软解, 让 deinterlace 生效。
+      await platform.setProperty('deinterlace', 'yes');
+      await platform.setProperty('hwdec', 'no');
+      await platform.setProperty('vf', 'bwdif');
+    } catch (e, st) {
+      debugPrint('MediaKitStreamOpener._configurePlayer failed: $e\n$st');
+    }
   }
 
   @override
   Future<bool> open(String url, {required Duration timeout}) async {
     final myGen = ++_generation;
     try {
+      await _configurePlayer();
       final completer = Completer<bool>();
       late final StreamSubscription<dynamic> sub;
       late final Timer timer;

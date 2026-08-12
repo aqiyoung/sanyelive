@@ -211,7 +211,9 @@ class _ForceUpdateDialogContentState
     // P0/critical: 不显示"稍后"按钮. 强制更新.
     if (!s.isCritical) {
       actions.add(
-        Expanded(
+        Flexible(
+          flex: 1,
+          fit: FlexFit.tight,
           child: OutlinedButton(
             onPressed: () async {
               final navigator = Navigator.of(context);
@@ -221,7 +223,7 @@ class _ForceUpdateDialogContentState
             style: OutlinedButton.styleFrom(
               foregroundColor: scheme.onSurfaceVariant,
               side: BorderSide(color: scheme.outline.withValues(alpha: 0.5)),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             ),
             child: const Text('稍后'),
           ),
@@ -232,7 +234,9 @@ class _ForceUpdateDialogContentState
 
     // 代理下载
     actions.add(
-      Expanded(
+      Flexible(
+        flex: 1,
+        fit: FlexFit.tight,
         child: OutlinedButton(
           onPressed: () => _open(
             appUpdateCore.proxyUrl(
@@ -242,7 +246,7 @@ class _ForceUpdateDialogContentState
           style: OutlinedButton.styleFrom(
             foregroundColor: _kUpdateAccent,
             side: BorderSide(color: _kUpdateAccent.withValues(alpha: 0.5)),
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           ),
           child: const Text('代理下载'),
         ),
@@ -251,9 +255,11 @@ class _ForceUpdateDialogContentState
 
     actions.add(const SizedBox(width: 10));
 
-    // 主操作: 前往下载
+    // 主操作: 前往下载 (占 2 份, 让带图标的文字有充足余量).
     actions.add(
-      Expanded(
+      Flexible(
+        flex: 2,
+        fit: FlexFit.tight,
         child: FilledButton.icon(
           onPressed: () =>
               _open(kUpdateConfig.releaseTagUrl(s.latestVersion)),
@@ -262,15 +268,18 @@ class _ForceUpdateDialogContentState
           style: FilledButton.styleFrom(
             backgroundColor: _kUpdateAccent,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
           ),
         ),
       ),
     );
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: actions,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: actions,
+      ),
     );
   }
 }

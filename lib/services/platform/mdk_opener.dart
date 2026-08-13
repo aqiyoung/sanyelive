@@ -56,6 +56,7 @@ Future<void> dumpMpvRenderInfo(Player player, {String? tag}) async {
     'hwdec-current',
     'video-format',
     'video-params/imgfmt',
+    'deinterlace-current',
     'width',
     'height',
     'current-vo',
@@ -89,21 +90,17 @@ class MediaKitStreamOpener implements StreamOpener {
   /// 每次 [open] 自增, 用于识别"当前有效"的那次 open。
   int _generation = 0;
 
-  /// 是否已针对当前 [_player] 配置过去隔行参数。
-  ///
-  /// mpv 属性设置是异步 FFI; provider 创建时不能 await, 所以放到第一次
-  /// [open] 前同步等待, 确保首播前已生效。
-  bool _configured = false;
-
   @override
   Future<void> cancel(String url) async {
     // 不再 stop: 新 open 会替换当前流; 旧切换的 cancel 若 stop 会误杀新流.
   }
 
+  /// 每次 [open] 前确保全屏去隔行配置生效。
+  ///
+  /// 不能用一次性守卫: 首页 Hero 预览会经 [configurePreview] 把共享 Player 的
+  /// deinterlace 改回 no, 若此处只在首次 open 设置, 后续全屏 open 会沿用预览
+  /// 留下的 no → 央视/卫视 1080i 隔行梳状花屏。故每次 open 都重新置 yes。
   Future<void> _configurePlayer() async {
-    if (_configured) return;
-    _configured = true;
-    // 去隔行配置抽成可复用函数, 首页 Hero 预览也用它 (见 [configureDeinterlace]).
     await configureDeinterlace(_player);
   }
 

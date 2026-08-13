@@ -5,6 +5,7 @@
 参照 sanyelive/.github/workflows/release.yml 里的「推送新版本到 Telegram」步骤：
 - 复用同样的 sendMessage 调用方式与 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID 机密
 - 把「单仓发版推送」扩成「多仓发布状态汇总」
+- 下载链接用 GitHub Release 资产直链（browser_download_url），不走代理
 
 用法：
   python3 scripts/push_release_status.py                 # 用环境变量里的机密真发
@@ -33,8 +34,8 @@ PROJECTS = [
     ("OpenClaw", "aqiyoung/openclaw"),
 ]
 
-# 与 sanyelive release.yml 里写死的默认 chat 一致
-DEFAULT_CHAT_ID = "460212872"
+# 与 sanyelive 实际使用的频道一致（aqiyoung Telegram 频道）
+DEFAULT_CHAT_ID = "-1004346529287"
 
 
 def gh_api(path):
@@ -60,11 +61,24 @@ def fmt_date(iso):
         return ""
 
 
+def apk_urls(release):
+    """从 release 资产里挑出 .apk 的 GitHub 直链（browser_download_url）。
+    没有 .apk 时回退到全部资产的直链；还是没有就返回空列表。"""
+    assets = release.get("assets") or []
+    if not assets:
+        return []
+    apks = [a["browser_download_url"] for a in assets if (a.get("name") or "").lower().endswith(".apk")]
+    if apks:
+        return apks
+    return [a["browser_download_url"] for a in assets]
+
+
 def get_release_info(repo):
-    """返回 (tag, name, published_iso, html_url) 或 None。
+    """返回 (tag, name, published_iso, html_url, dl_urls) 或 None。
 
     优先取 latest release（排除 draft/prerelease 的正式发布）；
     若该仓没有正式 release，回退到最新 tag（并尽量补上 tag 对应 commit 的日期）。
+    dl_urls 为 GitHub Release 资产的直链（.apk 优先），无则空列表。
     """
     out = gh_api(f"repos/{repo}/releases/latest")
     if out:
@@ -77,6 +91,7 @@ def get_release_info(repo):
                     d.get("name") or tag,
                     d.get("published_at"),
                     d.get("html_url") or f"https://github.com/{repo}/releases/tag/{tag}",
+                    apk_urls(d),
                 )
         except Exception:
             pass
@@ -102,6 +117,7 @@ def get_release_info(repo):
                     tag,
                     published,
                     f"https://github.com/{repo}/releases/tag/{tag}",
+                    [],
                 )
         except Exception:
             pass
@@ -114,11 +130,17 @@ def build_message():
     for disp, repo in PROJECTS:
         info = get_release_info(repo)
         if info:
-            tag, name, published, url = info
+            tag, name, published, url, dl_urls = info
             pdate = fmt_date(published) or "日期未知"
             extra = "" if name == tag else f"（{name}）"
             lines.append(f"🔹 {disp} — {tag}{extra}")
             lines.append(f"   📅 {pdate} · 🔗 {url}")
+            if dl_urls:
+                lines.append(f"   ⬇️ 下载：")
+                for u in dl_urls:
+                    lines.append(f"      {u}")
+            else:
+                lines.append(f"   ⬇️ 下载：前往 Release 页获取")
         else:
             lines.append(f"🔹 {disp} — 暂无发布")
             lines.append(f"   🔗 https://github.com/{repo}")
@@ -150,7 +172,7 @@ def main():
     ap = argparse.ArgumentParser(description="汇总多仓最新发布并推送到 Telegram")
     ap.add_argument("--dry-run", action="store_true", help="只打印待发消息，不发送")
     ap.add_argument("--chat", default=os.environ.get("TELEGRAM_CHAT_ID", DEFAULT_CHAT_ID),
-                    help="Telegram chat_id（默认 460212872，可用 env TELEGRAM_CHAT_ID 覆盖）")
+                    help="Telegram chat_id（默认 -1004346529287 频道，可用 env TELEGRAM_CHAT_ID 覆盖）")
     ap.add_argument("--token", default=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
                     help="Telegram bot token（默认读 env TELEGRAM_BOT_TOKEN）")
     args = ap.parse_args()

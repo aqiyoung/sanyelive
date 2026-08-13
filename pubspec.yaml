@@ -129,7 +129,7 @@ publish_to: "none"
 # 0.3.12+201 (8/12): 再修央视花屏 — 把 deinterlace=yes/hwdec=no/vf=bwdif
 #   的设置从 provider 创建时 unawaited 移到 MediaKitStreamOpener.open 首播前 await,
 #   确保属性真正在解码前生效。
-version: 0.3.12+213
+version: 0.3.12+214
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
@@ -140,6 +140,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   http: ^1.2.0
+  gbk_codec: ^0.4.0  # IP 定位: pconline 返回 GBK, 需 gbk_codec 正确解码
   flutter_riverpod: ^2.5.1
   go_router: ^14.6.2
   freezed_annotation: ^2.4.4

@@ -11,7 +11,9 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gbk_codec/gbk_codec.dart';
 import 'package:http/http.dart' as http;
 
 import '../../data/province_util.dart' show kProvinces;
@@ -49,32 +51,42 @@ class ProvinceNotifier extends Notifier<String?> {
   /// 全部失败 (网络/被墙/无字段) 返回 null, 由调用方回退手动选择.
   /// 不抛异常.
   ///
-  /// 源优先级 (实测可达性 + 稳定性):
-  ///   1. whois.pconline.com.cn/ipJson.jsp — 太平洋电脑网 IP 库, 常年稳定,
-  ///      返回 IPCallBack({"pro":"陕西省",...}), 国内网络 100% 可达.
-  ///   2. myip.ipip.net/json — ipip.net, 返回 {"data":{"location":[...]}}.
-  ///   3. www.ip.cn/api/index — 备用, 偶发 302 跳转, 仅兜底.
+  /// 源 (优先级 = 实测可达性 + 稳定性):
+  ///   1. myip.ipip.net/json            — UTF-8, 最可靠, 返回 data.location[省].
+  ///   2. whois.pconline.com.cn/ipJson — 国内常年稳定可达, 但返回 GBK 编码,
+  ///      必须先用 gbk_codec 解码 (package:http 无 GBK 解码器, 当 UTF-8 会乱码
+  ///      导致省份名匹配不上 → 永远失败).
+  ///   3. ip.useragentinfo.com/json     — UTF-8 备用源.
+  /// 注: www.ip.cn 已 302 失效, 已移除.
   Future<String?> autoDetect() async {
-    const endpoints = <String>[
-      'https://whois.pconline.com.cn/ipJson.jsp',
-      'https://myip.ipip.net/json',
-      'https://www.ip.cn/api/index?ip=&type=0',
+    const endpoints = <(String, bool)>[
+      ('https://myip.ipip.net/json', false),
+      ('https://whois.pconline.com.cn/ipJson.jsp', true),
+      ('https://ip.useragentinfo.com/json', false),
     ];
-    for (final url in endpoints) {
+    for (final (url, isGbk) in endpoints) {
       try {
         final resp = await http
             .get(Uri.parse(url))
             .timeout(const Duration(seconds: 6));
-        if (resp.statusCode != 200) continue;
-        final province = _parseProvince(resp.body);
+        if (resp.statusCode != 200) {
+          debugPrint('[province] $url -> HTTP ${resp.statusCode}');
+          continue;
+        }
+        // GBK 源必须按字节用 gbk_codec 解码, 否则中文变乱码、匹配失败.
+        final body = isGbk ? gbk.decode(resp.bodyBytes) : resp.body;
+        final province = _parseProvince(body);
         if (province != null) {
+          debugPrint('[province] 定位成功: $province (via $url)');
           await setProvince(province);
           return province;
         }
-      } catch (_) {
-        // 试下一个源
+        debugPrint('[province] $url 返回但无法解析省份: $body');
+      } catch (e) {
+        debugPrint('[province] $url 失败: $e');
       }
     }
+    debugPrint('[province] 所有 IP 定位源均失败, 回退手动选择');
     return null;
   }
 }
@@ -83,7 +95,7 @@ class ProvinceNotifier extends Notifier<String?> {
 ///   - whois.pconline.com.cn: IPCallBack({"pro":"陕西省","city":"西安市",...})
 ///       (注意: 整体不是 JSON, 而是 JS 函数调用包裹, 需先剥离外层)
 ///   - myip.ipip.net/json:     {"ret":"ok","data":{"location":["中国","陕西","西安","","联通"]}}
-///   - www.ip.cn:              {"address":"中国 广东省 深圳市 电信",...}
+///   - ip.useragentinfo.com:   {"country":"中国","province":"陕西","city":"西安",...}
 ///
 /// 结果必须能归一化成 [kProvinces] 中的简称才返回, 否则 null —— 避免把
 /// "深圳市"/"中国" 这类匹配不上的字符串存进设置, 导致排序静默失效.

@@ -503,7 +503,6 @@ class _TvHeroState extends ConsumerState<_TvHero> {
       );
     }
   }
-}
 
 /// 圆角遮罩 — 用 [color] 填充矩形 4 个角 (中间镂空), 让未裁剪的方角视频
 /// 看起来像圆角卡片, 同时不裁剪 Video 的 platform surface (mediacodec_embed

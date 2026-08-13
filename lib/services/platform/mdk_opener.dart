@@ -45,9 +45,12 @@ Future<void> configurePreview(Player player) async {
 /// 起播成功后 dump mpv 实际渲染参数, 便于真机排查花屏/灰屏。
 /// 绿紫噪点通常是 vo=gpu 的硬解 surface 颜色格式错乱; 这些属性能直接看出
 /// 实际走了哪个 vo / hwdec / 颜色格式 (imgfmt), 定位是解码层还是渲染层问题。
-Future<void> _dumpMpvRenderInfo(Player player) async {
+///
+/// [tag] 用于区分来源 (如 'hero-preview' / 全屏留空), 写入日志便于对照。
+Future<void> dumpMpvRenderInfo(Player player, {String? tag}) async {
   final platform = player.platform;
   if (platform is! NativePlayer) return;
+  final prefix = tag != null ? '[$tag] ' : '';
   const keys = <String>[
     'vo',
     'hwdec-current',
@@ -60,11 +63,11 @@ Future<void> _dumpMpvRenderInfo(Player player) async {
   for (final k in keys) {
     try {
       final v = await platform.getProperty(k);
-      debugPrint('[mpv] $k = $v');
-      await CrashLogger.log('[mpv] $k = $v');
+      debugPrint('[mpv] $prefix$k = $v');
+      await CrashLogger.log('[mpv] $prefix$k = $v');
     } catch (e) {
-      debugPrint('[mpv] $k = <unavailable: $e>');
-      await CrashLogger.log('[mpv] $k = <unavailable: $e>');
+      debugPrint('[mpv] $prefix$k = <unavailable: $e>');
+      await CrashLogger.log('[mpv] $prefix$k = <unavailable: $e>');
     }
   }
 }
@@ -130,7 +133,7 @@ class MediaKitStreamOpener implements StreamOpener {
       final ok = await completer.future;
       // 等待期间已发生更新的切换 -> 本次结果作废.
       if (myGen != _generation) return false;
-      if (ok) await _dumpMpvRenderInfo(_player);
+      if (ok) await dumpMpvRenderInfo(_player);
       return ok;
     } catch (e) {
       debugPrint('MediaKitStreamOpener.open failed: $e');

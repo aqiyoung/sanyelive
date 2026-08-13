@@ -18,7 +18,8 @@ import '../../../features/settings/province_provider.dart'
     show provinceProvider;
 import '../../../di/player_providers.dart'
     show mediaKitPlayerProvider, mediaKitVideoControllerProvider;
-import '../../../services/platform/mdk_opener.dart' show configurePreview;
+import '../../../services/platform/mdk_opener.dart'
+    show configurePreview, dumpMpvRenderInfo;
 import '../../../data/repositories/channel_repository.dart';
 import '../../../data/source_dispatcher.dart';
 import 'widgets/special_zone_section.dart';
@@ -357,6 +358,8 @@ class _TvHeroState extends ConsumerState<_TvHero> {
       await player.setVolume(0);
       // 直接对共享 Player 开流做预览, 不碰 PlayerService (避开其 _playing 守卫).
       await player.open(Media(sources.first));
+      // 预览起播成功 → dump mpv 渲染参数, 便于真机排查 Hero 小窗花屏.
+      unawaited(dumpMpvRenderInfo(player, tag: 'hero-preview'));
       if (mounted && _openedChannelId == ch.id) {
         setState(() => _previewReady = true);
       }

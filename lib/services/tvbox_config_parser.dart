@@ -23,6 +23,8 @@ import '../data/models/vod_source.dart';
 import 'vod_parse_service.dart' show TvBoxParseRule;
 
 const List<String> kTvBoxSourceUrls = [
+  // catcr: 实测可用 — 129+ 直播频道 (m3u) + 23 个 AppleCMS 影视源 (type:1).
+  'https://raw.githubusercontent.com/supermeguo/BoxRes/main/Myuse/catcr.json',
   'https://9280.kstore.space/wex.json',
   'https://dxawi.github.io/0/0.json',
   'https://raw.liucn.cc/box/m.json',

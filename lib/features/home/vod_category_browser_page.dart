@@ -158,7 +158,9 @@ class _VodCategoryBrowserPageState extends ConsumerState<VodCategoryBrowserPage>
                     final item = items[index];
                     return GestureDetector(
                       onTap: () {
-                        if (item.sourceUrls.isNotEmpty) {
+                        if (item.vodId != null) {
+                          context.go('/vod-detail?id=${Uri.encodeComponent(item.vodId!)}&title=${Uri.encodeComponent(item.title)}');
+                        } else if (item.sourceUrls.isNotEmpty) {
                           context.go('/player/vod?url=${Uri.encodeComponent(item.sourceUrls.first)}&title=${Uri.encodeComponent(item.title)}');
                         }
                       },

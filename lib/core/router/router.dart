@@ -6,6 +6,7 @@ import '../../features/category/category_page.dart';
 import '../../features/favorites/favorites_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/home/vod_category_browser_page.dart';
+import '../../features/home/vod_detail_page.dart';
 import '../../features/home/playback_history_page.dart';
 import '../../features/player/player_page.dart';
 import '../../features/search/search_page.dart';
@@ -61,6 +62,15 @@ GoRouter buildRouter({NavigatorObserver? playerObserver}) {
             builder: (context, state) {
               final cat = state.uri.queryParameters['cat'] ?? 'movie';
               return VodCategoryBrowserPage(category: cat);
+            },
+          ),
+          GoRoute(
+            path: 'vod-detail',
+            name: 'vod-detail',
+            builder: (context, state) {
+              final id = state.uri.queryParameters['id'] ?? '';
+              final title = state.uri.queryParameters['title'];
+              return VodDetailPage(vodId: id, title: title);
             },
           ),
           GoRoute(

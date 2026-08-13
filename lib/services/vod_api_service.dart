@@ -80,14 +80,14 @@ class VodApiService {
   }
 
   /// 将 API 条目转为 Content 模型
-  /// [firstEpisodeOnly] 为 true 时只取第一集播放 URL (适合海报墙展示)
+  /// 始终解析全集到 [Content.episodes]; [sourceUrls] 保留首集 URL (兼容旧 UI).
   Content toContent(Map<String, dynamic> item, {bool firstEpisodeOnly = true}) {
-    final playUrl = _parsePlayUrl(
-      item['vod_play_url'] as String? ?? '',
-      firstEpisodeOnly: firstEpisodeOnly,
-    );
+    final raw = (item['vod_play_url'] as String?) ?? '';
+    final episodes = parseEpisodes(raw);
+    final firstUrl = episodes.isNotEmpty ? episodes.first.url : null;
     return Content(
       id: 'vod_${item['vod_id']}',
+      vodId: '${item['vod_id']}',
       title: item['vod_name'] as String? ?? '',
       subtitle: item['vod_remarks'] as String?,
       posterUrl: item['vod_pic'] as String?,
@@ -96,20 +96,34 @@ class VodApiService {
       year: item['vod_year'] as String?,
       genres: [item['type_name'] as String? ?? ''],
       description: item['vod_content'] as String?,
-      sourceUrls: playUrl != null ? [playUrl] : [],
+      episodes: episodes,
+      sourceUrls: firstUrl != null ? [firstUrl] : [],
     );
   }
 
-  /// 解析 vod_play_url 格式: "第1集$url#第2集$url"
-  String? _parsePlayUrl(String raw, {bool firstEpisodeOnly = true}) {
-    if (raw.isEmpty) return null;
-    // 格式: "第1集$url#第2集$url" 或 "$url"
-    final episodes = raw.split('#');
-    if (episodes.isEmpty) return null;
-    final first = episodes.first;
-    final dollarIdx = first.indexOf('\$');
-    if (dollarIdx < 0) return first.trim(); // 无 $ 分隔, 直接是 URL
-    return first.substring(dollarIdx + 1).trim();
+  /// 解析 vod_play_url → 全集列表.
+  /// 格式: "第1集$url#第2集$url" 或 "组1$...#...$$$组2$..." (多播放源用 $$$ 分隔).
+  /// 多源时取第一组. 返回空列表表示无播放地址.
+  List<Episode> parseEpisodes(String raw) {
+    if (raw.isEmpty) return const [];
+    // 多播放源用 $$$ 分隔, 取第一组.
+    final group = raw.split('\$\$\$').first;
+    final parts =
+        group.split('#').where((p) => p.trim().isNotEmpty).toList();
+    if (parts.isEmpty) return const [];
+    final out = <Episode>[];
+    for (var i = 0; i < parts.length; i++) {
+      final p = parts[i];
+      final dollarIdx = p.indexOf('\$');
+      final name =
+          dollarIdx >= 0 ? p.substring(0, dollarIdx).trim() : '第${i + 1}集';
+      final url =
+          (dollarIdx >= 0 ? p.substring(dollarIdx + 1) : p).trim();
+      if (url.isNotEmpty) {
+        out.add(Episode(name: name.isNotEmpty ? name : '第${i + 1}集', url: url));
+      }
+    }
+    return out;
   }
 
   String _inferType(String typeName) {

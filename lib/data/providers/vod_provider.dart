@@ -85,3 +85,14 @@ final vodOverseasProvider = FutureProvider<List<Content>>((ref) async {
   final details = await api.getDetail(ids);
   return details.map((d) => api.toContent(d)).toList();
 });
+
+/// 详情: 按数字 vodId 拉取单条 (含全集 episodes). 源切换 → 自动重拉.
+final vodDetailProvider =
+    FutureProvider.family<Content?, String>((ref, vodId) async {
+  final api = ref.watch(vodApiServiceProvider);
+  final id = int.tryParse(vodId) ?? 0;
+  if (id <= 0) return null;
+  final items = await api.getDetail([id]);
+  if (items.isEmpty) return null;
+  return api.toContent(items.first, firstEpisodeOnly: false);
+});

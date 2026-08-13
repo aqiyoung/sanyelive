@@ -26,6 +26,7 @@ import '../../../core/theme/typography.dart';
 import '../../../data/models/vod_source.dart';
 import '../../../services/tvbox_config_parser.dart';
 import '../../../services/vod_source_registry.dart';
+import '../../../services/vod_parse_service.dart';
 import '../../../data/live_source_registry.dart';
 import '../../../data/repositories/channel_repository.dart'
     show channelsProvider, channelsStreamProvider;
@@ -1325,6 +1326,9 @@ class _VodSourceManagementCard extends ConsumerWidget {
       final newVod =
           cfg.vodSources.where((s) => !existingHosts.contains(s.host)).toList();
       if (newVod.isNotEmpty) await registry.addSources(newVod);
+    }
+    if (cfg.parseRules.isNotEmpty) {
+      ref.read(vodParseRegistryProvider).addAll(cfg.parseRules);
     }
 
     // 5. 刷新频道流 — 让首页 / 分类页立即出现导入频道.

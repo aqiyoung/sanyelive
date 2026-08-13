@@ -1,3 +1,14 @@
+/// 单集 (点播) — 从 vod_play_url "第1集$url#第2集$url" 解析.
+class Episode {
+  const Episode({required this.name, required this.url});
+
+  /// 集名 (如 "第1集" / "更新第12集").
+  final String name;
+
+  /// 播放地址 (m3u8 / mp4).
+  final String url;
+}
+
 /// 通用内容模型 — 点播/直播统一
 ///
 /// 直播频道通过 [ChannelPlayable] 扩展实现统一接口.
@@ -15,6 +26,8 @@ class Content {
     this.genres = const [],
     this.description,
     this.sourceUrls = const [],
+    this.episodes = const [],
+    this.vodId,
   });
 
   final String id;
@@ -29,6 +42,12 @@ class Content {
   final List<String> genres;
   final String? description;
   final List<String> sourceUrls;
+
+  /// 全集列表 (从 vod_play_url 解析). 为空时回退 sourceUrls.
+  final List<Episode> episodes;
+
+  /// 点播源的数字 id (vod_xxx 中的 xxx) — 用于详情页重新拉取. 非点播为 null.
+  final String? vodId;
 
   bool get isLive => type == 'live';
   bool get isVod => !isLive;
@@ -59,6 +78,15 @@ class Content {
       genres: ((j['genres'] as List?) ?? const []).cast<String>(),
       description: j['description'] as String?,
       sourceUrls: ((j['source_urls'] as List?) ?? const []).cast<String>(),
+      episodes: ((j['episodes'] as List?) ?? const [])
+          .cast<Map<String, dynamic>>()
+          .map((e) => Episode(
+                name: (e['name'] as String?) ?? '',
+                url: (e['url'] as String?) ?? '',
+              ))
+          .where((e) => e.url.isNotEmpty)
+          .toList(),
+      vodId: j['vod_id'] as String?,
     );
   }
 
@@ -75,6 +103,10 @@ class Content {
         'genres': genres,
         'description': description,
         'source_urls': sourceUrls,
+        'episodes': episodes
+            .map((e) => {'name': e.name, 'url': e.url})
+            .toList(),
+        'vod_id': vodId,
       };
 }
 

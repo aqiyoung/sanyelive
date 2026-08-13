@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../data/format/format_registry.dart' show ChannelFormatRegistry;
 import '../data/models/vod_source.dart';
+import 'vod_parse_service.dart' show TvBoxParseRule;
 
 const List<String> kTvBoxSourceUrls = [
   'https://9280.kstore.space/wex.json',
@@ -78,15 +79,17 @@ class TvBoxLiveGroup {
   final List<TvBoxLiveChannel> channels;
 }
 
-/// 解析后的完整 TVBox 配置 (影视源 + 直播源).
+/// 解析后的完整 TVBox 配置 (影视源 + 直播源 + 解析规则).
 class TvBoxConfig {
   const TvBoxConfig({
     this.vodSources = const [],
     this.liveGroups = const [],
+    this.parseRules = const [],
   });
 
   final List<VodSource> vodSources;
   final List<TvBoxLiveGroup> liveGroups;
+  final List<TvBoxParseRule> parseRules;
 
   int get liveChannelCount =>
       liveGroups.fold(0, (sum, g) => sum + g.channels.length);
@@ -98,10 +101,12 @@ class _PartialConfig {
     this.vodSources = const [],
     this.liveGroups = const [],
     this.subUrls = const [],
+    this.parseRules = const [],
   });
   final List<VodSource> vodSources;
   final List<TvBoxLiveGroup> liveGroups;
   final List<String> subUrls;
+  final List<TvBoxParseRule> parseRules;
 }
 
 class TvBoxConfigParser {
@@ -116,6 +121,7 @@ class TvBoxConfigParser {
   }) async {
     final vod = <String, VodSource>{}; // host → source (去重)
     final liveGroups = <TvBoxLiveGroup>[];
+    final parseRules = <String, TvBoxParseRule>{}; // name → rule (去重)
     final seen = <String>{};
     final queue = List<String>.from(urls);
 
@@ -131,6 +137,9 @@ class TvBoxConfigParser {
         if (!vod.containsKey(host)) vod[host] = s; // 同 host 留第一个
       }
       liveGroups.addAll(partial.liveGroups);
+      for (final r in partial.parseRules) {
+        parseRules[r.name] = r; // 同名覆盖
+      }
       // 跟多仓订阅 (urls 字段) — 入队递归拉取.
       for (final u in partial.subUrls) {
         if (!seen.contains(u)) queue.add(u);
@@ -140,6 +149,7 @@ class TvBoxConfigParser {
     return TvBoxConfig(
       vodSources: vod.values.toList(),
       liveGroups: liveGroups,
+      parseRules: parseRules.values.toList(),
     );
   }
 
@@ -163,15 +173,17 @@ class TvBoxConfigParser {
       final vodSources = await _parseSites(decoded);
       final liveGroups = await _parseLives(decoded);
       final subUrls = _parseSubUrls(decoded);
+      final parseRules = _parseParses(decoded);
 
       debugPrint(
           'TvBoxParser: $url → ${vodSources.length} vod, '
           '${liveGroups.fold(0, (s, g) => s + g.channels.length)} live, '
-          '${subUrls.length} sub');
+          '${subUrls.length} sub, ${parseRules.length} parse');
       return _PartialConfig(
         vodSources: vodSources,
         liveGroups: liveGroups,
         subUrls: subUrls,
+        parseRules: parseRules,
       );
     } catch (e) {
       debugPrint('TvBoxParser: $url fetch failed: $e');
@@ -202,14 +214,30 @@ class TvBoxConfigParser {
         host = 'tvbox';
       }
       final detected = await _detectTypeIds(api);
+      // sites[].parse 引用 parses[].name — 非空时播放地址需解析.
+      final parseKey = (site['parse'] as String?)?.trim();
       result.add(VodSource(
         id: '${host}_${result.length}',
         name: name,
         baseUrl: api,
         typeIds: detected ?? bfzyapiTypeIds,
+        parseKey: (parseKey != null && parseKey.isNotEmpty) ? parseKey : null,
       ));
     }
     return result;
+  }
+
+  /// 解析 parses[] → 解析规则列表 (TVBox 规范: name/type/url).
+  List<TvBoxParseRule> _parseParses(Map<String, dynamic> decoded) {
+    final parses = decoded['parses'];
+    if (parses is! List) return const [];
+    final out = <TvBoxParseRule>[];
+    for (final p in parses) {
+      if (p is! Map<String, dynamic>) continue;
+      final rule = TvBoxParseRule.fromJson(p);
+      if (rule != null) out.add(rule);
+    }
+    return out;
   }
 
   /// 解析 lives[] → 直播分组 (内联 channels[] + lives[].url 指向的 m3u/JSON).

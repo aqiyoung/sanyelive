@@ -1214,7 +1214,14 @@ class _PosterCard extends StatelessWidget {
       onTap: () {
         if (content.sourceUrls.isNotEmpty &&
             !content.sourceUrls.first.contains('example.com')) {
-          context.go('/player/vod?url=${Uri.encodeComponent(content.sourceUrls.first)}&title=${Uri.encodeComponent(content.title)}');
+          if (content.vodId != null) {
+            context.go(
+              '/vod-detail?id=${Uri.encodeComponent(content.vodId!)}'
+              '&title=${Uri.encodeComponent(content.title)}',
+            );
+          } else {
+            context.go('/player/vod?url=${Uri.encodeComponent(content.sourceUrls.first)}&title=${Uri.encodeComponent(content.title)}');
+          }
         } else {
           context.go('/search');
         }

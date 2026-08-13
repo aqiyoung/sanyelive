@@ -178,7 +178,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   void _goToVod(Content c) {
-    if (c.sourceUrls.isNotEmpty) {
+    if (c.vodId != null) {
+      context.push(
+        '/vod-detail?id=${Uri.encodeComponent(c.vodId!)}'
+        '&title=${Uri.encodeComponent(c.title)}',
+      );
+    } else if (c.sourceUrls.isNotEmpty) {
       context.push(
         '/player/vod?url=${Uri.encodeComponent(c.sourceUrls.first)}'
         '&title=${Uri.encodeComponent(c.title)}',

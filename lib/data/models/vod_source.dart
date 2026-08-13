@@ -97,6 +97,7 @@ class VodSource {
     required this.baseUrl,
     this.typeIds = bfzyapiTypeIds,
     this.builtIn = false,
+    this.parseKey,
   });
 
   /// 唯一标识 (host + index 自动生成,  或用户定义).
@@ -113,6 +114,10 @@ class VodSource {
 
   /// 默认内置源 (bfzyapi) = true → 不可删除.
   final bool builtIn;
+
+  /// 关联的 TVBox 解析规则名 (parses[].name). 非空时播放地址需经
+  /// VodParseService 解析才能拿到直链. AppleCMS 直连源为 null.
+  final String? parseKey;
 
   /// 从 URL 自动提取 host 当 display fallback.
   String get host {
@@ -147,6 +152,7 @@ class VodSource {
     String? baseUrl,
     Map<String, int>? typeIds,
     bool? builtIn,
+    String? parseKey,
   }) {
     return VodSource(
       id: id ?? this.id,
@@ -154,6 +160,7 @@ class VodSource {
       baseUrl: baseUrl ?? this.baseUrl,
       typeIds: typeIds ?? this.typeIds,
       builtIn: builtIn ?? this.builtIn,
+      parseKey: parseKey ?? this.parseKey,
     );
   }
 
@@ -163,6 +170,7 @@ class VodSource {
         'baseUrl': baseUrl,
         'typeIds': typeIds.map((k, v) => MapEntry(k, v)),
         'builtIn': builtIn,
+        'parseKey': parseKey,
       };
 
   factory VodSource.fromJson(Map<String, dynamic> json) => VodSource(
@@ -174,6 +182,7 @@ class VodSource {
             ) ??
             bfzyapiTypeIds,
         builtIn: json['builtIn'] as bool? ?? false,
+        parseKey: json['parseKey'] as String?,
       );
 
   @override

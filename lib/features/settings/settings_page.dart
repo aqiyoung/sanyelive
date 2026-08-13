@@ -26,6 +26,7 @@ import '../../../core/theme/typography.dart';
 import '../../../data/models/vod_source.dart';
 import '../../../services/tvbox_config_parser.dart';
 import '../../../services/vod_source_registry.dart';
+import '../../utils/crash_logger.dart' show CrashLogger;
 import 'theme_provider.dart';
 import 'app_mode_provider.dart';
 import 'province_provider.dart' show provinceProvider;
@@ -154,6 +155,14 @@ class SettingsPage extends ConsumerWidget {
                     onTap: () => _showProvinceDialog(context, ref),
                   );
                 },
+              ),
+              const _SettingsGap(),
+              ListTile(
+                leading: const Icon(Icons.bug_report_outlined),
+                title: const Text('导出日志'),
+                subtitle: const Text('把运行日志保存到 Download，可分享排查问题'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _exportLog(context),
               ),
               const _SettingsGap(),
               Consumer(
@@ -432,6 +441,33 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  // ─── 导出日志 ─────────────────────────────────────────────────────────────
+  // 把 CrashLogger 的日志文件复制到 /sdcard/Download/sanyelive_log_<ts>.txt,
+  // 提示路径; 用户用文件管理器把该文件分享给开发者即可.
+  Future<void> _exportLog(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final path = await CrashLogger.export();
+      if (context.mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 6),
+            content: Text('日志已导出：\n$path\n请用文件管理器分享该文件'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 6),
+            content: Text('导出失败：$e'),
+          ),
+        );
+      }
+    }
   }
 }
 

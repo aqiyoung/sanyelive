@@ -85,12 +85,42 @@ class CrashLogger {
       }
       return false;
     };
+
+    // 3. 让业务 debugPrint 也落盘 —— 覆盖顶层 debugPrint, 同时保留原生
+    //    console 输出. 各处 debugPrint (含 [mpv] / [province] 诊断) 自动写入
+    //    日志文件, 无需逐个改调用点. _writeLog 内部不调 debugPrint, 无递归.
+    final originalDebugPrint = debugPrint;
+    debugPrint = (String? message, {int? wrapWidth}) {
+      originalDebugPrint(message, wrapWidth: wrapWidth);
+      if (message != null && message.isNotEmpty) {
+        _writeLog(message);
+      }
+    };
   }
 
   /// 业务代码主动记一条 (e.g. libmpv init 失败时).
+  /// 不再走 debugPrint, 避免与重定向后的落盘重复前缀.
   static Future<void> log(String msg) async {
-    debugPrint('CrashLogger: $msg');
     await _writeLog(msg);
+  }
+
+  /// 导出日志到 /sdcard/Download/sanyelive_log_<时间戳>.txt, 返回目标路径.
+  /// 文件管理器可对该文件直接分享 (微信/QQ 等) 用于排查.
+  /// 抛异常: 日志未初始化 / 文件不存在 / 写入失败.
+  static Future<String> export() async {
+    final src = _logFile;
+    if (src == null) throw Exception('日志未初始化');
+    if (!await src.exists()) throw Exception('日志文件不存在');
+    final name = 'sanyelive_log_${_timestamp()}.txt';
+    final dest = File('/sdcard/Download/$name');
+    await src.copy(dest.path);
+    return dest.path;
+  }
+
+  static String _timestamp() {
+    final d = DateTime.now();
+    String p(int n) => n.toString().padLeft(2, '0');
+    return '${d.year}${p(d.month)}${p(d.day)}_${p(d.hour)}${p(d.minute)}${p(d.second)}';
   }
 
   static String? get logFilePath => _logFile?.path;

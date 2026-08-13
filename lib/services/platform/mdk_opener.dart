@@ -7,9 +7,10 @@ import '../source_failover.dart';
 
 /// 对 [player] 应用全屏播放路径的渲染配置。
 ///
-/// 当前方案: 硬解优先 (auto-safe) + VO/解码器自带去隔行 (deinterlace=yes)。
-/// 在 TV/平板等大屏设备上, 强制软解 (hwdec=no) 曾出现绿/紫噪点, 因此全屏
-/// 路径保持硬解优先; 1080i 隔行梳状纹由解码器/VO 处理。
+/// hwdec 已由 [mediaKitVideoControllerProvider] 在 VideoController 构造时锁定为
+/// auto-safe (MediaCodec 硬件解码), 此处不再改动 (运行时改 hwdec 无法重建解码
+/// 后端, 不可靠)。这里只控制去隔行: 全屏对 1080i 开 deinterlace, 并清空软件
+/// 去隔行滤镜 (vf='') 以免与硬件解码冲突。
 ///
 /// 仅供 [MediaKitStreamOpener] 调用。
 Future<void> configureDeinterlace(Player player) async {
@@ -17,7 +18,6 @@ Future<void> configureDeinterlace(Player player) async {
   if (platform is! NativePlayer) return;
   try {
     await platform.setProperty('deinterlace', 'yes');
-    await platform.setProperty('hwdec', 'auto-safe');
     await platform.setProperty('vf', '');
   } catch (e, st) {
     debugPrint('configureDeinterlace failed: $e\n$st');
@@ -26,10 +26,8 @@ Future<void> configureDeinterlace(Player player) async {
 
 /// 首页 Hero 小窗口预览的配置。
 ///
-/// 在 Android 16 + 新版 libmpv (16KB 页 SDK36) 手机上, 硬解优先 (auto-safe)
-/// 在小窗(surface 尺寸动态变化)下会渲染异常(灰屏/彩块马赛克)。因此预览前
-/// 强制切换到软件解码 (hwdec=no), 同时关闭去隔行滤镜 (deinterlace=no / vf=''),
-/// 避免从全屏播放页带回来的硬解+去隔行状态污染预览。
+/// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-safe, 此处不再改动。
+/// 预览对隔行梳状纹不敏感, 故关掉 deinterlace 以省算力; 同时清空 vf=''。
 ///
 /// 仅供 [_TvHeroState._startPreview] 调用。
 Future<void> configurePreview(Player player) async {
@@ -37,7 +35,6 @@ Future<void> configurePreview(Player player) async {
   if (platform is! NativePlayer) return;
   try {
     await platform.setProperty('deinterlace', 'no');
-    await platform.setProperty('hwdec', 'no');
     await platform.setProperty('vf', '');
   } catch (e, st) {
     debugPrint('configurePreview failed: $e\n$st');

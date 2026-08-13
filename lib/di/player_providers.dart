@@ -31,9 +31,9 @@ final libmpvAvailableProvider = Provider<bool>((ref) => true);
 
 /// 全局唯一 [Player] 实例。
 ///
-/// 央视/卫视是 1080i 隔行广播, 全屏播放时必须开 mpv 软件去隔行 (bwdif) 才能
-/// 消除梳状纹。注意: 软件去隔行只对**软件解码**帧生效, 所以全屏播放前会由
-/// [MediaKitStreamOpener] 把 player 的 hwdec 切到 'no'。
+/// 央视/卫视是 1080i 隔行广播, 全屏播放时用 mpv 的 deinterlace 去隔行
+/// (由 [MediaKitStreamOpener] 在首播前设置)。解码走 MediaCodec 硬件解码
+/// (auto-safe), 见 [mediaKitVideoControllerProvider]。
 ///
 /// 首页 Hero 小窗口预览**复用此共享实例**（与全屏播放页同一 Player）。历史
 /// 上 `d4c3acc` 用这套默认配置能正常出画面；独立 Preview Player 反而在本
@@ -60,11 +60,10 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// hwdec: 'no' = 强制软件解码。这是本设备(Android 16 + 新版 libmpv 1.3.8)上
-/// 能正常出画面的关键: 'auto-safe' 硬件解码在小窗预览(surface 尺寸动态变化)下
-/// 会渲染异常(绿屏/彩色块/灰屏); 而软件解码与全屏播放页(同样走 hwdec=no + bwdif)
-/// 行为一致, 已被验证稳定。全屏播放前 [MediaKitStreamOpener] 仍会运行时叠加
-/// deinterlace=bwdif 去隔行, 不受此处固定值影响。
+/// 走 media_kit_video 在 Android 上的默认渲染路径: vo=gpu (SurfaceTexture 纹理)
+/// + hwdec=auto-safe (MediaCodec 硬件解码)。这是 media_kit 在 Android 上的推荐
+/// 且默认配置, 在大屏/Android 16 设备上渲染稳定, 不会出现软件解码路径的
+/// 花屏/灰屏。去隔行由 [MediaKitStreamOpener] 在首播前通过 mpv 属性控制。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);
   if (player == null) return null;
@@ -72,7 +71,7 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'no',
+        hwdec: 'auto-safe',
       ),
     );
   } catch (e, st) {

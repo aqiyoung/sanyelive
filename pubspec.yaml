@@ -129,7 +129,7 @@ publish_to: "none"
 # 0.3.12+201 (8/12): 再修央视花屏 — 把 deinterlace=yes/hwdec=no/vf=bwdif
 #   的设置从 provider 创建时 unawaited 移到 MediaKitStreamOpener.open 首播前 await,
 #   确保属性真正在解码前生效。
-version: 0.3.12+212
+version: 0.3.12+213
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

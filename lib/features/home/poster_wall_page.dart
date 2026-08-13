@@ -287,9 +287,9 @@ class _TvLeanbackHome extends ConsumerWidget {
 /// Player + VideoController, 不新建第二个 native player). 叠加 LIVE 徽标 +
 /// 节目信息条. 点击进入全屏播放页.
 ///
-/// 每次开预览前调用 [configurePreview] 把共享 Player 切到
-/// hwdec=no + deinterlace=no, 避免从全屏播放页带回来的硬解/去隔行状态
-/// 污染小窗口预览 (Android 16 上表现为灰屏/彩块马赛克)。
+/// 渲染关键点: Video widget **不能**包在 ClipRRect 里 — mediacodec_embed (硬解)
+/// 在裁剪 widget 中无法渲染 (灰屏/彩块). 因此预览与全屏一样用硬解 (auto-safe),
+/// 圆角改用 [_CornerMaskPainter] 遮罩 (只盖 4 角, 不裁剪视频 surface) 实现.
 ///
 /// libmpv 不可用 (TV box 上 dlopen 失败) 或取流失败时, 自动降级到静态
 /// 台标 + 播放键兜底 (_HeroBackdrop), 不会崩.
@@ -348,8 +348,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _openedChannelId = ch.id;
     if (mounted) setState(() => _previewReady = false);
     try {
-      // 先把共享 Player 从全屏的硬解/去隔行状态切回适合小窗预览的软件解码。
-      // 仅改 VideoController.hwdec 不够: 必须直接设置 player 的 mpv 属性。
+      // 共享 Player 的 hwdec 已由 [mediaKitVideoControllerProvider] 在 VideoController
+      // 构造时锁定为 auto-safe (MediaCodec 硬件解码)。此处仅补充: 预览对隔行不
+      // 敏感, 关掉 deinterlace 省算力 (见 [configurePreview])。
       await configurePreview(player);
       // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
       // 会恢复音量 (setVolume(100)).
@@ -394,28 +395,32 @@ class _TvHeroState extends ConsumerState<_TvHero> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
         onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (showVideo)
-                  SizedBox.expand(
-                    child: Video(
-                      key: ValueKey(channel?.id ?? 'hero'),
-                      controller: _controller!,
-                      fit: BoxFit.cover,
-                      aspectRatio: 16 / 9,
-                    ),
-                  )
-                else
-                  _HeroBackdrop(
+        // 注意: Video 不能放进 ClipRRect — mediacodec_embed (硬解) 在裁剪 widget
+        // 里无法渲染 (灰屏/彩块马赛克)。圆角改用底部 _CornerMask 遮罩实现,
+        // 只盖住方角视频的 4 个角, 不裁剪视频 surface 本身。
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (showVideo)
+                Positioned.fill(
+                  child: Video(
+                    key: ValueKey(channel?.id ?? 'hero'),
+                    controller: _controller!,
+                    fit: BoxFit.cover,
+                    aspectRatio: 16 / 9,
+                  ),
+                )
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: _HeroBackdrop(
                     channel: channel,
                     isLoading: widget.isLoading,
                     failed: _previewFailed,
                   ),
+                ),
                 // 开流完成前显示加载圈 (盖在黑色视频面上).
                 if (showVideo && !_previewReady)
                   const ColoredBox(
@@ -482,6 +487,15 @@ class _TvHeroState extends ConsumerState<_TvHero> {
                     ),
                   ),
                 ),
+                // 圆角遮罩: 用页面底色盖住方角视频的 4 个角 (不裁剪视频 surface).
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _CornerMaskPainter(24, context.bgBase),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -489,6 +503,35 @@ class _TvHeroState extends ConsumerState<_TvHero> {
       ),
     );
   }
+}
+
+/// 圆角遮罩 — 用 [color] 填充矩形 4 个角 (中间镂空), 让未裁剪的方角视频
+/// 看起来像圆角卡片, 同时不裁剪 Video 的 platform surface (mediacodec_embed
+/// 硬解在裁剪 widget 里会灰屏)。[radius] 与卡片圆角保持一致。
+class _CornerMaskPainter extends CustomPainter {
+  const _CornerMaskPainter(this.radius, this.color);
+
+  final double radius;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          Radius.circular(radius),
+        ),
+      )
+      ..fillType = PathFillType.evenOdd;
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CornerMaskPainter old) =>
+      old.radius != radius || old.color != color;
 }
 
 /// Hero 静态兜底背景 — libmpv 不可用 / 取流失败 / 加载中时显示.

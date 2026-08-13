@@ -26,6 +26,9 @@ final provinceProvider =
 class ProvinceNotifier extends Notifier<String?> {
   static const kLocationProvinceKey = 'location_province';
 
+  /// 最近一次 autoDetect 失败的原因 (供 UI 显式展示, 不再静默吞掉)。
+  String? lastError;
+
   @override
   String? build() {
     final prefs = ref.read(sharedPreferencesProvider);
@@ -59,18 +62,22 @@ class ProvinceNotifier extends Notifier<String?> {
   ///   3. ip.useragentinfo.com/json     — UTF-8 备用源.
   /// 注: www.ip.cn 已 302 失效, 已移除.
   Future<String?> autoDetect() async {
+    lastError = null;
     const endpoints = <(String, bool)>[
       ('https://myip.ipip.net/json', false),
       ('https://whois.pconline.com.cn/ipJson.jsp', true),
       ('https://ip.useragentinfo.com/json', false),
     ];
+    final errors = <String>[];
     for (final (url, isGbk) in endpoints) {
       try {
         final resp = await http
             .get(Uri.parse(url))
-            .timeout(const Duration(seconds: 6));
+            .timeout(const Duration(seconds: 10));
         if (resp.statusCode != 200) {
-          debugPrint('[province] $url -> HTTP ${resp.statusCode}');
+          final msg = '$url -> HTTP ${resp.statusCode}';
+          debugPrint('[province] $msg');
+          errors.add(msg);
           continue;
         }
         // GBK 源必须按字节用 gbk_codec 解码, 否则中文变乱码、匹配失败.
@@ -81,12 +88,19 @@ class ProvinceNotifier extends Notifier<String?> {
           await setProvince(province);
           return province;
         }
-        debugPrint('[province] $url 返回但无法解析省份: $body');
+        final msg = '$url 返回但无法解析省份: $body';
+        debugPrint('[province] $msg');
+        errors.add(msg);
       } catch (e) {
-        debugPrint('[province] $url 失败: $e');
+        final msg = '$url 失败: $e';
+        debugPrint('[province] $msg');
+        errors.add(msg);
       }
     }
-    debugPrint('[province] 所有 IP 定位源均失败, 回退手动选择');
+    lastError = errors.isNotEmpty
+        ? errors.join('；')
+        : '所有 IP 定位源均失败';
+    debugPrint('[province] 定位失败: $lastError');
     return null;
   }
 }

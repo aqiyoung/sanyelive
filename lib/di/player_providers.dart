@@ -33,7 +33,7 @@ final libmpvAvailableProvider = Provider<bool>((ref) => true);
 ///
 /// 央视/卫视是 1080i 隔行广播, 全屏播放时用 mpv 的 deinterlace 去隔行
 /// (由 [MediaKitStreamOpener] 在首播前设置)。解码走 MediaCodec 硬件解码
-/// (auto-safe), 见 [mediaKitVideoControllerProvider]。
+/// (auto-copy), 见 [mediaKitVideoControllerProvider]。
 ///
 /// 首页 Hero 小窗口预览**复用此共享实例**（与全屏播放页同一 Player）。历史
 /// 上 `d4c3acc` 用这套默认配置能正常出画面；独立 Preview Player 反而在本
@@ -60,10 +60,17 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// 走 media_kit_video 在 Android 上的默认渲染路径: vo=gpu (SurfaceTexture 纹理)
-/// + hwdec=auto-safe (MediaCodec 硬件解码)。这是 media_kit 在 Android 上的推荐
-/// 且默认配置, 在大屏/Android 16 设备上渲染稳定, 不会出现软件解码路径的
-/// 花屏/灰屏。去隔行由 [MediaKitStreamOpener] 在首播前通过 mpv 属性控制。
+/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + hwdec=auto-copy。
+///
+/// 为什么是 auto-copy 而不是 auto-safe: 本设备 (Android 16) 上 auto-safe
+/// (MediaCodec 直出 surface) 与 no (纯软解) 都出现绿/紫噪点花屏 —— 这是硬解
+/// surface 直出时颜色格式 (YUV↔RGB / dataspace) 协商错乱的典型表现。auto-copy
+/// 让 MediaCodec 解码后再把帧拷贝到普通内存再交给 GPU vo 上传, 绕开直出格式
+/// 问题, 是 media_kit 在 Android 上解决绿屏的标准方案。
+///
+/// 去隔行由 [MediaKitStreamOpener] 在首播前通过 mpv 属控 (deinterlace)。
+/// 另: [MediaKitStreamOpener.open] 起播后会 dump mpv 的 vo/hwdec/颜色格式到
+/// debugPrint, 便于真机排查渲染问题。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);
   if (player == null) return null;
@@ -71,7 +78,7 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'auto-safe',
+        hwdec: 'auto-copy',
       ),
     );
   } catch (e, st) {

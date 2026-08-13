@@ -26,7 +26,7 @@ Future<void> configureDeinterlace(Player player) async {
 
 /// 首页 Hero 小窗口预览的配置。
 ///
-/// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-safe, 此处不再改动。
+/// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-copy, 此处不再改动。
 /// 预览对隔行梳状纹不敏感, 故关掉 deinterlace 以省算力; 同时清空 vf=''。
 ///
 /// 仅供 [_TvHeroState._startPreview] 调用。
@@ -38,6 +38,31 @@ Future<void> configurePreview(Player player) async {
     await platform.setProperty('vf', '');
   } catch (e, st) {
     debugPrint('configurePreview failed: $e\n$st');
+  }
+}
+
+/// 起播成功后 dump mpv 实际渲染参数, 便于真机排查花屏/灰屏。
+/// 绿紫噪点通常是 vo=gpu 的硬解 surface 颜色格式错乱; 这些属性能直接看出
+/// 实际走了哪个 vo / hwdec / 颜色格式 (imgfmt), 定位是解码层还是渲染层问题。
+Future<void> _dumpMpvRenderInfo(Player player) async {
+  final platform = player.platform;
+  if (platform is! NativePlayer) return;
+  const keys = <String>[
+    'vo',
+    'hwdec-current',
+    'video-format',
+    'video-params/imgfmt',
+    'width',
+    'height',
+    'current-vo',
+  ];
+  for (final k in keys) {
+    try {
+      final v = await platform.getProperty(k);
+      debugPrint('[mpv] $k = $v');
+    } catch (e) {
+      debugPrint('[mpv] $k = <unavailable: $e>');
+    }
   }
 }
 
@@ -102,6 +127,7 @@ class MediaKitStreamOpener implements StreamOpener {
       final ok = await completer.future;
       // 等待期间已发生更新的切换 -> 本次结果作废.
       if (myGen != _generation) return false;
+      if (ok) await _dumpMpvRenderInfo(_player);
       return ok;
     } catch (e) {
       debugPrint('MediaKitStreamOpener.open failed: $e');

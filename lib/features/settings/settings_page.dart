@@ -382,8 +382,9 @@ class SettingsPage extends ConsumerWidget {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
+                                    duration: const Duration(seconds: 6),
                                     content: Text(p == null
-                                        ? '自动定位失败，请手动选择'
+                                        ? '自动定位失败：${notifier.lastError ?? '请手动选择'}'
                                         : '已定位到：$p'),
                                   ),
                                 );

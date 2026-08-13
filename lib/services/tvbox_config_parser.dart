@@ -257,7 +257,19 @@ class TvBoxConfigParser {
         for (final c in chList) {
           if (c is! Map<String, dynamic>) continue;
           final ch = TvBoxLiveChannel.fromJson(c);
-          if (ch.name.isNotEmpty && ch.urls.isNotEmpty) channels.add(ch);
+          if (ch.name.isEmpty) continue;
+          // urls 全部是 proxy 列表代理 → 解码真实列表 URL, 走 _parseLiveUrl 展开
+          final listProxies = ch.urls
+              .map((u) => decodeTvBoxProxy(u))
+              .whereType<String>()
+              .toList();
+          if (ch.urls.isNotEmpty && listProxies.length == ch.urls.length) {
+            for (final lu in listProxies) {
+              channels.addAll(await _parseLiveUrl('$gName/${ch.name}', lu));
+            }
+            continue;
+          }
+          if (ch.urls.isNotEmpty) channels.add(ch);
         }
       }
 
@@ -275,8 +287,42 @@ class TvBoxConfigParser {
     return groups;
   }
 
-  /// 解析单个 lives[].url (m3u 或 JSON 频道表) → 直播频道.
+  /// 解码 TVBox proxy:// 协议.
+  ///
+  /// 仅支持 type=txt/m3u/json 的"直播列表代理" (如
+  /// `proxy://do=live&type=txt&ext=<base64>`), 返回真实列表 URL (供 parser
+  /// 再次 fetch + 解析). 单流代理 (type=m3u8 等) 返回 null — 本 app 播放链路
+  /// 不认 proxy:// 协议. 解析失败 / 非 proxy 返回 null.
+  String? decodeTvBoxProxy(String proxyUrl) {
+    if (!proxyUrl.startsWith('proxy://')) return null;
+    final q = proxyUrl.substring('proxy://'.length);
+    final params = <String, String>{};
+    for (final seg in q.split('&')) {
+      final idx = seg.indexOf('=');
+      if (idx < 0) continue;
+      params[seg.substring(0, idx)] =
+          Uri.decodeComponent(seg.substring(idx + 1));
+    }
+    final type = params['type'] ?? '';
+    final ext = params['ext'];
+    if (ext == null || ext.isEmpty) return null;
+    try {
+      final decoded = utf8.decode(base64Decode(ext));
+      if (type == 'txt' || type == 'm3u' || type == 'json') return decoded;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 解析单个 lives[].url (m3u / JSON / TVBox live.txt 频道表) → 直播频道.
+  /// url 为 proxy:// 列表代理时先解码出真实列表 URL 再递归.
   Future<List<TvBoxLiveChannel>> _parseLiveUrl(String groupName, String url) async {
+    if (url.startsWith('proxy://')) {
+      final real = decodeTvBoxProxy(url);
+      if (real == null) return const [];
+      return _parseLiveUrl(groupName, real);
+    }
     try {
       final body = await _fetchRaw(url);
       if (body == null) return const [];

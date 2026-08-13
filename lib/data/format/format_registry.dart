@@ -11,6 +11,7 @@ library;
 import 'channel_format.dart';
 import 'iptv_org_json_format.dart';
 import 'm3u_format.dart';
+import 'tvbox_live_txt_format.dart';
 import '../models/channel.dart';
 
 class ChannelFormatRegistry {
@@ -19,6 +20,7 @@ class ChannelFormatRegistry {
 
   static const List<ChannelFormat> _defaultFormats = [
     M3uFormat(),
+    TvboxLiveTxtFormat(),
     IptvOrgJsonFormat(),
   ];
 

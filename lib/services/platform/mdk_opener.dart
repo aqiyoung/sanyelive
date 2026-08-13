@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 
 import '../source_failover.dart';
+import '../../utils/crash_logger.dart';
 
 /// 对 [player] 应用全屏播放路径的渲染配置。
 ///
@@ -60,8 +61,10 @@ Future<void> _dumpMpvRenderInfo(Player player) async {
     try {
       final v = await platform.getProperty(k);
       debugPrint('[mpv] $k = $v');
+      await CrashLogger.log('[mpv] $k = $v');
     } catch (e) {
       debugPrint('[mpv] $k = <unavailable: $e>');
+      await CrashLogger.log('[mpv] $k = <unavailable: $e>');
     }
   }
 }

@@ -15,6 +15,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'source_failover.dart';
+import '../utils/crash_logger.dart';
 
 /// 单个源的健康评分
 @immutable
@@ -290,14 +291,18 @@ class SmartSourceFailover extends SourceFailover {
     List<String> sources, {
     void Function(SourceAttemptEvent event)? onAttempt,
     bool Function()? shouldAbort,
+    String? label,
   }) async {
+    final tag = label != null ? ' ($label)' : '';
     if (sources.isEmpty) {
+      await CrashLogger.log('failover: play EMPTY sources$tag');
       throw const AllSourcesFailedException([]);
     }
 
     // 只有一个源, 直接走
     if (sources.length == 1) {
       if (shouldAbort?.call() ?? false) {
+        await CrashLogger.log('failover: ABORTED (single)$tag');
         throw const SourcePlayAbortedException();
       }
       final url = sources.first;
@@ -305,9 +310,11 @@ class SmartSourceFailover extends SourceFailover {
       final ok = await opener.open(url, timeout: perSourceTimeout);
       if (ok) {
         await _router.recordResult(url, true);
+        await CrashLogger.log('failover: single OK$tag url=$url');
         return url;
       }
       await _router.recordResult(url, false);
+      await CrashLogger.log('failover: single FAILED$tag url=$url');
       throw AllSourcesFailedException([(url: url, error: 'single source failed')]);
     }
 
@@ -316,10 +323,13 @@ class SmartSourceFailover extends SourceFailover {
     final scores = await _router.getScores(sources, probeIfStale: false);
     final ranked = _router.rankSources(sources, scores);
 
+    await CrashLogger.log('failover: play START ${ranked.length} source(s)$tag');
+
     final attempts = <({int index, String url, String error})>[];
 
     for (var i = 0; i < ranked.length; i++) {
       if (shouldAbort?.call() ?? false) {
+        await CrashLogger.log('failover: ABORTED before src#${i + 1}$tag');
         throw const SourcePlayAbortedException();
       }
       final url = ranked[i];
@@ -334,10 +344,14 @@ class SmartSourceFailover extends SourceFailover {
         final ok = await opener.open(url, timeout: perSourceTimeout);
         if (ok) {
           await _router.recordResult(url, true);
+          await CrashLogger.log(
+              'failover: src#${i + 1}/${ranked.length} OK$tag url=$url');
           return url;
         }
         attempts.add((index: i + 1, url: url, error: 'opener returned false'));
         await _router.recordResult(url, false);
+        await CrashLogger.log(
+            'failover: src#${i + 1}/${ranked.length} FAILED(opener=false)$tag url=$url');
       } on TimeoutException {
         await opener.cancel(url);
         attempts.add((
@@ -346,13 +360,18 @@ class SmartSourceFailover extends SourceFailover {
           error: 'timeout after ${perSourceTimeout.inMilliseconds}ms',
         ));
         await _router.recordResult(url, false);
+        await CrashLogger.log(
+            'failover: src#${i + 1}/${ranked.length} TIMEOUT(${perSourceTimeout.inMilliseconds}ms)$tag url=$url');
       } catch (e) {
         await opener.cancel(url);
         attempts.add((index: i + 1, url: url, error: e.toString()));
         await _router.recordResult(url, false);
+        await CrashLogger.log(
+            'failover: src#${i + 1}/${ranked.length} ERROR: $e$tag url=$url');
       }
     }
 
+    await CrashLogger.log('failover: ALL ${ranked.length} sources FAILED$tag');
     throw AllSourcesFailedException(
       attempts.map((a) => (url: a.url, error: a.error)).toList(growable: false),
     );

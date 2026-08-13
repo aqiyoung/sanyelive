@@ -16,6 +16,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../utils/crash_logger.dart';
+
 /// 抽象的"打开一个流"接口
 /// - 真实实现: [MediaKitStreamOpener] 调用 media_kit
 /// - 测试实现: 注入 mock, 返回 `true` (成功) / `false` (失败) / `Future.error(...)`
@@ -108,15 +110,20 @@ class SourceFailover {
     List<String> sources, {
     void Function(SourceAttemptEvent event)? onAttempt,
     bool Function()? shouldAbort,
+    String? label,
   }) async {
+    final tag = label != null ? ' ($label)' : '';
     if (sources.isEmpty) {
+      await CrashLogger.log('failover: play EMPTY sources$tag');
       throw const AllSourcesFailedException([]);
     }
+    await CrashLogger.log('failover: play START ${sources.length} source(s)$tag');
 
     final attempts = <_SourceAttempt>[];
 
     for (var i = 0; i < sources.length; i++) {
       if (shouldAbort?.call() ?? false) {
+        await CrashLogger.log('failover: ABORTED before src#${i + 1}$tag');
         throw const SourcePlayAbortedException();
       }
       final url = sources[i];
@@ -125,13 +132,21 @@ class SourceFailover {
       );
       try {
         final ok = await _opener.open(url, timeout: perSourceTimeout);
-        if (ok) return url;
+        if (ok) {
+          await CrashLogger.log(
+              'failover: src#${i + 1}/${sources.length} OK$tag url=$url');
+          return url;
+        }
+        await CrashLogger.log(
+            'failover: src#${i + 1}/${sources.length} FAILED(opener=false)$tag url=$url');
         attempts.add(
           _SourceAttempt(
               index: i + 1, url: url, error: 'opener returned false'),
         );
       } on TimeoutException {
         await _opener.cancel(url);
+        await CrashLogger.log(
+            'failover: src#${i + 1}/${sources.length} TIMEOUT(${perSourceTimeout.inMilliseconds}ms)$tag url=$url');
         attempts.add(
           _SourceAttempt(
             index: i + 1,
@@ -141,6 +156,8 @@ class SourceFailover {
         );
       } catch (e) {
         await _opener.cancel(url);
+        await CrashLogger.log(
+            'failover: src#${i + 1}/${sources.length} ERROR: $e$tag url=$url');
         attempts.add(
           _SourceAttempt(
             index: i + 1,
@@ -151,6 +168,7 @@ class SourceFailover {
       }
     }
 
+    await CrashLogger.log('failover: ALL ${sources.length} sources FAILED$tag');
     throw AllSourcesFailedException(
       attempts.map((a) => (url: a.url, error: a.error)).toList(growable: false),
     );
@@ -158,10 +176,15 @@ class SourceFailover {
 
   ///
   /// 返回是否成功.  成功条件跟 [play] 一致: opener 返回 true.
-  Future<bool> playSingle(String url) async {
+  Future<bool> playSingle(String url, {String? label}) async {
+    final tag = label != null ? ' ($label)' : '';
     try {
-      return await _opener.open(url, timeout: perSourceTimeout);
-    } catch (_) {
+      final ok = await _opener.open(url, timeout: perSourceTimeout);
+      await CrashLogger.log(
+          'failover: playSingle ${ok ? 'OK' : 'FAILED'}$tag url=$url');
+      return ok;
+    } catch (e) {
+      await CrashLogger.log('failover: playSingle ERROR: $e$tag url=$url');
       return false;
     }
   }

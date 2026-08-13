@@ -6,6 +6,7 @@ import 'package:media_kit/media_kit.dart';
 import '../data/models/channel.dart';
 import '../data/source_dispatcher.dart';
 import '../services/platform/fallback_player.dart';
+import '../utils/crash_logger.dart';
 import 'smart_source_router.dart';
 import 'source_failover.dart';
 
@@ -125,6 +126,7 @@ class PlayerService extends ChangeNotifier {
 
     final sources = SourceDispatcher.dispatch(channel);
     if (sources.isEmpty) {
+      await CrashLogger.log('play: channel=${channel.id} 无可用播放源 (dispatch empty)');
       _set(
         _state.copyWith(
           status: PlayerStatus.error,
@@ -135,6 +137,7 @@ class PlayerService extends ChangeNotifier {
       );
       return;
     }
+    await CrashLogger.log('play: channel=${channel.id} 尝试 ${sources.length} 个源');
 
     _set(
       _state.copyWith(
@@ -160,6 +163,7 @@ class PlayerService extends ChangeNotifier {
           _set(_state.copyWith(attempt: event));
         },
         shouldAbort: () => myGen != _playGeneration,
+        label: channel.id,
       );
       if (myGen != _playGeneration) return; // 已被更新的切换覆盖
       if (_disposed) return;
@@ -225,7 +229,7 @@ class PlayerService extends ChangeNotifier {
     );
 
     try {
-      final ok = await _failover.playSingle(url);
+      final ok = await _failover.playSingle(url, label: ch.id);
       if (_disposed) return;
       await _router.recordResult(url, ok);
       if (ok) {

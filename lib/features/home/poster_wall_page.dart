@@ -500,8 +500,8 @@ class _TvHeroState extends ConsumerState<_TvHero> {
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 }
 

@@ -189,7 +189,8 @@ class CategoryPage extends ConsumerWidget {
                     ch.primaryCategory == '地方' ||
                     ch.primaryCategory == '影视' ||
                     ch.primaryCategory == '新闻' ||
-                    ch.primaryCategory == '娱乐'))
+                    ch.primaryCategory == '娱乐' ||
+                    ch.primaryCategory == '导入'))
             .toList();
       case 'cctv':
         return ChannelFilter.cctv(all);

@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/channel.dart';
+import '../live_source_registry.dart' show importedLiveChannelsProvider;
 import '../format/format_registry.dart';
 // 分类 JSON (每周一 cron 自动生成),  失败 fallback 本地 assets/data/channels_cn.json.
 // 单独抽 remote_channels_source.dart 让 channel_repository 保持 focused on assets.
@@ -308,9 +309,16 @@ final channelsProvider = FutureProvider<List<Channel>>((ref) async {
       ref: ref,
       channels: local,
     );
-    return await _enrichWithRemoteLogos(ref: ref, channels: enriched);
+    final withLogos = await _enrichWithRemoteLogos(
+      ref: ref,
+      channels: enriched,
+    );
+    // 并入用户从 TVBox 接口导入的直播频道 (categories=['导入']).
+    final imported = ref.watch(importedLiveChannelsProvider);
+    return [...withLogos, ...imported];
   } catch (_) {
-    return local;
+    final imported = ref.watch(importedLiveChannelsProvider);
+    return [...local, ...imported];
   }
 });
 
@@ -401,9 +409,11 @@ final channelsStreamProvider = StreamProvider<List<Channel>>((ref) async* {
   final local = await repo.loadBundled();
   // 首帧 emit enriched 结果 (本地 + 远端 sources URLs).
   // 远端失败 fallback 本地 (_enrichWithRemoteSources 内部吞错).
+  // 并入用户从 TVBox 接口导入的直播频道.
+  final imported = ref.watch(importedLiveChannelsProvider);
   final localEnriched =
       await _enrichWithRemoteSources(ref: ref, channels: local);
-  yield localEnriched;
+  yield [...localEnriched, ...imported];
   // 远端 — timeout 后 emit 覆盖.  测试环境中 remoteChannelsProvider
   // 默认行为,  测试需手动 override channelsStreamProvider 才能控制 loading.
   try {
@@ -416,7 +426,7 @@ final channelsStreamProvider = StreamProvider<List<Channel>>((ref) async* {
         ref: ref,
         channels: bundle.all,
       );
-      yield remoteEnriched;
+      yield [...remoteEnriched, ...imported];
     }
   } catch (_) {
     // 远程失败 — 保持本地,  不重 yield.

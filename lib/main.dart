@@ -29,6 +29,7 @@ import 'data/tv_logo_manifest.dart';
 // 之前一轮删 import 导致 build 挂 (lib/main.dart:86 Undefined name), 这里再加回.
 import 'features/settings/theme_provider.dart';
 import 'services/vod_source_registry.dart';
+import 'data/live_source_registry.dart';
 // 简陋版 _SplashOverlay 删掉,  改用 lib/features/splash/splash_logo.dart.
 // 见该文件 design notes + motion_spec.md / motion.css v2 时间线.
 // 设计决策: 不用 flutter_svg — flutter_svg 只能整图渲染, 不能对 #tv-body /
@@ -163,6 +164,7 @@ void main() async {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         vodSharedPreferencesProvider.overrideWithValue(prefs),
+        liveSharedPreferencesProvider.overrideWithValue(prefs),
         currentVersionCodeProvider.overrideWithValue(runtimeVersionCode),
         currentVersionStringProvider.overrideWithValue(runtimeVersion),
         libmpvAvailableProvider.overrideWithValue(libmpvAvailable),

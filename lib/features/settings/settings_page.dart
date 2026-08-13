@@ -26,6 +26,9 @@ import '../../../core/theme/typography.dart';
 import '../../../data/models/vod_source.dart';
 import '../../../services/tvbox_config_parser.dart';
 import '../../../services/vod_source_registry.dart';
+import '../../../data/live_source_registry.dart';
+import '../../../data/repositories/channel_repository.dart'
+    show channelsProvider, channelsStreamProvider;
 import '../../utils/crash_logger.dart' show CrashLogger;
 import 'theme_provider.dart';
 import 'app_mode_provider.dart';
@@ -1082,6 +1085,26 @@ class _VodSourceManagementCard extends ConsumerWidget {
             ],
           ),
         ),
+        const _SettingsGap(),
+        // 导入直播状态 + 清空.
+        Consumer(
+          builder: (ctx, ref2, _) {
+            final liveCount = ref2.watch(liveSourceRegistryProvider).count;
+            return ListTile(
+              leading: const Icon(Icons.live_tv_outlined),
+              title: const Text('导入直播'),
+              subtitle: Text(liveCount == 0
+                  ? '尚未导入 TVBox 直播源'
+                  : '已导入 $liveCount 个直播频道'),
+              trailing: liveCount == 0
+                  ? null
+                  : TextButton(
+                      onPressed: () => _clearImportedLive(context, ref),
+                      child: const Text('清空'),
+                    ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -1228,93 +1251,170 @@ class _VodSourceManagementCard extends ConsumerWidget {
     };
   }
 
-  /// 导入 TVBox 源 — 拉 4 个 URL,  展示新发现数,  一键导入.
+  /// 导入 TVBox 源 — 先让用户粘贴接口链接 (可留空 = 用内置预设),
+  /// 拉取后解析 lives (直播) + sites (影视), 一并导入并刷新频道流.
   Future<void> _importTvBoxSources(BuildContext context, WidgetRef ref) async {
-    // 加载指示.
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-    List<VodSource> found;
+    // 1. 手动粘贴接口链接 (留空则用内置预设源).
+    final url = await _showManualUrlDialog(context);
+    if (url == null) return; // 取消
+    final manual = url.trim();
+    final useManual = manual.isNotEmpty;
+
+    // 2. 加载指示.
+    if (context.mounted) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+    }
+    TvBoxConfig cfg;
     try {
       final parser = TvBoxConfigParser();
-      found = await parser.fetchTvBoxSources();
+      cfg = await parser.fetchTvBoxConfig(
+        urls: useManual ? [manual] : kTvBoxSourceUrls,
+      );
       parser.dispose();
     } catch (e) {
-      found = [];
+      cfg = const TvBoxConfig();
     }
     if (context.mounted) Navigator.pop(context); // 关加载
-
     if (!context.mounted) return;
-    if (found.isEmpty) {
+
+    final liveCount = cfg.liveChannelCount;
+    final vodCount = cfg.vodSources.length;
+    if (liveCount == 0 && vodCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('未发现可导入的 MacCMS 源, 请检查网络')),
+        const SnackBar(content: Text('未发现可导入的内容, 请检查链接或网络')),
       );
       return;
     }
 
-    // 过滤已存在的 (同 host).
-    final registry = ref.read(vodSourceRegistryProvider);
-    final existingHosts = registry.sources.map((s) => s.host).toSet();
-    final newOnes = found.where((s) => !existingHosts.contains(s.host)).toList();
-
-    if (newOnes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已导入全部 ${found.length} 个源, 无新增')),
-      );
-      return;
-    }
-
-    // 确认导入对话框.
-    final selected = List<bool>.filled(newOnes.length, true);
+    // 3. 确认导入 (展示直播 / 影视发现数).
     final scheme = Theme.of(context).colorScheme;
-    final result = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('导入 TVBox 内容',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: Text(
+          '发现 $liveCount 个直播频道, $vodCount 个影视源。\n'
+          '直播将出现在「全部直播 → 导入」, 影视将加入影视源列表。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('取消', style: TextStyle(color: scheme.onSurfaceVariant)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('导入'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    // 4. 写入注册器 (去重).
+    if (cfg.liveGroups.isNotEmpty) {
+      await ref.read(liveSourceRegistryProvider).addGroups(cfg.liveGroups);
+    }
+    if (cfg.vodSources.isNotEmpty) {
+      final registry = ref.read(vodSourceRegistryProvider);
+      final existingHosts = registry.sources.map((s) => s.host).toSet();
+      final newVod =
+          cfg.vodSources.where((s) => !existingHosts.contains(s.host)).toList();
+      if (newVod.isNotEmpty) await registry.addSources(newVod);
+    }
+
+    // 5. 刷新频道流 — 让首页 / 分类页立即出现导入频道.
+    ref.invalidate(channelsProvider);
+    ref.invalidate(channelsStreamProvider);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('已导入 $liveCount 个直播频道 + $vodCount 个影视源'),
+        ),
+      );
+    }
+  }
+
+  /// 手动粘贴 TVBox 接口链接对话框. 返回 trimmed URL (可能为空串),
+  /// 返回 null 表示取消.
+  Future<String?> _showManualUrlDialog(BuildContext context) async {
+    final ctrl = TextEditingController();
+    final scheme = Theme.of(context).colorScheme;
+    final result = await showDialog<String?>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: Text('发现 ${newOnes.length} 个新源',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: newOnes.length,
-              itemBuilder: (ctx, i) => CheckboxListTile(
-                title: Text(newOnes[i].name),
-                subtitle: Text(newOnes[i].host),
-                value: selected[i],
-                onChanged: (v) => setLocal(() => selected[i] = v ?? false),
+          title: const Text('导入 TVBox 接口',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('粘贴 TVBox 接口链接 (留空则导入内置预设源):',
+                  style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: ctrl,
+                decoration: const InputDecoration(
+                  labelText: '接口链接',
+                  hintText: 'https://example.com/tvbox.json',
+                ),
+                keyboardType: TextInputType.url,
+                autofocus: true,
               ),
-            ),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
+              onPressed: () => Navigator.pop(ctx, null),
               child: Text('取消', style: TextStyle(color: scheme.onSurfaceVariant)),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('导入'),
+              onPressed: () => Navigator.pop(ctx, ctrl.text),
+              child: const Text('下一步'),
             ),
           ],
         ),
       ),
     );
+    ctrl.dispose();
+    return result;
+  }
 
-    if (result == true && context.mounted) {
-      final toImport = <VodSource>[];
-      for (var i = 0; i < newOnes.length; i++) {
-        if (selected[i]) toImport.add(newOnes[i]);
-      }
-      if (toImport.isNotEmpty) {
-        await ref.read(vodSourceRegistryProvider).addSources(toImport);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('已导入 ${toImport.length} 个影视源')),
-          );
-        }
-      }
+  /// 清空全部导入的直播频道.
+  Future<void> _clearImportedLive(BuildContext context, WidgetRef ref) async {
+    final scheme = Theme.of(context).colorScheme;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('清空导入直播',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: const Text('将移除所有从 TVBox 接口导入的直播频道, 不可恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('取消', style: TextStyle(color: scheme.onSurfaceVariant)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('清空'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await ref.read(liveSourceRegistryProvider).clearAll();
+    ref.invalidate(channelsProvider);
+    ref.invalidate(channelsStreamProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已清空导入的直播频道')),
+      );
     }
   }
 }

@@ -10,8 +10,11 @@ import '../../utils/crash_logger.dart';
 ///
 /// hwdec 已由 [mediaKitVideoControllerProvider] 在 VideoController 构造时锁定为
 /// auto-safe (MediaCodec 硬件解码), 此处不再改动 (运行时改 hwdec 无法重建解码
-/// 后端, 不可靠)。这里只控制去隔行: 全屏对 1080i 开 deinterlace, 并清空软件
-/// 去隔行滤镜 (vf='') 以免与硬件解码冲突。
+/// 后端, 不可靠)。这里只控制去隔行: 全屏对 1080i 开 deinterlace。
+///
+/// ⚠️ 不再清空 vf (曾用 vf='' 清软件去隔行滤镜避免与硬解冲突, 但实测
+/// vf='' 会杀掉 mpv 渲染必需的默认滤镜链, 导致 auto-safe/auto-copy/no
+/// 三种模式全花屏)。让 mpv 自行管理滤镜链。
 ///
 /// 仅供 [MediaKitStreamOpener] 调用。
 Future<void> configureDeinterlace(Player player) async {
@@ -19,7 +22,7 @@ Future<void> configureDeinterlace(Player player) async {
   if (platform is! NativePlayer) return;
   try {
     await platform.setProperty('deinterlace', 'yes');
-    await platform.setProperty('vf', '');
+    // 不再设 vf='' — 让 mpv 保持默认滤镜链
   } catch (e, st) {
     debugPrint('configureDeinterlace failed: $e\n$st');
   }
@@ -27,8 +30,10 @@ Future<void> configureDeinterlace(Player player) async {
 
 /// 首页 Hero 小窗口预览的配置。
 ///
-/// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-copy, 此处不再改动。
-/// 预览对隔行梳状纹不敏感, 故关掉 deinterlace 以省算力; 同时清空 vf=''。
+/// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-safe, 此处不再改动。
+/// 预览对隔行梳状纹不敏感, 故关掉 deinterlace 以省算力。
+///
+/// ⚠️ 不再清空 vf (同 configureDeinterlace 理由)。
 ///
 /// 仅供 [_TvHeroState._startPreview] 调用。
 Future<void> configurePreview(Player player) async {
@@ -36,15 +41,16 @@ Future<void> configurePreview(Player player) async {
   if (platform is! NativePlayer) return;
   try {
     await platform.setProperty('deinterlace', 'no');
-    await platform.setProperty('vf', '');
+    // 不再设 vf='' — 让 mpv 保持默认滤镜链
   } catch (e, st) {
     debugPrint('configurePreview failed: $e\n$st');
   }
 }
 
 /// 起播成功后 dump mpv 实际渲染参数, 便于真机排查花屏/灰屏。
-/// 绿紫噪点通常是 vo=gpu 的硬解 surface 颜色格式错乱; 这些属性能直接看出
-/// 实际走了哪个 vo / hwdec / 颜色格式 (imgfmt), 定位是解码层还是渲染层问题。
+/// 三种 hwdec (auto-copy/auto-safe/no) 全花屏的根因是 vf='' 清掉了默认滤镜链
+/// (已修复); 现在若仍有问题, 这些属性能直接看出实际走了哪个 vo / hwdec /
+/// 颜色格式 (imgfmt), 定位是解码层还是渲染层问题。
 ///
 /// [tag] 用于区分来源 (如 'hero-preview' / 全屏留空), 写入日志便于对照。
 Future<void> dumpMpvRenderInfo(Player player, {String? tag}) async {

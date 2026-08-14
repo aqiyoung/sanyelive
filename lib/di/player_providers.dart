@@ -60,19 +60,13 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + **hwdec=no (纯软件解码)**。
+/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + hwdec=auto-safe (MediaCodec 硬解)。
 ///
-/// 为什么是 no（完整实测链）:
-/// - `auto-copy` (+224/+225): 全屏 CCTV-13 彩色噪点/半屏黑 ❌
-/// - `auto-safe` (+226): Hero 小窗 CCTV-1 同样彩色噪点 ❌
-/// - `no` (+211 当年钉死时): **全屏正常出画面** ✅ (唯一确认能用的)
-///
-/// no 的代价: CPU 软解略耗电, 1080p60 可能掉帧; 但在当前设备上这是唯一
-/// 能正常渲染的路径。Hero 小窗花屏的根因(共享 Player deinterlace 污染)已由
-/// +225 每次 open 重置修复。
-///
-/// 去隔行由 [MediaKitStreamOpener] 在每次 open 前通过 mpv 属控
-/// (deinterlace=yes)。
+/// 为什么是 auto-safe (硬解优先):
+/// - 用户设备硬件无问题 (其他播放器 app 正常播放 CCTV)。
+/// - 三种 hwdec 实测全挂的根因是 vf='' 清掉了 mpv 渲染必需的默认滤镜链,
+///   不是解码器问题。修复后应恢复硬解能力。
+/// - auto-safe 是 MediaCodec 直出 surface 的标准 Android 路径。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);
   if (player == null) return null;
@@ -80,7 +74,7 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'no',
+        hwdec: 'auto-safe',
       ),
     );
   } catch (e, st) {

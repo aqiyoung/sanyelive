@@ -9,25 +9,29 @@ import '../../utils/crash_logger.dart';
 /// 对 [player] 应用全屏播放路径的渲染配置。
 ///
 /// hwdec 已由 [mediaKitVideoControllerProvider] 在 VideoController 构造时锁定为
-/// auto-safe (MediaCodec 硬件解码), 此处不再改动 (运行时改 hwdec 无法重建解码
-/// 后端, 不可靠)。
+/// auto-safe (MediaCodec 硬件解码), 此处不再改动。
 ///
-/// ⚠️ Android 16 vo=gpu 渲染修复 (三种 hwdec 全花屏的根因):
-///   不再是 vf='' 的问题 (已移除), 而是 OpenGL ES→SurfaceTexture 管线在 Android 16
-///   上需要显式指定 gpu-api 和颜色空间参数。这些属性必须在 open 前设置,
-///   因为它们影响 vo 初始化。
+/// 关键背景 (真机实测): 卫视等渐进源在 auto-safe 下完全正常, 只有**央视 1080i
+/// 隔行源**花屏 — 说明不是渲染器整体故障, 而是央视流的解码后像素格式/颜色空间在
+/// vo=gpu 上被错误处理 (绿/紫噪点)。
+///
+/// 修法:
+///  - `deinterlace=yes`: 处理 1080i 隔行。
+///  - `vf=format=yuv420p`: 强制输出标准像素格式。vo=gpu 对 yuv420p 处理稳定
+///    (卫视正是此格式且正常), 可绕开央视流在 GPU 上的颜色空间错乱。
+///
+/// 为什么用 vf 而不是 gpu-api/target-colorspace-hint: 后者必须在 vo 初始化前
+/// 设置 (VideoController 构造时), 运行时 setProperty 太晚、不生效; vf 是运行时
+/// 可重建滤镜链的属性, 在 open 前 setProperty 能真正起作用。
 ///
 /// 仅供 [MediaKitStreamOpener] 调用。
 Future<void> configureDeinterlace(Player player) async {
   final platform = player.platform;
   if (platform is! NativePlayer) return;
   try {
-    // Android 16 渲染兼容: 强制 OpenGL ES (不用 Vulkan, 避免 Adreno 兼容问题)
-    await platform.setProperty('gpu-api', 'opengl');
-    // 颜色空间 hint: 确保 YUV→RGB 映射正确 (绿/紫噪点的典型修复)
-    await platform.setProperty('target-colorspace-hint', 'srgb');
-    // 去隔行: 央视/卫视 1080i 必需
     await platform.setProperty('deinterlace', 'yes');
+    // 强制标准像素格式: 绕开央视 1080i 流在 vo=gpu 上的颜色空间错乱 (绿/紫噪点)
+    await platform.setProperty('vf', 'format=yuv420p');
   } catch (e, st) {
     debugPrint('configureDeinterlace failed: $e\n$st');
   }
@@ -36,20 +40,16 @@ Future<void> configureDeinterlace(Player player) async {
 /// 首页 Hero 小窗口预览的配置。
 ///
 /// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-safe, 此处不再改动。
-/// 预览对隔行梳状纹不敏感, 故关掉 deinterlace 以省算力。
-///
-/// ⚠️ 同样需要 gpu-api/target-colorspace-hint (Android 16 渲染兼容, 见 configureDeinterlace)。
+/// 预览对隔行梳状纹不敏感, 故关掉 deinterlace 以省算力; 但仍强制 yuv420p 格式,
+/// 避免央视流预览花屏 (与全屏同因)。
 ///
 /// 仅供 [_TvHeroState._startPreview] 调用。
 Future<void> configurePreview(Player player) async {
   final platform = player.platform;
   if (platform is! NativePlayer) return;
   try {
-    // Android 16 渲染兼容 (同全屏)
-    await platform.setProperty('gpu-api', 'opengl');
-    await platform.setProperty('target-colorspace-hint', 'srgb');
-    // 预览不需要去隔行
     await platform.setProperty('deinterlace', 'no');
+    await platform.setProperty('vf', 'format=yuv420p');
   } catch (e, st) {
     debugPrint('configurePreview failed: $e\n$st');
   }

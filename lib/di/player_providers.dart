@@ -60,14 +60,16 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + hwdec=auto-safe。
+/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + **hwdec=no (纯软件解码)**。
 ///
-/// 为什么是 auto-safe:
-/// - 本设备 (Android 16) 上实测 auto-copy (硬件解码+拷贝上传) 仍出现
-///   彩色噪点/半屏黑花屏 (CCTV-13 全屏播放确认)。
-/// - no (纯软解) + vo=gpu 在 libmpv 1.3.8 / Android 16 同样渲染异常。
-/// - auto-safe (MediaCodec 直出 surface) 是 `d4c3acc` 当年能正常工作的
-///   配置, 也是 media_kit Android 端默认推荐值。
+/// 为什么是 no（完整实测链）:
+/// - `auto-copy` (+224/+225): 全屏 CCTV-13 彩色噪点/半屏黑 ❌
+/// - `auto-safe` (+226): Hero 小窗 CCTV-1 同样彩色噪点 ❌
+/// - `no` (+211 当年钉死时): **全屏正常出画面** ✅ (唯一确认能用的)
+///
+/// no 的代价: CPU 软解略耗电, 1080p60 可能掉帧; 但在当前设备上这是唯一
+/// 能正常渲染的路径。Hero 小窗花屏的根因(共享 Player deinterlace 污染)已由
+/// +225 每次 open 重置修复。
 ///
 /// 去隔行由 [MediaKitStreamOpener] 在每次 open 前通过 mpv 属控
 /// (deinterlace=yes)。
@@ -78,7 +80,7 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'auto-safe',
+        hwdec: 'no',
       ),
     );
   } catch (e, st) {

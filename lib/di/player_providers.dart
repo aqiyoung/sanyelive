@@ -60,17 +60,17 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + hwdec=auto-copy。
+/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + hwdec=auto-safe。
 ///
-/// 为什么是 auto-copy 而不是 auto-safe: 本设备 (Android 16) 上 auto-safe
-/// (MediaCodec 直出 surface) 与 no (纯软解) 都出现绿/紫噪点花屏 —— 这是硬解
-/// surface 直出时颜色格式 (YUV↔RGB / dataspace) 协商错乱的典型表现。auto-copy
-/// 让 MediaCodec 解码后再把帧拷贝到普通内存再交给 GPU vo 上传, 绕开直出格式
-/// 问题, 是 media_kit 在 Android 上解决绿屏的标准方案。
+/// 为什么是 auto-safe:
+/// - 本设备 (Android 16) 上实测 auto-copy (硬件解码+拷贝上传) 仍出现
+///   彩色噪点/半屏黑花屏 (CCTV-13 全屏播放确认)。
+/// - no (纯软解) + vo=gpu 在 libmpv 1.3.8 / Android 16 同样渲染异常。
+/// - auto-safe (MediaCodec 直出 surface) 是 `d4c3acc` 当年能正常工作的
+///   配置, 也是 media_kit Android 端默认推荐值。
 ///
-/// 去隔行由 [MediaKitStreamOpener] 在首播前通过 mpv 属控 (deinterlace)。
-/// 另: [MediaKitStreamOpener.open] 起播后会 dump mpv 的 vo/hwdec/颜色格式到
-/// debugPrint, 便于真机排查渲染问题。
+/// 去隔行由 [MediaKitStreamOpener] 在每次 open 前通过 mpv 属控
+/// (deinterlace=yes)。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);
   if (player == null) return null;
@@ -78,7 +78,7 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'auto-copy',
+        hwdec: 'auto-safe',
       ),
     );
   } catch (e, st) {

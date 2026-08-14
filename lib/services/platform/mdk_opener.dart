@@ -10,19 +10,24 @@ import '../../utils/crash_logger.dart';
 ///
 /// hwdec 已由 [mediaKitVideoControllerProvider] 在 VideoController 构造时锁定为
 /// auto-safe (MediaCodec 硬件解码), 此处不再改动 (运行时改 hwdec 无法重建解码
-/// 后端, 不可靠)。这里只控制去隔行: 全屏对 1080i 开 deinterlace。
+/// 后端, 不可靠)。
 ///
-/// ⚠️ 不再清空 vf (曾用 vf='' 清软件去隔行滤镜避免与硬解冲突, 但实测
-/// vf='' 会杀掉 mpv 渲染必需的默认滤镜链, 导致 auto-safe/auto-copy/no
-/// 三种模式全花屏)。让 mpv 自行管理滤镜链。
+/// ⚠️ Android 16 vo=gpu 渲染修复 (三种 hwdec 全花屏的根因):
+///   不再是 vf='' 的问题 (已移除), 而是 OpenGL ES→SurfaceTexture 管线在 Android 16
+///   上需要显式指定 gpu-api 和颜色空间参数。这些属性必须在 open 前设置,
+///   因为它们影响 vo 初始化。
 ///
 /// 仅供 [MediaKitStreamOpener] 调用。
 Future<void> configureDeinterlace(Player player) async {
   final platform = player.platform;
   if (platform is! NativePlayer) return;
   try {
+    // Android 16 渲染兼容: 强制 OpenGL ES (不用 Vulkan, 避免 Adreno 兼容问题)
+    await platform.setProperty('gpu-api', 'opengl');
+    // 颜色空间 hint: 确保 YUV→RGB 映射正确 (绿/紫噪点的典型修复)
+    await platform.setProperty('target-colorspace-hint', 'srgb');
+    // 去隔行: 央视/卫视 1080i 必需
     await platform.setProperty('deinterlace', 'yes');
-    // 不再设 vf='' — 让 mpv 保持默认滤镜链
   } catch (e, st) {
     debugPrint('configureDeinterlace failed: $e\n$st');
   }
@@ -33,24 +38,27 @@ Future<void> configureDeinterlace(Player player) async {
 /// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-safe, 此处不再改动。
 /// 预览对隔行梳状纹不敏感, 故关掉 deinterlace 以省算力。
 ///
-/// ⚠️ 不再清空 vf (同 configureDeinterlace 理由)。
+/// ⚠️ 同样需要 gpu-api/target-colorspace-hint (Android 16 渲染兼容, 见 configureDeinterlace)。
 ///
 /// 仅供 [_TvHeroState._startPreview] 调用。
 Future<void> configurePreview(Player player) async {
   final platform = player.platform;
   if (platform is! NativePlayer) return;
   try {
+    // Android 16 渲染兼容 (同全屏)
+    await platform.setProperty('gpu-api', 'opengl');
+    await platform.setProperty('target-colorspace-hint', 'srgb');
+    // 预览不需要去隔行
     await platform.setProperty('deinterlace', 'no');
-    // 不再设 vf='' — 让 mpv 保持默认滤镜链
   } catch (e, st) {
     debugPrint('configurePreview failed: $e\n$st');
   }
 }
 
 /// 起播成功后 dump mpv 实际渲染参数, 便于真机排查花屏/灰屏。
-/// 三种 hwdec (auto-copy/auto-safe/no) 全花屏的根因是 vf='' 清掉了默认滤镜链
-/// (已修复); 现在若仍有问题, 这些属性能直接看出实际走了哪个 vo / hwdec /
-/// 颜色格式 (imgfmt), 定位是解码层还是渲染层问题。
+///
+/// Android 16 上 vo=gpu 管线花屏的修复方向: gpu-api / target-colorspace-hint /
+/// vo / hwdec-current / imgfmt。这些属性能直接看出实际渲染路径是否正确。
 ///
 /// [tag] 用于区分来源 (如 'hero-preview' / 全屏留空), 写入日志便于对照。
 Future<void> dumpMpvRenderInfo(Player player, {String? tag}) async {
@@ -60,6 +68,8 @@ Future<void> dumpMpvRenderInfo(Player player, {String? tag}) async {
   const keys = <String>[
     'vo',
     'hwdec-current',
+    'gpu-api',
+    'target-colorspace-hint',
     'video-format',
     'video-params/imgfmt',
     'deinterlace-current',

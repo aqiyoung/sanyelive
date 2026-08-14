@@ -32,12 +32,15 @@ final libmpvAvailableProvider = Provider<bool>((ref) => true);
 /// 全局唯一 [Player] 实例。
 ///
 /// 央视/卫视是 1080i 隔行广播, 全屏播放时用 mpv 的 deinterlace 去隔行
-/// (由 [MediaKitStreamOpener] 在首播前设置)。解码走 MediaCodec 硬件解码
-/// (auto-copy), 见 [mediaKitVideoControllerProvider]。
+/// (由 [MediaKitStreamOpener] 在每次 open 前设置)。解码走 MediaCodec 硬件解码
+/// (auto-safe), 见 [mediaKitVideoControllerProvider]。
 ///
-/// 首页 Hero 小窗口预览**复用此共享实例**（与全屏播放页同一 Player）。历史
-/// 上 `d4c3acc` 用这套默认配置能正常出画面；独立 Preview Player 反而在本
-/// 设备上渲染异常。
+/// 首页 Hero 小窗口预览**复用此共享实例**（与全屏播放页同一 Player）。
+///
+/// ⚠️ Android 16 渲染兼容性: 三种 hwdec (auto-copy/auto-safe/no) 实测全花屏,
+/// 根因在 vo=gpu 的 OpenGL ES→SurfaceTexture 管线, 不在解码器。通过
+/// PlayerConfiguration 显式指定 vo + mdk_opener 在 open 前设置 gpu-api 等
+/// 参数来修复。详见 [MediaKitStreamOpener._configurePlayer]。
 final mediaKitPlayerProvider = Provider<Player?>((ref) {
   final available = ref.read(libmpvAvailableProvider);
   if (!available) {
@@ -47,9 +50,12 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
   }
   try {
     MediaKit.ensureInitialized();
-    final player = Player();
-    // 去隔行/软解配置在 [MediaKitStreamOpener.open] 首播前 await 设置,
-    // provider 创建不能阻塞, 这里不再异步 setProperty。
+    final player = Player(
+      configuration: const PlayerConfiguration(
+        vo: 'gpu',
+        logLevel: MPVLogLevel.warn,
+      ),
+    );
     return player;
   } catch (e, st) {
     debugPrint('mediaKitPlayerProvider: failed: $e\n$st');
@@ -64,8 +70,8 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 ///
 /// 为什么是 auto-safe (硬解优先):
 /// - 用户设备硬件无问题 (其他播放器 app 正常播放 CCTV)。
-/// - 三种 hwdec 实测全挂的根因是 vf='' 清掉了 mpv 渲染必需的默认滤镜链,
-///   不是解码器问题。修复后应恢复硬解能力。
+/// - 三种 hwdec 全花屏的根因是 vo=gpu 渲染管线在 Android 16 上的兼容性问题
+///   (已通过 PlayerConfiguration.vo + gpu-api 等参数修复, 见 mdk_opener)。
 /// - auto-safe 是 MediaCodec 直出 surface 的标准 Android 路径。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);

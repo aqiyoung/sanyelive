@@ -37,10 +37,11 @@ final libmpvAvailableProvider = Provider<bool>((ref) => true);
 ///
 /// 首页 Hero 小窗口预览**复用此共享实例**（与全屏播放页同一 Player）。
 ///
-/// ⚠️ Android 16 渲染兼容性: 三种 hwdec (auto-copy/auto-safe/no) 实测全花屏,
-/// 根因在 vo=gpu 的 OpenGL ES→SurfaceTexture 管线, 不在解码器。通过
-/// PlayerConfiguration 显式指定 vo + mdk_opener 在 open 前设置 gpu-api 等
-/// 参数来修复。详见 [MediaKitStreamOpener._configurePlayer]。
+/// ⚠️ 央视花屏根因 (卫视正常对照): 央视 1080i 解码后像素格式 (yuv422p/4:2:2)
+/// 在 vo=gpu 上颜色空间错乱 (绿/紫噪点); 卫视是 yuv420p 故正常。
+/// 修复靠 [mdk_opener] 的 vf=format=fmt=yuv420p 强制转 yuv420p, 且 hwdec=auto-copy
+/// 把帧拉回内存使 vf 滤镜链生效 (auto-safe 直出 Surface 会绕过 vf)。
+/// 详见 [MediaKitStreamOpener._configurePlayer]。
 final mediaKitPlayerProvider = Provider<Player?>((ref) {
   final available = ref.read(libmpvAvailableProvider);
   if (!available) {
@@ -66,13 +67,18 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 
 /// media_kit 视频渲染控制器。
 ///
-/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + hwdec=auto-safe (MediaCodec 硬解)。
+/// 渲染路径: vo=gpu (SurfaceTexture 纹理) + hwdec=auto-copy (MediaCodec 硬解
+/// 后把帧拷贝到内存, 再交给 vo=gpu 上传)。
 ///
-/// 为什么是 auto-safe (硬解优先):
+/// 为什么是 auto-copy 而不是 auto-safe:
+/// - 央视 1080i 花屏的根因是其解码后像素格式 (yuv422p/4:2:2) 在 vo=gpu 上颜色
+///   空间错乱 (绿/紫噪点); 卫视是 yuv420p 故正常。
+/// - 修复靠 [configureDeinterlace] 的 vf=format=fmt=yuv420p 把央视流转成标准
+///   yuv420p。但 auto-safe 走 MediaCodec **直出 Surface**, 会绕过 mpv 滤镜链
+///   (vf) 使该转换失效; 只有 auto-copy 把帧拉回内存, vo=gpu 上传前 vf 才真正生效。
+///   (+225 auto-copy 无 vf 花屏; +230 auto-safe 有 vf(语法错) 花屏; 二者都未命中
+///    auto-copy + 正确 vf 这个组合。)
 /// - 用户设备硬件无问题 (其他播放器 app 正常播放 CCTV)。
-/// - 三种 hwdec 全花屏的根因是 vo=gpu 渲染管线在 Android 16 上的兼容性问题
-///   (已通过 PlayerConfiguration.vo + gpu-api 等参数修复, 见 mdk_opener)。
-/// - auto-safe 是 MediaCodec 直出 surface 的标准 Android 路径。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);
   if (player == null) return null;
@@ -80,7 +86,7 @@ final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
     return VideoController(
       player,
       configuration: const VideoControllerConfiguration(
-        hwdec: 'auto-safe',
+        hwdec: 'auto-copy',
       ),
     );
   } catch (e, st) {

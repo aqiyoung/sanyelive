@@ -17,12 +17,16 @@ import '../../utils/crash_logger.dart';
 ///
 /// 修法:
 ///  - `deinterlace=yes`: 处理 1080i 隔行。
-///  - `vf=format=yuv420p`: 强制输出标准像素格式。vo=gpu 对 yuv420p 处理稳定
-///    (卫视正是此格式且正常), 可绕开央视流在 GPU 上的颜色空间错乱。
+///  - `vf=format=fmt=yuv420p`: **正确 mpv 语法** (参数名是 fmt, 不是裸写格式名)。
+///    强制输出标准像素格式。vo=gpu 对 yuv420p 处理稳定 (卫视正是此格式且正常),
+///    可绕开央视流在 GPU 上的颜色空间错乱 (绿/紫噪点)。
+///    (+230 写成 `format=yuv420p` 被 mpv 当无效参数静默忽略, 故未生效。)
 ///
 /// 为什么用 vf 而不是 gpu-api/target-colorspace-hint: 后者必须在 vo 初始化前
 /// 设置 (VideoController 构造时), 运行时 setProperty 太晚、不生效; vf 是运行时
 /// 可重建滤镜链的属性, 在 open 前 setProperty 能真正起作用。
+/// ⚠️ vf 滤镜链只有在帧回到内存时才生效 — 故 [mediaKitVideoControllerProvider]
+/// 必须用 hwdec=auto-copy (auto-safe 直出 Surface 会绕过 vf)。
 ///
 /// 仅供 [MediaKitStreamOpener] 调用。
 Future<void> configureDeinterlace(Player player) async {
@@ -31,7 +35,8 @@ Future<void> configureDeinterlace(Player player) async {
   try {
     await platform.setProperty('deinterlace', 'yes');
     // 强制标准像素格式: 绕开央视 1080i 流在 vo=gpu 上的颜色空间错乱 (绿/紫噪点)
-    await platform.setProperty('vf', 'format=yuv420p');
+    // 注意语法 format=fmt=yuv420p (+230 漏写 fmt= 导致静默失效)
+    await platform.setProperty('vf', 'format=fmt=yuv420p');
   } catch (e, st) {
     debugPrint('configureDeinterlace failed: $e\n$st');
   }
@@ -39,9 +44,9 @@ Future<void> configureDeinterlace(Player player) async {
 
 /// 首页 Hero 小窗口预览的配置。
 ///
-/// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-safe, 此处不再改动。
+/// hwdec 已由 [mediaKitVideoControllerProvider] 锁定为 auto-copy, 此处不再改动。
 /// 预览对隔行梳状纹不敏感, 故关掉 deinterlace 以省算力; 但仍强制 yuv420p 格式,
-/// 避免央视流预览花屏 (与全屏同因)。
+/// 避免央视流预览花屏 (与全屏同因)。vf 语法同 [configureDeinterlace]。
 ///
 /// 仅供 [_TvHeroState._startPreview] 调用。
 Future<void> configurePreview(Player player) async {
@@ -49,7 +54,7 @@ Future<void> configurePreview(Player player) async {
   if (platform is! NativePlayer) return;
   try {
     await platform.setProperty('deinterlace', 'no');
-    await platform.setProperty('vf', 'format=yuv420p');
+    await platform.setProperty('vf', 'format=fmt=yuv420p');
   } catch (e, st) {
     debugPrint('configurePreview failed: $e\n$st');
   }

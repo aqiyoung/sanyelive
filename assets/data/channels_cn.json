@@ -13,14 +13,13 @@
     "logo": null,
     "is_nsfw": false,
     "sources": [
-      "http://69.30.245.50/live/cctv1.m3u8",
-      "http://74.91.26.218:82/live/cctv1hd.m3u8",
-      "http://198.204.240.250:82/live/cctv1.m3u8",
-      "http://207.56.13.146:81/cdnlive/cctv1.m3u8",
-      "http://222.169.85.8:9901/tsfile/live/0001_1.m3u8"
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv1.m3u8",
+      "http://183.250.156.180:9999/newlive/live/hls/1/live.m3u8",
+      "http://222.71.90.218:8888/newlive/live/hls/2/live.m3u8",
+      "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1_ud.m3u8"
     ],
     "cctvSource": [
-      "http://198.204.240.250:82/live/cctv1.m3u8"
+      "http://113.57.140.161:10081/newlive/live/hls/1/live.m3u8"
     ]
   },
   {
@@ -341,14 +340,12 @@
     "logo": "https://gitee.com/mytv-android/myTVlogo/raw/main/img/CCTV13.png",
     "is_nsfw": false,
     "sources": [
-      "http://go.bkpcp.top/mg/cctv13",
-      "https://cdn3.163189.xyz/163189/cctv13",
-      "http://74.91.26.218:82/live/cctv13hd.m3u8",
-      "https://event.pull.hebtv.com/jishi/cp1.m3u8",
-      "http://222.223.41.27:8888/hls/13/index.m3u8"
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv13.m3u8",
+      "http://183.250.156.180:9999/newlive/live/hls/14/live.m3u8",
+      "http://222.71.90.218:8888/newlive/live/hls/14/live.m3u8"
     ],
     "cctvSource": [
-      "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1_ud.m3u8"
+      "http://113.57.140.161:10081/newlive/live/hls/14/live.m3u8"
     ]
   },
   {

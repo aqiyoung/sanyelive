@@ -14,12 +14,12 @@
     "is_nsfw": false,
     "sources": [
       "https://live-play.cctvnews.cctv.com/cctv/merge_cctv1.m3u8",
-      "http://183.250.156.180:9999/newlive/live/hls/1/live.m3u8",
-      "http://222.71.90.218:8888/newlive/live/hls/2/live.m3u8",
       "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1_ud.m3u8"
     ],
     "cctvSource": [
-      "http://113.57.140.161:10081/newlive/live/hls/1/live.m3u8"
+      "https://shyd.695847.xyz/cms001/ch00000090990000001022/index.m3u8",
+      "http://iptv.tvfix.org/hls/cctv1hd.m3u8",
+      "http://171.38.223.80:8082/tsfile/live/0001_1.m3u8?key=txiptv&playlive=1&authid=0"
     ]
   },
   {
@@ -341,11 +341,13 @@
     "is_nsfw": false,
     "sources": [
       "https://live-play.cctvnews.cctv.com/cctv/merge_cctv13.m3u8",
-      "http://183.250.156.180:9999/newlive/live/hls/14/live.m3u8",
-      "http://222.71.90.218:8888/newlive/live/hls/14/live.m3u8"
+      "http://222.223.41.27:8888/hls/13/index.m3u8"
     ],
     "cctvSource": [
-      "http://113.57.140.161:10081/newlive/live/hls/14/live.m3u8"
+      "https://shyd.695847.xyz/cms001/ch00000090990000001328/index.m3u8",
+      "http://iptv.tvfix.org/hls/cctv13hd.m3u8",
+      "http://171.38.223.80:8082/tsfile/live/0013_1.m3u8?key=txiptv&playlive=1&authid=0",
+      "http://116.128.243.121:85/tsfile/live/0013_1.m3u8?key=txiptv&playlive=0&authid=0"
     ]
   },
   {

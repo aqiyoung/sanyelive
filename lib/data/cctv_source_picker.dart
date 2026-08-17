@@ -191,6 +191,23 @@ class CctvSourcePicker {
     return kCctvSubChannelIds.contains(c.id);
   }
 
+  /// 央视腾讯云源改写: 把主码流 master(`.../cdrmldcctvN_1/index.m3u8`) 改写为
+  /// 720p 渐进子码流(`.../cdrmldcctvN_1_td.m3u8`)。
+  ///
+  /// 背景(ffprobe 实锤): 央视腾讯云 `index.m3u8` 是多码流列表, libmpv 默认挑
+  /// 最高的 1920x1080@3.2Mbps(1080i 隔行) → 在 Android 16 media_kit 管线上花屏 +
+  /// 加载慢。该 CDN 同目录提供 `_td.m3u8`(1280x720 / progressive / yuv420p /
+  /// 1.8Mbps), 与卫视同构 → 不花屏且更快。故直接改写 URL 拉 720p 渐进子码流。
+  /// 仅匹配腾讯云央视专属路径, 其它源原样返回(不误伤卫视/其它 CDN)。
+  String _rewriteCctvTencent720p(String url) {
+    final u = url.trim();
+    final m = RegExp(
+      r'^(https?://[^\s]+?/ldncctvwbcd/)(cdrmldcctv\d+_\d+)/index\.m3u8$',
+    ).firstMatch(u);
+    if (m == null) return u;
+    return '${m.group(1)}${m.group(2)}_td.m3u8';
+  }
+
   /// 给定 channel, 返回按"国内源优先"排序的播放源 URL 列表。
   ///
   /// 层次 (从前到后):
@@ -221,8 +238,12 @@ class CctvSourcePicker {
       if (urls.isEmpty) return;
       final layer = <_ScoredUrl>[];
       for (final url in urls) {
-        if (!seen.add(url)) continue;
-        layer.add(_ScoredUrl(url, _priorityScore(url, reg: regByUrl[url])));
+        // 腾讯云央视源改写为 720p 渐进子码流(避免拉 1080i 主码流 → 花屏+慢加载)
+        final rewritten = _rewriteCctvTencent720p(url);
+        if (!seen.add(rewritten)) continue;
+        // 回查 reg: 用原始 url 的探活信息(改写后 host 不变, 分类一致)
+        final reg = regByUrl[url] ?? regByUrl[rewritten];
+        layer.add(_ScoredUrl(rewritten, _priorityScore(rewritten, reg: reg)));
       }
       if (layer.isEmpty) return;
       layer.sort((a, b) => b.score.compareTo(a.score));

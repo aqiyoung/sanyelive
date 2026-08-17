@@ -27,7 +27,11 @@ abstract class StreamOpener {
   /// 抛出:
   ///   - [TimeoutException] 表示超时
   ///   - 其他异常表示协议/网络层错误
-  Future<bool> open(String url, {required Duration timeout});
+  Future<bool> open(
+    String url, {
+    required Duration timeout,
+    bool preferSoftwareDecode = false,
+  });
 
   /// 取消正在进行的 open 操作 (清理资源, 不抛异常).
   /// 默认 no-op, 子类可 override.
@@ -111,6 +115,7 @@ class SourceFailover {
     void Function(SourceAttemptEvent event)? onAttempt,
     bool Function()? shouldAbort,
     String? label,
+    bool preferSoftwareDecode = false,
   }) async {
     final tag = label != null ? ' ($label)' : '';
     if (sources.isEmpty) {
@@ -131,7 +136,11 @@ class SourceFailover {
         SourceAttemptEvent(index: i + 1, total: sources.length, url: url),
       );
       try {
-        final ok = await _opener.open(url, timeout: perSourceTimeout);
+        final ok = await _opener.open(
+          url,
+          timeout: perSourceTimeout,
+          preferSoftwareDecode: preferSoftwareDecode,
+        );
         if (ok) {
           await CrashLogger.log(
               'failover: src#${i + 1}/${sources.length} OK$tag url=$url');
@@ -176,10 +185,18 @@ class SourceFailover {
 
   ///
   /// 返回是否成功.  成功条件跟 [play] 一致: opener 返回 true.
-  Future<bool> playSingle(String url, {String? label}) async {
+  Future<bool> playSingle(
+    String url, {
+    String? label,
+    bool preferSoftwareDecode = false,
+  }) async {
     final tag = label != null ? ' ($label)' : '';
     try {
-      final ok = await _opener.open(url, timeout: perSourceTimeout);
+      final ok = await _opener.open(
+        url,
+        timeout: perSourceTimeout,
+        preferSoftwareDecode: preferSoftwareDecode,
+      );
       await CrashLogger.log(
           'failover: playSingle ${ok ? 'OK' : 'FAILED'}$tag url=$url');
       return ok;

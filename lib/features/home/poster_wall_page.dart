@@ -11,6 +11,7 @@ import '../../../core/theme/colors.dart';
 import '../settings/app_mode_provider.dart';
 import '../../../data/providers/vod_provider.dart';
 import '../../../data/models/channel.dart';
+import '../../../data/cctv_source_picker.dart';
 import '../../../data/models/content.dart';
 import '../../../data/channel_filter.dart';
 import '../../../data/province_util.dart' show sortSatelliteByProvince;
@@ -352,7 +353,10 @@ class _TvHeroState extends ConsumerState<_TvHero> {
       // 共享 Player 的 hwdec 已由 [mediaKitVideoControllerProvider] 在 VideoController
       // 构造时锁定为 auto-safe (MediaCodec 硬件解码)。此处仅补充: 预览对隔行不
       // 敏感, 关掉 deinterlace 省算力 (见 [configurePreview])。
-      await configurePreview(player);
+      await configurePreview(
+        player,
+        softwareDecode: CctvSourcePicker.isCctvChannel(ch),
+      );
       // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
       // 会恢复音量 (setVolume(100)).
       await player.setVolume(0);

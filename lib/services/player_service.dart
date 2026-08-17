@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 
 import '../data/models/channel.dart';
+import '../data/cctv_source_picker.dart';
 import '../data/source_dispatcher.dart';
 import '../services/platform/fallback_player.dart';
 import '../utils/crash_logger.dart';
@@ -164,6 +165,7 @@ class PlayerService extends ChangeNotifier {
         },
         shouldAbort: () => myGen != _playGeneration,
         label: channel.id,
+        preferSoftwareDecode: CctvSourcePicker.isCctvChannel(channel),
       );
       if (myGen != _playGeneration) return; // 已被更新的切换覆盖
       if (_disposed) return;
@@ -229,7 +231,11 @@ class PlayerService extends ChangeNotifier {
     );
 
     try {
-      final ok = await _failover.playSingle(url, label: ch.id);
+      final ok = await _failover.playSingle(
+        url,
+        label: ch.id,
+        preferSoftwareDecode: ch != null && CctvSourcePicker.isCctvChannel(ch),
+      );
       if (_disposed) return;
       await _router.recordResult(url, ok);
       if (ok) {

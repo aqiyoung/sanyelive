@@ -292,6 +292,7 @@ class SmartSourceFailover extends SourceFailover {
     void Function(SourceAttemptEvent event)? onAttempt,
     bool Function()? shouldAbort,
     String? label,
+    bool preferSoftwareDecode = false,
   }) async {
     final tag = label != null ? ' ($label)' : '';
     if (sources.isEmpty) {
@@ -307,7 +308,11 @@ class SmartSourceFailover extends SourceFailover {
       }
       final url = sources.first;
       onAttempt?.call(SourceAttemptEvent(index: 1, total: 1, url: url));
-      final ok = await opener.open(url, timeout: perSourceTimeout);
+      final ok = await opener.open(
+        url,
+        timeout: perSourceTimeout,
+        preferSoftwareDecode: preferSoftwareDecode,
+      );
       if (ok) {
         await _router.recordResult(url, true);
         await CrashLogger.log('failover: single OK$tag url=$url');
@@ -341,7 +346,11 @@ class SmartSourceFailover extends SourceFailover {
       ));
 
       try {
-        final ok = await opener.open(url, timeout: perSourceTimeout);
+        final ok = await opener.open(
+          url,
+          timeout: perSourceTimeout,
+          preferSoftwareDecode: preferSoftwareDecode,
+        );
         if (ok) {
           await _router.recordResult(url, true);
           await CrashLogger.log(

@@ -17,7 +17,11 @@ import '../utils/crash_logger.dart';
 /// libmpv 不可用时占位: open 直接记日志并返回 false, 让上层走错误分支。
 class _NoopStreamOpener implements StreamOpener {
   @override
-  Future<bool> open(String url, {required Duration timeout}) async {
+  Future<bool> open(
+    String url, {
+    required Duration timeout,
+    bool preferSoftwareDecode = false,
+  }) async {
     await CrashLogger.log('_NoopStreamOpener.open($url) — libmpv unavailable');
     return false;
   }
@@ -37,10 +41,11 @@ final libmpvAvailableProvider = Provider<bool>((ref) => true);
 ///
 /// 首页 Hero 小窗口预览**复用此共享实例**（与全屏播放页同一 Player）。
 ///
-/// ⚠️ 央视花屏根因 (卫视正常对照): 央视 1080i 解码后像素格式 (yuv422p/4:2:2)
-/// 在 vo=gpu 上颜色空间错乱 (绿/紫噪点); 卫视是 yuv420p 故正常。
-/// 修复靠 [mdk_opener] 的 vf=format=fmt=yuv420p 强制转 yuv420p, 且 hwdec=auto-copy
-/// 把帧拉回内存使 vf 滤镜链生效 (auto-safe 直出 Surface 会绕过 vf)。
+/// ⚠️ 央视花屏根因 (ffprobe 实锤): 不是 chroma(央视流实测就是 yuv420p, 与卫视同构),
+/// 而是**默认拉了 1080i/1080p 最重主码流**在 Android 16 media_kit 管线上没正确
+/// 去隔行/渲染。根治在源级: [CctvSourcePicker] 把腾讯云央视源改为 720p 渐进子码流,
+/// [MediaKitStreamOpener] 再设 `hls-bitrate` 封顶双保险。本处 hwdec=auto-copy +
+/// [mdk_opener] 的 deinterlace/vf 仅作无害兜底(渐进 720p 下 vf 是 no-op)。
 /// 详见 [MediaKitStreamOpener._configurePlayer]。
 final mediaKitPlayerProvider = Provider<Player?>((ref) {
   final available = ref.read(libmpvAvailableProvider);
@@ -71,13 +76,11 @@ final mediaKitPlayerProvider = Provider<Player?>((ref) {
 /// 后把帧拷贝到内存, 再交给 vo=gpu 上传)。
 ///
 /// 为什么是 auto-copy 而不是 auto-safe:
-/// - 央视 1080i 花屏的根因是其解码后像素格式 (yuv422p/4:2:2) 在 vo=gpu 上颜色
-///   空间错乱 (绿/紫噪点); 卫视是 yuv420p 故正常。
-/// - 修复靠 [configureDeinterlace] 的 vf=format=fmt=yuv420p 把央视流转成标准
-///   yuv420p。但 auto-safe 走 MediaCodec **直出 Surface**, 会绕过 mpv 滤镜链
-///   (vf) 使该转换失效; 只有 auto-copy 把帧拉回内存, vo=gpu 上传前 vf 才真正生效。
-///   (+225 auto-copy 无 vf 花屏; +230 auto-safe 有 vf(语法错) 花屏; 二者都未命中
-///    auto-copy + 正确 vf 这个组合。)
+/// - 根治靠源级: [CctvSourcePicker] 把腾讯云央视源改为 720p 渐进子码流(与卫视同构),
+///   [MediaKitStreamOpener] 再设 `hls-bitrate` 封顶, 从源头避开 1080i/1080p 花屏。
+/// - auto-copy 仍保留作兜底路径: 它把 MediaCodec 解码后的帧**拷贝回内存**, 使
+///   [configureDeinterlace] 的 vf 滤镜链(若有 4:2:2 源需转 yuv420p)能真正生效;
+///   auto-safe 直出 Surface 会绕过 vf, 故不能用 auto-safe。
 /// - 用户设备硬件无问题 (其他播放器 app 正常播放 CCTV)。
 final mediaKitVideoControllerProvider = Provider<VideoController?>((ref) {
   final player = ref.watch(mediaKitPlayerProvider);

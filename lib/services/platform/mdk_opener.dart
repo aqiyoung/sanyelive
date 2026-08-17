@@ -11,16 +11,17 @@ import '../../utils/crash_logger.dart';
 /// hwdec 已由 [mediaKitVideoControllerProvider] 在 VideoController 构造时锁定为
 /// auto-safe (MediaCodec 硬件解码), 此处不再改动。
 ///
-/// 关键背景 (真机实测): 卫视等渐进源在 auto-safe 下完全正常, 只有**央视 1080i
-/// 隔行源**花屏 — 说明不是渲染器整体故障, 而是央视流的解码后像素格式/颜色空间在
-/// vo=gpu 上被错误处理 (绿/紫噪点)。
-///
-/// 修法:
-///  - `deinterlace=yes`: 处理 1080i 隔行。
-///  - `vf=format=fmt=yuv420p`: **正确 mpv 语法** (参数名是 fmt, 不是裸写格式名)。
-///    强制输出标准像素格式。vo=gpu 对 yuv420p 处理稳定 (卫视正是此格式且正常),
-///    可绕开央视流在 GPU 上的颜色空间错乱 (绿/紫噪点)。
-///    (+230 写成 `format=yuv420p` 被 mpv 当无效参数静默忽略, 故未生效。)
+/// 关键背景 (ffprobe 实锤 + 真机实测):
+///  - 卫视等渐进源正常 → 渲染器本身没坏。
+///  - 央视腾讯云 `index.m3u8` 是多码流列表, libmpv 默认挑最高的 1920x1080@3.2Mbps
+///    **1080i 隔行**主码流 → 在 Android 16 media_kit vo=gpu 管线上花屏 + 加载慢。
+///  - ffprobe 实测央视流本身就是 **yuv420p(4:2:0)**, 与卫视同构; 故此前
+///    `vf=format=fmt=yuv420p` 实为 no-op(本就 4:2:0), 不能修复花屏。
+///  - **真因 = 拉了 1080i 1080p 主码流**。根治在源级: [CctvSourcePicker] 已把腾讯云
+///    央视源改写为 720p 渐进子码流(`_td.m3u8`), 且 [MediaKitStreamOpener] 设
+///    `hls-bitrate` 封顶(≤2Mbps)双保险 → 自动避开 1080p/1080i。
+///  - `deinterlace`/`vf=format=fmt=yuv420p` 此处保留作**无害兜底**(渐进 720p 下
+///    vf 是 no-op; 万一命中 4:2:2 源仍可转 yuv420p)。
 ///
 /// 为什么用 vf 而不是 gpu-api/target-colorspace-hint: 后者必须在 vo 初始化前
 /// 设置 (VideoController 构造时), 运行时 setProperty 太晚、不生效; vf 是运行时
@@ -28,14 +29,54 @@ import '../../utils/crash_logger.dart';
 /// ⚠️ vf 滤镜链只有在帧回到内存时才生效 — 故 [mediaKitVideoControllerProvider]
 /// 必须用 hwdec=auto-copy (auto-safe 直出 Surface 会绕过 vf)。
 ///
-/// 仅供 [MediaKitStreamOpener] 调用。
-Future<void> configureDeinterlace(Player player) async {
+/// 央视源判定: 给定 URL 是否很可能属于 CCTV 主/子频道。
+///
+/// 用于决定是否走**软件解码**兜花色问题。覆盖 [CctvSourcePicker] 里出现的
+/// 全部央视源 host (腾讯云 / 198.204.240.250 / xykt-fix.github.io / skygo.mn)。
+bool _isLikelyCctv(String url) {
+  final u = url.toLowerCase();
+  if (u.contains('cctv')) return true;
+  if (u.contains('ldncctvwbcd')) return true; // 腾讯云央视专属路径
+  if (u.contains('xykt-fix.github.io')) return true; // CCTV-4/9/11/15 跳转源
+  if (u.contains('skygo.mn')) return true; // CCTV-10/14 蒙古 CDN
+  if (u.contains('198.204.240.250')) return true; // iptv-org 历史央视裸 IP
+  return false;
+}
+
+/// 应用 hwdec 策略。
+///
+/// [software] = true → `hwdec=no` (纯软件解码): 颜色 100% 正确, 彻底规避
+/// `vo=gpu` + `mediacodec-copy` 在部分 Android 设备上回拷内存后 GPU 上传的
+/// 颜色格式错乱(绿紫噪点)。央视源已被改写为 720p 渐进, 软件解码 CPU 完全扛得住。
+/// [software] = false → 恢复 `hwdec=auto-copy` (硬件解码, 其它频道沿用)。
+///
+/// ⚠️ hwdec 必须在 open 之前 setProperty 才对本次流生效。
+Future<void> _applyHwdec(Player player, bool software) async {
   final platform = player.platform;
   if (platform is! NativePlayer) return;
   try {
+    await platform.setProperty('hwdec', software ? 'no' : 'auto-copy');
+  } catch (e, st) {
+    debugPrint('_applyHwdec($software) failed: $e\n$st');
+  }
+}
+
+/// 仅供 [MediaKitStreamOpener] 调用。
+Future<void> configureDeinterlace(
+  Player player, {
+  bool? softwareDecode,
+}) async {
+  final platform = player.platform;
+  if (platform is! NativePlayer) return;
+  if (softwareDecode != null) await _applyHwdec(player, softwareDecode);
+  try {
+    // 全局 HLS 码率封顶: 多码流源(含央视腾讯云)自动不选 1080p, 改选 ≤2Mbps 子码流
+    // → 加快加载 + 避开 1080i 花屏。单码流源/卫视(多为单码流)不受影响。
+    await platform.setProperty('hls-bitrate', '2000000');
     await platform.setProperty('deinterlace', 'yes');
-    // 强制标准像素格式: 绕开央视 1080i 流在 vo=gpu 上的颜色空间错乱 (绿/紫噪点)
-    // 注意语法 format=fmt=yuv420p (+230 漏写 fmt= 导致静默失效)
+    // 强制标准像素格式: 兜底处理(ffprobe 实测央视流已为 yuv420p, 此处在渐进 720p
+    // 下为 no-op; 若命中 4:2:2 源仍可转 yuv420p)。语法 format=fmt=yuv420p
+    // (+230 漏写 fmt= 导致静默失效)。
     await platform.setProperty('vf', 'format=fmt=yuv420p');
   } catch (e, st) {
     debugPrint('configureDeinterlace failed: $e\n$st');
@@ -49,10 +90,16 @@ Future<void> configureDeinterlace(Player player) async {
 /// 避免央视流预览花屏 (与全屏同因)。vf 语法同 [configureDeinterlace]。
 ///
 /// 仅供 [_TvHeroState._startPreview] 调用。
-Future<void> configurePreview(Player player) async {
+Future<void> configurePreview(
+  Player player, {
+  bool? softwareDecode,
+}) async {
   final platform = player.platform;
   if (platform is! NativePlayer) return;
+  if (softwareDecode != null) await _applyHwdec(player, softwareDecode);
   try {
+    // 与全屏一致: HLS 码率封顶, 避免 Hero 预览也拉 1080p(慢 + 可能花屏)
+    await platform.setProperty('hls-bitrate', '2000000');
     await platform.setProperty('deinterlace', 'no');
     await platform.setProperty('vf', 'format=fmt=yuv420p');
   } catch (e, st) {
@@ -121,15 +168,28 @@ class MediaKitStreamOpener implements StreamOpener {
   /// 不能用一次性守卫: 首页 Hero 预览会经 [configurePreview] 把共享 Player 的
   /// deinterlace 改回 no, 若此处只在首次 open 设置, 后续全屏 open 会沿用预览
   /// 留下的 no → 央视/卫视 1080i 隔行梳状花屏。故每次 open 都重新置 yes。
-  Future<void> _configurePlayer() async {
-    await configureDeinterlace(_player);
+  ///
+  /// [softwareDecode] 来自上层 (央视频道 → true): 央视走软件解码, 规避
+  /// `vo=gpu` + mediacodec-copy 回拷内存的颜色错乱(绿紫花屏)。
+  Future<void> _configurePlayer(bool softwareDecode) async {
+    await configureDeinterlace(_player, softwareDecode: softwareDecode);
+    if (softwareDecode) {
+      // 央视/疑似源 → 软件解码兜花色错乱; 该次 open 的 [mpv] hwdec-current 应=no
+      unawaited(CrashLogger.log(
+          'decode: software(hwdec=no) for CCTV/likely-cctv source'));
+    }
   }
 
   @override
-  Future<bool> open(String url, {required Duration timeout}) async {
+  Future<bool> open(
+    String url, {
+    required Duration timeout,
+    bool preferSoftwareDecode = false,
+  }) async {
     final myGen = ++_generation;
     try {
-      await _configurePlayer();
+      final software = preferSoftwareDecode || _isLikelyCctv(url);
+      await _configurePlayer(software);
       final completer = Completer<bool>();
       late final StreamSubscription<dynamic> sub;
       late final Timer timer;

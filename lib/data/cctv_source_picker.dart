@@ -199,7 +199,7 @@ class CctvSourcePicker {
   /// 加载慢。该 CDN 同目录提供 `_td.m3u8`(1280x720 / progressive / yuv420p /
   /// 1.8Mbps), 与卫视同构 → 不花屏且更快。故直接改写 URL 拉 720p 渐进子码流。
   /// 仅匹配腾讯云央视专属路径, 其它源原样返回(不误伤卫视/其它 CDN)。
-  String _rewriteCctvTencent720p(String url) {
+  static String _rewriteCctvTencent720p(String url) {
     final u = url.trim();
     final m = RegExp(
       r'^(https?://[^\s]+?/ldncctvwbcd/)(cdrmldcctv\d+_\d+)/index\.m3u8$',

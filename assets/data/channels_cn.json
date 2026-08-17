@@ -3684,5 +3684,170 @@
     "sources": [
       "http://livealone302.iqilu.com/iqilu/typd.m3u8"
     ]
+  },
+  {
+    "id": "YZB4387.cn",
+    "name": "扬州测试-4387",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/4387"]
+  },
+  {
+    "id": "YZB11ecc.cn",
+    "name": "扬州测试-11ecc",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ecc"]
+  },
+  {
+    "id": "YZB11ef4.cn",
+    "name": "扬州测试-11ef4",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ef4"]
+  },
+  {
+    "id": "YZB11ef0.cn",
+    "name": "扬州测试-11ef0",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ef0"]
+  },
+  {
+    "id": "YZB11eec.cn",
+    "name": "扬州测试-11eec",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11eec"]
+  },
+  {
+    "id": "YZB11ee8.cn",
+    "name": "扬州测试-11ee8",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ee8"]
+  },
+  {
+    "id": "YZB11ee0.cn",
+    "name": "扬州测试-11ee0",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ee0"]
+  },
+  {
+    "id": "YZB11ed8.cn",
+    "name": "扬州测试-11ed8",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ed8"]
+  },
+  {
+    "id": "YZB4e2f.cn",
+    "name": "扬州测试-4e2f",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/4e2f"]
+  },
+  {
+    "id": "YZB1bd7d.cn",
+    "name": "扬州测试-1bd7d",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd7d"]
+  },
+  {
+    "id": "YZB1bd5d.cn",
+    "name": "扬州测试-1bd5d",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd5d"]
+  },
+  {
+    "id": "YZB1bd81.cn",
+    "name": "扬州测试-1bd81",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd81"]
+  },
+  {
+    "id": "YZB1bd75.cn",
+    "name": "扬州测试-1bd75",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd75"]
+  },
+  {
+    "id": "YZB1bd69.cn",
+    "name": "扬州测试-1bd69",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd69"]
+  },
+  {
+    "id": "YZB1bd61.cn",
+    "name": "扬州测试-1bd61",
+    "country": "CN",
+    "categories": ["测试"],
+    "alt_names": [],
+    "website": null,
+    "logo": null,
+    "is_nsfw": false,
+    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd61"]
   }
 ]

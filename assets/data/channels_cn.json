@@ -17,8 +17,10 @@
       "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1_ud.m3u8"
     ],
     "cctvSource": [
+      "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1_td.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0001_1.m3u8?key=txiptv&playlive=0&authid=0",
-      "http://222.223.41.27:8888/hls/1/index.m3u8"
+      "http://222.223.41.27:8888/hls/1/index.m3u8",
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv1.m3u8"
     ]
   },
   {
@@ -51,6 +53,7 @@
       }
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv2.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0002_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/2/index.m3u8"
     ]
@@ -76,6 +79,7 @@
       "http://112.123.243.37:50085/tsfile/live/0003_1.m3u8?key=txiptv&playlive=0&authid=0"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv3.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0003_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/3/index.m3u8"
     ]
@@ -99,6 +103,7 @@
     ],
     "is_nsfw": false,
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv4.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0004_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/4/index.m3u8"
     ]
@@ -133,6 +138,7 @@
       }
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv5.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0005_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/5/index.m3u8"
     ]
@@ -195,6 +201,7 @@
       "http://173.208.212.130:8181/720p/cctv6.m3u8"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv6.m3u8",
       "http://222.223.41.27:8888/hls/6/index.m3u8"
     ]
   },
@@ -218,6 +225,7 @@
       "http://112.123.243.37:50085/tsfile/live/0008_1.m3u8?key=txiptv&playlive=0&authid=0"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv7.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0007_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/7/index.m3u8"
     ]
@@ -243,6 +251,7 @@
       "http://173.208.212.130:8181/720p/cctv8k.m3u8"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv8.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0008_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/8/index.m3u8"
     ]
@@ -266,6 +275,7 @@
       "http://112.123.243.37:50085/tsfile/live/0010_1.m3u8?key=txiptv&playlive=0&authid=0"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv9.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0009_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/9/index.m3u8"
     ]
@@ -291,6 +301,7 @@
       "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv10.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0010_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/10/index.m3u8"
     ]
@@ -316,6 +327,7 @@
       "http://cd-live-stream.news.cctvplus.com/live/smil:CHANNEL1.smil/chunklist_w744036192_b1000000.m3u8"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv11.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0011_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/11/index.m3u8"
     ]
@@ -350,6 +362,7 @@
       "http://173.208.212.130:8181/720p/cctv12.m3u8"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv12.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0012_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/12/index.m3u8"
     ]
@@ -373,6 +386,7 @@
       "http://222.223.41.27:8888/hls/13/index.m3u8"
     ],
     "cctvSource": [
+      "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1_td.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0013_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/13/index.m3u8"
     ]
@@ -397,6 +411,7 @@
       "http://38.75.136.137:98/gslb/dsdqbv/cctv14hd.m3u8?auth=test20251009"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv14.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0014_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/14/index.m3u8"
     ]
@@ -422,6 +437,7 @@
       "https://piccpndks.v.kcdnvip.com/audio/cctv15_2/index.m3u8"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv15.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0015_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/15/index.m3u8"
     ]
@@ -443,6 +459,7 @@
       "http://74.91.26.218:82/live/cctv16hd.m3u8"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv16.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0016_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/16/index.m3u8"
     ]
@@ -464,6 +481,7 @@
       "http://74.91.26.218:82/live/cctv17hd.m3u8"
     ],
     "cctvSource": [
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv17.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0017_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/17/index.m3u8"
     ]

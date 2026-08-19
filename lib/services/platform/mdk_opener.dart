@@ -29,17 +29,17 @@ import '../../utils/crash_logger.dart';
 /// ⚠️ vf 滤镜链只有在帧回到内存时才生效 — 故 [mediaKitVideoControllerProvider]
 /// 必须用 hwdec=auto-copy (auto-safe 直出 Surface 会绕过 vf)。
 ///
-/// 央视源判定: 给定 URL 是否很可能属于 CCTV 主/子频道。
+/// 央视源判定: 给定 URL 是否需要对央视源走**软件解码**兜花色问题。
 ///
-/// 用于决定是否走**软件解码**兜花色问题。覆盖 [CctvSourcePicker] 里出现的
-/// 全部央视源 host (腾讯云 / 198.204.240.250 / xykt-fix.github.io / skygo.mn)。
+/// ⚠️ 8-19 修正: 此前对所有含 `cctv` 的 URL 一律软解, 但 +236 把央视主频道
+/// 换成卫视同款国内天翼/txiptv `112.123.243.37` + `222.223.41.27` 源后,
+/// 这些**普通 HLS/TS 源**在 `vo=gpu + hwdec=no`(软解)下渲染出灰屏/无画面
+/// (音频正常, 说明源本身通)。故软解只保留给**历史上真花屏**的腾讯云
+/// `ldncctvwbcd` 720p 子码流; 其余央视源改走硬件解码 `auto-copy`。
 bool _isLikelyCctv(String url) {
   final u = url.toLowerCase();
-  if (u.contains('cctv')) return true;
-  if (u.contains('ldncctvwbcd')) return true; // 腾讯云央视专属路径
-  if (u.contains('xykt-fix.github.io')) return true; // CCTV-4/9/11/15 跳转源
-  if (u.contains('skygo.mn')) return true; // CCTV-10/14 蒙古 CDN
-  if (u.contains('198.204.240.250')) return true; // iptv-org 历史央视裸 IP
+  // 仅腾讯云央视专属路径(此前实锤绿紫花屏)走软件解码, 颜色 100% 正确。
+  if (u.contains('ldncctvwbcd')) return true;
   return false;
 }
 

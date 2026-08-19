@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 
 import '../data/models/channel.dart';
-import '../data/cctv_source_picker.dart';
 import '../data/source_dispatcher.dart';
 import '../services/platform/fallback_player.dart';
 import '../utils/crash_logger.dart';
@@ -165,7 +164,9 @@ class PlayerService extends ChangeNotifier {
         },
         shouldAbort: () => myGen != _playGeneration,
         label: channel.id,
-        preferSoftwareDecode: CctvSourcePicker.isCctvChannel(channel),
+        // 8-19 修正: 不再对全部央视频道无条件软解(否则国内 txiptv/222 源灰屏)。
+        // 软解仅由 [MediaKitStreamOpener] 内部按 URL 判定(仅腾讯云 ldncctvwbcd)。
+        preferSoftwareDecode: false,
       );
       if (myGen != _playGeneration) return; // 已被更新的切换覆盖
       if (_disposed) return;
@@ -234,7 +235,8 @@ class PlayerService extends ChangeNotifier {
       final ok = await _failover.playSingle(
         url,
         label: ch.id,
-        preferSoftwareDecode: ch != null && CctvSourcePicker.isCctvChannel(ch),
+        // 8-19 修正: 同 [play], 软解交由 opener 内部按 URL 判定(仅腾讯云 ldncctvwbcd)。
+        preferSoftwareDecode: false,
       );
       if (_disposed) return;
       await _router.recordResult(url, ok);

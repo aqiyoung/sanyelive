@@ -355,7 +355,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
       // 敏感, 关掉 deinterlace 省算力 (见 [configurePreview])。
       await configurePreview(
         player,
-        softwareDecode: CctvSourcePicker.isCctvChannel(ch),
+        // 8-19 修正: 同 [play], 不再对全部央视频道软解(国内源软解灰屏);
+        // 软解仅由 opener 内部按 URL 判定(腾讯云 ldncctvwbcd)。
+        softwareDecode: false,
       );
       // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
       // 会恢复音量 (setVolume(100)).

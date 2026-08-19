@@ -17,9 +17,8 @@
       "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv1_1_ud.m3u8"
     ],
     "cctvSource": [
-      "https://shyd.695847.xyz/cms001/ch00000090990000001022/index.m3u8",
-      "http://iptv.tvfix.org/hls/cctv1hd.m3u8",
-      "http://171.38.223.80:8082/tsfile/live/0001_1.m3u8?key=txiptv&playlive=1&authid=0"
+      "http://112.123.243.37:50085/tsfile/live/0001_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/1/index.m3u8"
     ]
   },
   {
@@ -51,7 +50,10 @@
         "type": "hls"
       }
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0002_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/2/index.m3u8"
+    ]
   },
   {
     "id": "CCTV3.cn",
@@ -73,7 +75,10 @@
       "http://173.208.212.130:8181/720p/cctv3.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0003_1.m3u8?key=txiptv&playlive=0&authid=0"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0003_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/3/index.m3u8"
+    ]
   },
   {
     "id": "CCTV4.cn",
@@ -92,7 +97,11 @@
       "http://173.208.212.130:8181/720p/cctv4.m3u8",
       "https://live-play-hls.cctvnews.cctv.com/CCTVChannel/channel_cctv4_mbd.m3u8?auth_key=1781938800-1-b59134a2ead43d7f783f943c8f535e7bb80c5169575b2e8efcd5b3ddea21b41c-f97e1b4b766b8d374536f815e2648287&yid=b59134a2ead43d7f783f943c8f535e7bb80c5169575b2e8efcd5b3ddea21b41c"
     ],
-    "is_nsfw": false
+    "is_nsfw": false,
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0004_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/4/index.m3u8"
+    ]
   },
   {
     "id": "CCTV5.cn",
@@ -123,7 +132,10 @@
         "type": "hls"
       }
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0005_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/5/index.m3u8"
+    ]
   },
   {
     "id": "CCTV5Plus.cn",
@@ -157,7 +169,10 @@
       },
       "http://112.123.243.37:50085/tsfile/live/0006_1.m3u8?key=txiptv&playlive=0&authid=0"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0005_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/5/index.m3u8"
+    ]
   },
   {
     "id": "CCTV6.cn",
@@ -180,7 +195,7 @@
       "http://173.208.212.130:8181/720p/cctv6.m3u8"
     ],
     "cctvSource": [
-      "http://198.204.240.250:82/live/cctv6.m3u8"
+      "http://222.223.41.27:8888/hls/6/index.m3u8"
     ]
   },
   {
@@ -202,7 +217,10 @@
       "http://222.223.41.27:8888/hls/7/index.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0008_1.m3u8?key=txiptv&playlive=0&authid=0"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0007_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/7/index.m3u8"
+    ]
   },
   {
     "id": "CCTV8.cn",
@@ -225,7 +243,8 @@
       "http://173.208.212.130:8181/720p/cctv8k.m3u8"
     ],
     "cctvSource": [
-      "http://198.204.240.250:82/live/cctv8.m3u8"
+      "http://112.123.243.37:50085/tsfile/live/0008_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/8/index.m3u8"
     ]
   },
   {
@@ -246,7 +265,10 @@
       "http://222.223.41.27:8888/hls/9/index.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0010_1.m3u8?key=txiptv&playlive=0&authid=0"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0009_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/9/index.m3u8"
+    ]
   },
   {
     "id": "CCTV10.cn",
@@ -269,7 +291,8 @@
       "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8"
     ],
     "cctvSource": [
-      "https://cdn4.skygo.mn/live/disk1/CCTV-10/HLSv3-FTA/CCTV-10.m3u8"
+      "http://112.123.243.37:50085/tsfile/live/0010_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/10/index.m3u8"
     ]
   },
   {
@@ -292,7 +315,10 @@
       "http://38.75.136.137:98/gslb/dsdqpub/cctv11hd.m3u8?auth=testpub",
       "http://cd-live-stream.news.cctvplus.com/live/smil:CHANNEL1.smil/chunklist_w744036192_b1000000.m3u8"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0011_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/11/index.m3u8"
+    ]
   },
   {
     "id": "CCTV12.cn",
@@ -323,7 +349,10 @@
       },
       "http://173.208.212.130:8181/720p/cctv12.m3u8"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0012_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/12/index.m3u8"
+    ]
   },
   {
     "id": "CCTV13.cn",
@@ -344,10 +373,8 @@
       "http://222.223.41.27:8888/hls/13/index.m3u8"
     ],
     "cctvSource": [
-      "https://shyd.695847.xyz/cms001/ch00000090990000001328/index.m3u8",
-      "http://iptv.tvfix.org/hls/cctv13hd.m3u8",
-      "http://171.38.223.80:8082/tsfile/live/0013_1.m3u8?key=txiptv&playlive=1&authid=0",
-      "http://116.128.243.121:85/tsfile/live/0013_1.m3u8?key=txiptv&playlive=0&authid=0"
+      "http://112.123.243.37:50085/tsfile/live/0013_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/13/index.m3u8"
     ]
   },
   {
@@ -370,7 +397,8 @@
       "http://38.75.136.137:98/gslb/dsdqbv/cctv14hd.m3u8?auth=test20251009"
     ],
     "cctvSource": [
-      "https://cdn4.skygo.mn/live/disk1/CCTV-14/HLSv3-FTA/CCTV-14.m3u8"
+      "http://112.123.243.37:50085/tsfile/live/0014_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/14/index.m3u8"
     ]
   },
   {
@@ -393,7 +421,10 @@
       "https://xykt-fix.github.io/play/a02e/index.m3u8",
       "https://piccpndks.v.kcdnvip.com/audio/cctv15_2/index.m3u8"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0015_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/15/index.m3u8"
+    ]
   },
   {
     "id": "CCTV16.cn",
@@ -411,7 +442,10 @@
     "sources": [
       "http://74.91.26.218:82/live/cctv16hd.m3u8"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0016_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/16/index.m3u8"
+    ]
   },
   {
     "id": "CCTV17.cn",
@@ -429,7 +463,10 @@
     "sources": [
       "http://74.91.26.218:82/live/cctv17hd.m3u8"
     ],
-    "cctvSource": []
+    "cctvSource": [
+      "http://112.123.243.37:50085/tsfile/live/0017_1.m3u8?key=txiptv&playlive=0&authid=0",
+      "http://222.223.41.27:8888/hls/17/index.m3u8"
+    ]
   },
   {
     "id": "CCTV4America.cn",
@@ -499,7 +536,7 @@
       "http://198.204.240.250:82/live/cctv4k.m3u8"
     ],
     "cctvSource": [
-      "http://198.204.240.250:82/live/cctv4k.m3u8"
+      "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv4k_1/index.m3u8"
     ]
   },
   {
@@ -3688,165 +3725,225 @@
     "id": "YZB4387.cn",
     "name": "扬州测试-4387",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/4387"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/4387"
+    ]
   },
   {
     "id": "YZB11ecc.cn",
     "name": "扬州测试-11ecc",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ecc"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/11ecc"
+    ]
   },
   {
     "id": "YZB11ef4.cn",
     "name": "扬州测试-11ef4",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ef4"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/11ef4"
+    ]
   },
   {
     "id": "YZB11ef0.cn",
     "name": "扬州测试-11ef0",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ef0"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/11ef0"
+    ]
   },
   {
     "id": "YZB11eec.cn",
     "name": "扬州测试-11eec",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11eec"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/11eec"
+    ]
   },
   {
     "id": "YZB11ee8.cn",
     "name": "扬州测试-11ee8",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ee8"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/11ee8"
+    ]
   },
   {
     "id": "YZB11ee0.cn",
     "name": "扬州测试-11ee0",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ee0"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/11ee0"
+    ]
   },
   {
     "id": "YZB11ed8.cn",
     "name": "扬州测试-11ed8",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/11ed8"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/11ed8"
+    ]
   },
   {
     "id": "YZB4e2f.cn",
     "name": "扬州测试-4e2f",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/4e2f"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/4e2f"
+    ]
   },
   {
     "id": "YZB1bd7d.cn",
     "name": "扬州测试-1bd7d",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd7d"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/1bd7d"
+    ]
   },
   {
     "id": "YZB1bd5d.cn",
     "name": "扬州测试-1bd5d",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd5d"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/1bd5d"
+    ]
   },
   {
     "id": "YZB1bd81.cn",
     "name": "扬州测试-1bd81",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd81"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/1bd81"
+    ]
   },
   {
     "id": "YZB1bd75.cn",
     "name": "扬州测试-1bd75",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd75"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/1bd75"
+    ]
   },
   {
     "id": "YZB1bd69.cn",
     "name": "扬州测试-1bd69",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd69"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/1bd69"
+    ]
   },
   {
     "id": "YZB1bd61.cn",
     "name": "扬州测试-1bd61",
     "country": "CN",
-    "categories": ["测试"],
+    "categories": [
+      "测试"
+    ],
     "alt_names": [],
     "website": null,
     "logo": null,
     "is_nsfw": false,
-    "sources": ["rtmp://yftv-wshls.yzbtv.cn/live/1bd61"]
+    "sources": [
+      "rtmp://yftv-wshls.yzbtv.cn/live/1bd61"
+    ]
   }
 ]

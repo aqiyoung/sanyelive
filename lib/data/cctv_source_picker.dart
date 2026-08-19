@@ -191,21 +191,31 @@ class CctvSourcePicker {
     return kCctvSubChannelIds.contains(c.id);
   }
 
-  /// 央视腾讯云源改写: 把主码流 master(`.../cdrmldcctvN_1/index.m3u8`) 改写为
-  /// 720p 渐进子码流(`.../cdrmldcctvN_1_td.m3u8`)。
+  /// 央视腾讯云源改写: 仅对 **CCTV-1 / CCTV-13** 改写为 720p 渐进子码流
+  /// (`.../cdrmldcctvN_1_td.m3u8`)。
   ///
-  /// 背景(ffprobe 实锤): 央视腾讯云 `index.m3u8` 是多码流列表, libmpv 默认挑
-  /// 最高的 1920x1080@3.2Mbps(1080i 隔行) → 在 Android 16 media_kit 管线上花屏 +
-  /// 加载慢。该 CDN 同目录提供 `_td.m3u8`(1280x720 / progressive / yuv420p /
-  /// 1.8Mbps), 与卫视同构 → 不花屏且更快。故直接改写 URL 拉 720p 渐进子码流。
-  /// 仅匹配腾讯云央视专属路径, 其它源原样返回(不误伤卫视/其它 CDN)。
+  /// 关键事实(6/18 调研 + 8/19 复测双重确认): 腾讯云 `ldncctvwbcd` CDN 的
+  /// `index.m3u8` 对全部 CCTV1~17 + 5+ 都返回 200, 但其 **sub-stream 仅 CCTV-1/13
+  /// 真实存在**(`_td`=1280x720 渐进)。CCTV2~17 的 master 虽 200, 但指向的
+  /// `_hd`/`_td` 子码流在 CDN 上 **404** —— 若一刀切把全部频道改写成 `_td.m3u8`,
+  /// 会制造一堆 404 死链("资源有问题" 的根因之一)。故:
+  ///   - 仅 CCTV-1/13 改写 `_td`(720p 渐进, 与卫视同构, 不花屏且更快);
+  ///   - 其余腾讯云 URL 保持 `index.m3u8` 原样(由播放器从 master 选码流), 不臆造 404。
+  /// 仅匹配腾讯云央视专属路径, 其它源(卫视/其它 CDN)原样返回, 不误伤。
+  static const Set<String> _kTencentRewritableTokens = <String>{
+    'cdrmldcctv1_1',
+    'cdrmldcctv13_1',
+  };
+
   static String _rewriteCctvTencent720p(String url) {
     final u = url.trim();
     final m = RegExp(
-      r'^(https?://[^\s]+?/ldncctvwbcd/)(cdrmldcctv\d+_\d+)/index\.m3u8$',
+      r'^(https?://[^\s]+?/ldncctvwbcd/)(cdrmldcctv(?:5plus|\d+)_1)/index\.m3u8$',
     ).firstMatch(u);
     if (m == null) return u;
-    return '${m.group(1)}${m.group(2)}_td.m3u8';
+    final token = m.group(2)!;
+    if (!_kTencentRewritableTokens.contains(token)) return u; // 2~17: 保持 master, 避免 404
+    return '${m.group(1)}$token' '_td.m3u8';
   }
 
   /// 给定 channel, 返回按"国内源优先"排序的播放源 URL 列表。

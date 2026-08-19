@@ -27,18 +27,22 @@ class CrashLogger {
     if (_initialized) return;
     _initialized = true;
 
-    //   1. /sdcard/Download/iptv_crash.log — TV 盒子文件管理器可直接看到
-    //   2. app 内部存储 — adb pull 备用
+    //   1. getExternalStorageDirectory() /crash.log — /sdcard/Android/data/<pkg>/files/
+    //      Android 11+ 分区存储下 app 对自己外部目录**可写无需权限**, 且文件管理器
+    //      可访问(如 MT 管理器进 Android/data/com.threelive.tv/). 比 /sdcard/Download/
+    //      直写可靠(后者在 API 29+ 被分区存储静默吞掉写入, 导致运行时 [mpv] 行全丢).
+    //   2. fallback: app 内部存储 getApplicationSupportDirectory()
     try {
-      // 位置1: /sdcard/Download/ (Android 9 及以下无需权限)
       try {
-        _logFile = File('/sdcard/Download/iptv_crash.log');
+        final ext = await getExternalStorageDirectory();
+        if (ext == null) throw Exception('getExternalStorageDirectory null');
+        _logFile = File('${ext.path}/crash.log');
         if (!await _logFile!.exists()) {
           await _logFile!.create(recursive: true);
         }
-        await _writeLog('CrashLogger init OK (Download dir)');
+        await _writeLog('CrashLogger init OK (extStorage: ${ext.path})');
       } catch (e) {
-        debugPrint('CrashLogger: /sdcard/Download failed: $e');
+        debugPrint('CrashLogger: extStorage failed: $e');
         // fallback: app 内部存储
         try {
           final dir = await getApplicationSupportDirectory();
@@ -46,7 +50,7 @@ class CrashLogger {
           if (!await _logFile!.exists()) {
             await _logFile!.create(recursive: true);
           }
-          await _writeLog('CrashLogger init OK (internal dir)');
+          await _writeLog('CrashLogger init OK (internal dir: ${dir.path})');
         } catch (e2) {
           debugPrint('CrashLogger: internal dir also failed: $e2');
         }
@@ -104,17 +108,22 @@ class CrashLogger {
     await _writeLog(msg);
   }
 
-  /// 导出日志到 /sdcard/Download/sanyelive_log_<时间戳>.txt, 返回目标路径.
-  /// 文件管理器可对该文件直接分享 (微信/QQ 等) 用于排查.
-  /// 抛异常: 日志未初始化 / 文件不存在 / 写入失败.
+  /// 导出日志: 复制当前日志到 /sdcard/Download/sanyelive_log_<时间戳>.txt 便于分享.
+  /// 返回目标路径; 若 Download 复制失败(分区存储)则回退返回日志实际路径
+  /// (/sdcard/Android/data/<pkg>/files/crash.log, 文件管理器可访问).
   static Future<String> export() async {
     final src = _logFile;
     if (src == null) throw Exception('日志未初始化');
     if (!await src.exists()) throw Exception('日志文件不存在');
     final name = 'sanyelive_log_${_timestamp()}.txt';
-    final dest = File('/sdcard/Download/$name');
-    await src.copy(dest.path);
-    return dest.path;
+    try {
+      final dest = File('/sdcard/Download/$name');
+      await src.copy(dest.path);
+      return dest.path;
+    } catch (e) {
+      debugPrint('CrashLogger.export: Download copy failed ($e), fallback to $src');
+      return src.path;
+    }
   }
 
   static String _timestamp() {

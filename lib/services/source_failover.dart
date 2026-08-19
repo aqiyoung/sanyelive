@@ -94,7 +94,10 @@ class SourceAttemptEvent {
 class SourceFailover {
   SourceFailover({
     required StreamOpener opener,
-    this.perSourceTimeout = const Duration(milliseconds: 1500),
+    // 6s: 给视频首帧足够时间. 央视/txiptv 等慢源起播后视频帧可能延迟出现,
+    // 过短(原 1.5s)会导致正常源被误判失败. 配合 MediaKitStreamOpener 的
+    // "playing + videoDimensions>0" 双保险: 不出帧的源会在 6s 后判失败切下一源.
+    this.perSourceTimeout = const Duration(milliseconds: 6000),
   }) : _opener = opener;
 
   final StreamOpener _opener;

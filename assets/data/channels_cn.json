@@ -387,6 +387,7 @@
     ],
     "cctvSource": [
       "http://ldncctvwbcdtxy.liveplay.myqcloud.com/ldncctvwbcd/cdrmldcctv13_1_td.m3u8",
+      "https://live-play.cctvnews.cctv.com/cctv/merge_cctv13.m3u8",
       "http://112.123.243.37:50085/tsfile/live/0013_1.m3u8?key=txiptv&playlive=0&authid=0",
       "http://222.223.41.27:8888/hls/13/index.m3u8"
     ]

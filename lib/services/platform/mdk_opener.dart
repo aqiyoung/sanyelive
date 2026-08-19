@@ -191,18 +191,43 @@ class MediaKitStreamOpener implements StreamOpener {
       final software = preferSoftwareDecode || _isLikelyCctv(url);
       await _configurePlayer(software);
       final completer = Completer<bool>();
-      late final StreamSubscription<dynamic> sub;
+      late final StreamSubscription<dynamic> subPlaying;
+      late final StreamSubscription<dynamic> subWidth;
       late final Timer timer;
-      sub = _player.stream.playing.listen((playing) {
-        if (!completer.isCompleted) {
-          sub.cancel();
+      var gotPlaying = false;
+      var gotVideo = false;
+      void maybeComplete() {
+        if (!completer.isCompleted && gotPlaying && gotVideo) {
+          subPlaying.cancel();
+          subWidth.cancel();
           timer.cancel();
           completer.complete(true);
+        }
+      }
+
+      // 成功条件: 起播(有声音) **且** 视频宽度 > 0(视频帧真正解出来).
+      // 背景: 央视 MPEG-2 源在 MediaCodec 硬解下音频能出、但视频帧解不出来 →
+      // 仅看 `playing` 会被误判成功并卡在灰屏("有声音没画面"), 后续 H.264 源
+      // 永无机会. 加 width 双保险: 不出帧的源会被判失败并自动切下一源.
+      // 宽度归零时复位 gotVideo, 避免旧源残留宽度(切换瞬间)导致误判成功.
+      subPlaying = _player.stream.playing.listen((playing) {
+        if (playing) {
+          gotPlaying = true;
+          maybeComplete();
+        }
+      });
+      subWidth = _player.stream.width.listen((w) {
+        if (w != null && w > 0) {
+          gotVideo = true;
+          maybeComplete();
+        } else {
+          gotVideo = false;
         }
       });
       timer = Timer(timeout, () {
         if (!completer.isCompleted) {
-          sub.cancel();
+          subPlaying.cancel();
+          subWidth.cancel();
           completer.complete(false);
         }
       });

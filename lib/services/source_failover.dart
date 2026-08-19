@@ -48,8 +48,7 @@ class AllSourcesFailedException implements Exception {
 
   @override
   String toString() =>
-      'AllSourcesFailedException: tried ${attempts.length} source(s) — '
-      '${attempts.map((a) => "${a.url} → ${a.error}").join("; ")}';
+      '已尝试 ${attempts.length} 个源, 全部无法连接';
 }
 
 /// 本次播放被更新的切换打断时抛出, 上层据此丢弃结果, 不污染状态。

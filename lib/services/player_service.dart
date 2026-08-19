@@ -186,11 +186,16 @@ class PlayerService extends ChangeNotifier {
       for (final attempt in e.attempts) {
         unawaited(CctvSourcePicker.recordFailure(attempt.url));
       }
-      final isCctvChannel = channel.id.startsWith('CCTV') &&
-          CctvSourcePicker.isCctvMainChannel(channel);
+      // 把详细失败信息写进日志, UI 只显示人话短句.
+      final details = e.attempts
+          .map((a) => '${a.url} → ${a.error}')
+          .join('; ');
+      unawaited(CrashLogger.log('AllSourcesFailed [${channel.id}]: $details'));
+
+      final isCctvChannel = channel.id.startsWith('CCTV');
       final errorMsg = isCctvChannel
-          ? 'CCTV 公开源不稳定，建议跳到卫视或联系作者自建源。'
-          : e.toString();
+          ? '央视源不稳定, 请换台或稍后再试'
+          : '当前频道所有源均无法连接, 请检查网络或换源';
       _set(
         _state.copyWith(
           status: PlayerStatus.error,

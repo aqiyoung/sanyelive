@@ -31,16 +31,26 @@ import '../../utils/crash_logger.dart';
 ///
 /// 央视源判定: 给定 URL 是否需要对央视源走**软件解码**兜花色问题。
 ///
-/// ⚠️ 8-19 修正: 此前对所有含 `cctv` 的 URL 一律软解, 但 +236 把央视主频道
-/// 换成卫视同款国内天翼/txiptv `112.123.243.37` + `222.223.41.27` 源后,
-/// 这些**普通 HLS/TS 源**在 `vo=gpu + hwdec=no`(软解)下渲染出灰屏/无画面
-/// (音频正常, 说明源本身通)。故软解只保留给**历史上真花屏**的腾讯云
-/// `ldncctvwbcd` 720p 子码流; 其余央视源改走硬件解码 `auto-copy`。
+/// ⚠️ 8-19 关键修正(真机日志铁证): 本设备软件解码(`hwdec=no`)**根本不显示画面**——
+/// 仅出声音(媒体帧不走标准 Surface 上屏, media_kit 在部分 Android 上的已知问题)。
+/// 日志实证: CCTV1/13 经腾讯云 `ldncctvwbcd _td` 软解 → `hwdec-current=no` →
+/// 有声音没画面; 而卫视/222.223 经 `mediacodec-copy` 硬件解码 → 画面正常。
+///
+/// 因此软解**绝不能**用于能硬件解码的渐进流。判定收紧为:
+///  - `_td`/`_hd`/`_ud`/`_md`/`_sd` 等**渐进子码流** → 返回 false(硬件解码)。
+///    这些流已是 720p 渐进 H.264, 硬件解码不花屏, 且本设备软解不显示画面。
+///  - 裸 `index.m3u8` **隔行主码流**(1080i, 历史上真绿紫花屏) → 返回 true(软件解码),
+///    作为兜底, 避免命中隔行主码流时花屏。该裸流在用户网络几乎不会被命中
+///    (CCTV1/13 首选已是 `_td`, 且即便命中软解无画面也好过花屏)。
 bool _isLikelyCctv(String url) {
   final u = url.toLowerCase();
-  // 仅腾讯云央视专属路径(此前实锤绿紫花屏)走软件解码, 颜色 100% 正确。
-  if (u.contains('ldncctvwbcd')) return true;
-  return false;
+  if (!u.contains('ldncctvwbcd')) return false;
+  // 渐进子码流 → 硬件解码(本设备软解不显示画面)。
+  final isProgressive =
+      RegExp(r'_(td|hd|ud|md|sd)\.m3u8$').hasMatch(u);
+  if (isProgressive) return false;
+  // 裸 index.m3u8 隔行主码流 → 软件解码兜底(规避 1080i 绿紫花屏)。
+  return true;
 }
 
 /// 应用 hwdec 策略。

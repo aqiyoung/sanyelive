@@ -189,8 +189,7 @@ class PlayerService extends ChangeNotifier {
       final isCctvChannel = channel.id.startsWith('CCTV') &&
           CctvSourcePicker.isCctvMainChannel(channel);
       final errorMsg = isCctvChannel
-          ? 'CCTV 频道在公开网络上很少有长期稳定的明文流。\n'
-              '建议：跳到卫视频道观看（点下方返回 / 换台），或联系作者自建源。'
+          ? 'CCTV 公开源不稳定，建议跳到卫视或联系作者自建源。'
           : e.toString();
       _set(
         _state.copyWith(

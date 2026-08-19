@@ -3,6 +3,8 @@
 /// null, Video widget 不会渲染 (会崩).  显示 "本机播放器不可用" 占位.
 library;
 
+import 'dart:math' show min;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -161,77 +163,85 @@ class ErrorOverlay extends ConsumerWidget {
     final hasMultipleSources = (channel?.sources.length ?? 0) > 1;
 
     final scheme = Theme.of(context).colorScheme;
+    final maxWidth = min<double>(320, MediaQuery.of(context).size.width - 48);
 
     return ColoredBox(
       color: Colors.black.withValues(alpha: 0.6),
       child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                color: scheme.error,
-                size: 48,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '播放失败',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: scheme.error,
+                  size: 48,
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              const SizedBox(height: 16),
-              // 重试 + 换源 两个按钮.  重试: 重调 play(当前 channel), 走
-              // SourceFailover 自动选源.  换源: 弹底部 sheet, 选单源调
-              // playSingleSource.
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: channel == null
-                        ? null
-                        : () {
-                            ref.read(playerServiceProvider).play(channel);
-                          },
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('重试'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white70),
-                    ),
+                const SizedBox(height: 8),
+                Text(
+                  '播放失败',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  if (hasMultipleSources) ...[
-                    const SizedBox(width: 12),
-                    FilledButton.icon(
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: true,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                // 重试 + 换源 两个按钮.  重试: 重调 play(当前 channel), 走
+                // SourceFailover 自动选源.  换源: 弹底部 sheet, 选单源调
+                // playSingleSource.
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
                       onPressed: channel == null
                           ? null
-                          : () async {
-                              final url = await pickSourceUrl(context, channel);
-                              if (url == null) return; // 取消
-                              ref
-                                  .read(playerServiceProvider)
-                                  .playSingleSource(url, channel: channel);
+                          : () {
+                              ref.read(playerServiceProvider).play(channel);
                             },
-                      icon: const Icon(Icons.swap_horiz, size: 18),
-                      label: const Text('换源'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: scheme.primary,
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('重试'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white70),
                       ),
                     ),
+                    if (hasMultipleSources)
+                      FilledButton.icon(
+                        onPressed: channel == null
+                            ? null
+                            : () async {
+                                final url = await pickSourceUrl(context, channel);
+                                if (url == null) return; // 取消
+                                ref
+                                    .read(playerServiceProvider)
+                                    .playSingleSource(url, channel: channel);
+                              },
+                        icon: const Icon(Icons.swap_horiz, size: 18),
+                        label: const Text('换源'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: scheme.primary,
+                        ),
+                      ),
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

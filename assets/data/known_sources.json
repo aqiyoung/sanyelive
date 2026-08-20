@@ -117,8 +117,8 @@
     "https://stream.hrbtv.net/yspd/playlist.m3u8"
   ],
   "HebeiTV.cn": [
-    "https://event.pull.hebtv.com/live/live101.m3u8",
     "https://restream.pdtvhd.com/memfs/1db8c005-9365-4b32-94a4-3736987b5646.m3u8",
+    "https://event.pull.hebtv.com/live/live101.m3u8",
     "http://118.81.195.79:9003/hls/29/index.m3u8",
     "http://183.207.248.71/gitv/live1/G_HEBEI/G_HEBEI"
   ],
@@ -218,9 +218,9 @@
     "http://222.80.13.33:4022/udp/238.125.3.175:5140"
   ],
   "XinjiangTV3.cn": [
-    "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
     "http://110.153.180.106:55555/out_2/index.m3u8",
-    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1"
+    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
+    "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8"
   ],
   "XinjiangTV8.cn": [
     "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1"

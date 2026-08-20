@@ -12,8 +12,8 @@
   ],
   "BeijingSatelliteTV.cn": [],
   "CCTV1.cn": [
-    "http://74.91.26.218:82/live/cctv1hd.m3u8",
-    "http://198.204.240.250:82/live/cctv1.m3u8"
+    "http://198.204.240.250:82/live/cctv1.m3u8",
+    "http://74.91.26.218:82/live/cctv1hd.m3u8"
   ],
   "CCTV2.cn": [
     "http://74.91.26.218:82/live/cctv2hd.m3u8"
@@ -94,8 +94,8 @@
   ],
   "CGTN.cn": [
     "https://0472.org/hls/cgtn.m3u8",
-    "https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8",
-    "https://english-livebkali.cgtn.com/live/encgtn.m3u8"
+    "https://english-livebkali.cgtn.com/live/encgtn.m3u8",
+    "https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8"
   ],
   "CGTNDocumentary.cn": [
     "https://amg00405-rakutentv-cgtndocumentary-rakuten-0ql8j.amagi.tv/master.m3u8"
@@ -117,8 +117,8 @@
     "https://stream.hrbtv.net/yspd/playlist.m3u8"
   ],
   "HebeiTV.cn": [
-    "https://restream.pdtvhd.com/memfs/1db8c005-9365-4b32-94a4-3736987b5646.m3u8",
     "https://event.pull.hebtv.com/live/live101.m3u8",
+    "https://restream.pdtvhd.com/memfs/1db8c005-9365-4b32-94a4-3736987b5646.m3u8",
     "http://118.81.195.79:9003/hls/29/index.m3u8",
     "http://183.207.248.71/gitv/live1/G_HEBEI/G_HEBEI"
   ],
@@ -219,8 +219,8 @@
   ],
   "XinjiangTV3.cn": [
     "http://110.153.180.106:55555/out_2/index.m3u8",
-    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
-    "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8"
+    "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
+    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1"
   ],
   "XinjiangTV8.cn": [
     "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1"

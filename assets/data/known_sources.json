@@ -12,8 +12,8 @@
   ],
   "BeijingSatelliteTV.cn": [],
   "CCTV1.cn": [
-    "http://74.91.26.218:82/live/cctv1hd.m3u8",
-    "http://198.204.240.250:82/live/cctv1.m3u8"
+    "http://198.204.240.250:82/live/cctv1.m3u8",
+    "http://74.91.26.218:82/live/cctv1hd.m3u8"
   ],
   "CCTV2.cn": [
     "http://74.91.26.218:82/live/cctv2hd.m3u8"
@@ -363,8 +363,8 @@
     "http://183.207.249.12/PLTV/4/224/3221225935/index.m3u8"
   ],
   "JiangsuPublicNewsChannel.cn": [
-    "https://jiangning-tv-playing-t.cm.jstv.com/jiangning-tv/jnxwzh.m3u8",
-    "http://183.207.248.71/gitv/live1/G_JSGG/G_JSGG"
+    "http://183.207.248.71/gitv/live1/G_JSGG/G_JSGG",
+    "https://jiangning-tv-playing-t.cm.jstv.com/jiangning-tv/jnxwzh.m3u8"
   ],
   "JiangsuSatelliteTV.cn": [
     "http://183.207.248.71/cntv/live1/HD-2500k-1080P-jiangsustv/HD-2500k-1080P-jiangsustv",

@@ -12,8 +12,8 @@
   ],
   "BeijingSatelliteTV.cn": [],
   "CCTV1.cn": [
-    "http://198.204.240.250:82/live/cctv1.m3u8",
-    "http://74.91.26.218:82/live/cctv1hd.m3u8"
+    "http://74.91.26.218:82/live/cctv1hd.m3u8",
+    "http://198.204.240.250:82/live/cctv1.m3u8"
   ],
   "CCTV2.cn": [
     "http://74.91.26.218:82/live/cctv2hd.m3u8"
@@ -49,8 +49,8 @@
     "http://74.91.26.218:82/live/cctv8hd.m3u8"
   ],
   "CCTV8K.cn": [
-    "http://198.204.240.250:82/live/cctv8k.m3u8",
     "http://192.151.150.154/live/cctv8k.m3u8",
+    "http://198.204.240.250:82/live/cctv8k.m3u8",
     "http://74.91.26.218:82/live/cctv8k.m3u8"
   ],
   "CCTV9.cn": [
@@ -175,15 +175,18 @@
     "http://video10.qtv.com.cn/drm/qtv2at/manifest.m3u8"
   ],
   "QTV3.cn": [
+    "http://119.166.53.110:85/tsfile/live/1002_1.m3u8?key=txiptv&playlive=1&authid=0",
     "http://video10.qtv.com.cn/drm/qtv3at/manifest.m3u8"
   ],
   "QTV4.cn": [
+    "http://119.166.53.110:85/tsfile/live/1004_1.m3u8?key=txiptv&playlive=1&authid=0",
     "http://video10.qtv.com.cn/drm/qtv4at/manifest.m3u8"
   ],
   "QTV5.cn": [
     "http://video10.qtv.com.cn/drm/qtv5at/manifest.m3u8"
   ],
   "QTV6.cn": [
+    "http://119.166.53.110:85/tsfile/live/0002_1.m3u8?key=txiptv&playlive=1&authid=0",
     "http://video10.qtv.com.cn/drm/qtv6at/manifest.m3u8"
   ],
   "ShanghaiEducationTelevisionStation.cn": [
@@ -219,9 +222,9 @@
     "http://222.80.13.33:4022/udp/238.125.3.175:5140"
   ],
   "XinjiangTV3.cn": [
+    "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
     "http://110.153.180.106:55555/out_2/index.m3u8",
-    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
-    "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8"
+    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1"
   ],
   "XinjiangTV8.cn": [
     "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1"
@@ -494,5 +497,11 @@
   ],
   "FujianComprehensiveChannel.cn": [
     "http://120.39.52.202:5140/%E7%A6%8F%E5%BB%BA%E7%BB%BC%E5%90%88"
+  ],
+  "GuangxiVarietyTravelChannel.cn": [
+    "http://111.59.24.227:8181/tsfile/live/1001_1.m3u8?key=txiptv&playlive=1&authid=0"
+  ],
+  "KangbaTV.cn": [
+    "http://110.185.237.164:8888/hls/30/index.m3u8"
   ]
 }

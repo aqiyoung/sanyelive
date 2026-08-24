@@ -12,8 +12,8 @@
   ],
   "BeijingSatelliteTV.cn": [],
   "CCTV1.cn": [
-    "http://198.204.240.250:82/live/cctv1.m3u8",
-    "http://74.91.26.218:82/live/cctv1hd.m3u8"
+    "http://74.91.26.218:82/live/cctv1hd.m3u8",
+    "http://198.204.240.250:82/live/cctv1.m3u8"
   ],
   "CCTV2.cn": [
     "http://74.91.26.218:82/live/cctv2hd.m3u8"
@@ -168,26 +168,26 @@
     "http://1.24.190.98:10080/hls/40/index.m3u8"
   ],
   "QTV1.cn": [
-    "http://119.166.53.110:85/tsfile/live/1000_1.m3u8?key=txiptv&playlive=1&authid=0",
-    "http://video10.qtv.com.cn/drm/qtv1at/manifest.m3u8"
+    "http://video10.qtv.com.cn/drm/qtv1at/manifest.m3u8",
+    "http://119.166.53.110:85/tsfile/live/1000_1.m3u8?key=txiptv&playlive=1&authid=0"
   ],
   "QTV2.cn": [
     "http://video10.qtv.com.cn/drm/qtv2at/manifest.m3u8"
   ],
   "QTV3.cn": [
-    "http://119.166.53.110:85/tsfile/live/1002_1.m3u8?key=txiptv&playlive=1&authid=0",
-    "http://video10.qtv.com.cn/drm/qtv3at/manifest.m3u8"
+    "http://video10.qtv.com.cn/drm/qtv3at/manifest.m3u8",
+    "http://119.166.53.110:85/tsfile/live/1002_1.m3u8?key=txiptv&playlive=1&authid=0"
   ],
   "QTV4.cn": [
-    "http://119.166.53.110:85/tsfile/live/1004_1.m3u8?key=txiptv&playlive=1&authid=0",
-    "http://video10.qtv.com.cn/drm/qtv4at/manifest.m3u8"
+    "http://video10.qtv.com.cn/drm/qtv4at/manifest.m3u8",
+    "http://119.166.53.110:85/tsfile/live/1004_1.m3u8?key=txiptv&playlive=1&authid=0"
   ],
   "QTV5.cn": [
     "http://video10.qtv.com.cn/drm/qtv5at/manifest.m3u8"
   ],
   "QTV6.cn": [
-    "http://119.166.53.110:85/tsfile/live/0002_1.m3u8?key=txiptv&playlive=1&authid=0",
-    "http://video10.qtv.com.cn/drm/qtv6at/manifest.m3u8"
+    "http://video10.qtv.com.cn/drm/qtv6at/manifest.m3u8",
+    "http://119.166.53.110:85/tsfile/live/0002_1.m3u8?key=txiptv&playlive=1&authid=0"
   ],
   "ShanghaiEducationTelevisionStation.cn": [
     "http://223.166.234.114:7777/tsfile/live/1033_1.m3u8"
@@ -222,9 +222,9 @@
     "http://222.80.13.33:4022/udp/238.125.3.175:5140"
   ],
   "XinjiangTV3.cn": [
-    "http://110.153.180.106:55555/out_2/index.m3u8",
     "http://218.84.35.38:3000/m3u8/live/tctv-2/index.m3u8",
-    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1"
+    "http://120.70.60.179:9901/tsfile/live/1006_1.m3u8?authid=0&key=txiptv&playlive=1",
+    "http://110.153.180.106:55555/out_2/index.m3u8"
   ],
   "XinjiangTV8.cn": [
     "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1"

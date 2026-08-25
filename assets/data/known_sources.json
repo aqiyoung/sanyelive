@@ -49,8 +49,8 @@
     "http://74.91.26.218:82/live/cctv8hd.m3u8"
   ],
   "CCTV8K.cn": [
-    "http://192.151.150.154/live/cctv8k.m3u8",
     "http://198.204.240.250:82/live/cctv8k.m3u8",
+    "http://192.151.150.154/live/cctv8k.m3u8",
     "http://74.91.26.218:82/live/cctv8k.m3u8"
   ],
   "CCTV9.cn": [
@@ -98,8 +98,8 @@
     "https://english-livebkali.cgtn.com/live/encgtn.m3u8"
   ],
   "CGTNDocumentary.cn": [
-    "https://hlspackager.akamaized.net/live/DB/CGTN_DOCUMENTARY/HLS/CGTN_DOCUMENTARY.m3u8",
-    "https://amg00405-rakutentv-cgtndocumentary-rakuten-0ql8j.amagi.tv/master.m3u8"
+    "https://amg00405-rakutentv-cgtndocumentary-rakuten-0ql8j.amagi.tv/master.m3u8",
+    "https://hlspackager.akamaized.net/live/DB/CGTN_DOCUMENTARY/HLS/CGTN_DOCUMENTARY.m3u8"
   ],
   "ChifengComprehensiveNewsChanel.cn": [
     "http://play1-qk.nmtv.cn/live/1735546697341033.m3u8"

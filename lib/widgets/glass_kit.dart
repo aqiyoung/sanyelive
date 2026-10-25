@@ -78,33 +78,25 @@ class GlassDock extends StatelessWidget {
   const GlassDock({
     super.key,
     required this.child,
-    required this.itemCount,
   });
 
   final Widget child;
-  final int itemCount;
 
   @override
   Widget build(BuildContext context) {
-    final screenW = MediaQuery.of(context).size.width;
-    // 每项约 76px, 至少 160 (两个 tab 不至于缩成一条), 至多屏宽 - 32.
-    final dockW = (itemCount * 76.0).clamp(160.0, screenW - 32);
+    // 贴底全宽底栏: 占满横向、贴着底部边缘, 不居中、不悬浮,
+    // 不留底部 16px 悬空, 避免看起来像飘在屏幕中间.
+    // 玻璃用正常浓度 (非 clear 透模式), 在实色背景上也能看清是一条栏.
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Center(
-          child: SizedBox(
-            width: dockW,
-            height: 68,
-            child: LiquidGlassContainer(
-              variant: LiquidGlassVariant.auto,
-              borderRadius: GlassRadius.bar,
-              clear: true,
-              blurSigma: 28,
-              child: child,
-            ),
-          ),
+      child: SizedBox(
+        height: 68,
+        width: double.infinity,
+        child: LiquidGlassContainer(
+          variant: LiquidGlassVariant.auto,
+          borderRadius: 0,
+          blurSigma: 20,
+          child: child,
         ),
       ),
     );

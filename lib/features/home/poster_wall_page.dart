@@ -297,6 +297,9 @@ class _TvHeroState extends ConsumerState<_TvHero> {
   bool _previewReady = false;
   bool _previewFailed = false;
   String? _openedChannelId;
+  // 每次 _startPreview 自增, 旧频道/旧一轮的异步回调 (open/首帧等待) 靠它
+  // 识别并丢弃, 避免切频道后旧流把新频道的状态改回 ready/failed.
+  int _previewAttempt = 0;
   Player? _player;
   VideoController? _controller;
 
@@ -313,7 +316,7 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     if (old.channel?.id != widget.channel?.id) _startPreview();
   }
 
-  void _startPreview() {
+  Future<void> _startPreview() async {
     final ch = widget.channel;
     if (ch == null) return;
     // 同一频道已尝试过 (成功或失败) 不再重复开流.
@@ -334,25 +337,92 @@ class _TvHeroState extends ConsumerState<_TvHero> {
     _player = player;
     _controller = controller;
     _openedChannelId = ch.id;
-    if (mounted) setState(() => _previewReady = false);
+    final attempt = ++_previewAttempt;
+    if (mounted) {
+      setState(() {
+        _previewReady = false;
+        _previewFailed = false;
+      });
+    }
     // 首页预览默认静音 — 避免一进首页就出声; 进播放页时 PlayerService.play()
     // 会恢复音量 (setVolume(100)).
     unawaited(player.setVolume(0));
+    // 先停掉上一频道的残留流: 否则 playing/width/height 的旧值会让
+    // 新一轮误判为"新流已出帧".
+    try {
+      await player.stop();
+    } catch (_) {}
     // 直接对共享 Player 开流做预览, 不碰 PlayerService (避开其 _playing 守卫).
-    unawaited(
-      player
-          .open(Media(sources.first))
-          .then((_) {
-            if (mounted && _openedChannelId == ch.id) {
-              setState(() => _previewReady = true);
-            }
-          })
-          .catchError((_) {
-            if (mounted && _openedChannelId == ch.id) {
-              setState(() => _previewFailed = true);
-            }
-          }),
-    );
+    //
+    // 旧逻辑只试 sources.first, 且 player.open() 一返回就置 ready:
+    // open 成功只说明 demuxer 接上了, 不代表解码出帧; 首源死了但 open
+    // 不抛错、或能播但不出帧时, 界面就是一块纯黑 Video, 永远不回退.
+    // 新逻辑: 逐源尝试, 每源必须在限时内同时满足 playing + 视频尺寸 > 0
+    // (即 libmpv 真正拿到视频轨并解出尺寸), 否则停掉切下一源; 全部失败
+    // 才置 failed, 界面回静态台标兜底, 不再黑屏.
+    final opener = MediaKitStreamOpener(player);
+    for (final url in sources) {
+      if (!mounted || attempt != _previewAttempt) return;
+      bool opened = false;
+      try {
+        opened = await opener.open(url, timeout: const Duration(seconds: 4));
+      } catch (_) {
+        opened = false;
+      }
+      if (!mounted || attempt != _previewAttempt) return;
+      if (opened && await _waitForVideoSize(player)) {
+        if (mounted && attempt == _previewAttempt) {
+          setState(() => _previewReady = true);
+        }
+        return;
+      }
+      // 本源不行: 停掉残留流再试下一源, 避免旧流继续占 surface.
+      try {
+        await player.stop();
+      } catch (_) {}
+    }
+    if (mounted && attempt == _previewAttempt) {
+      setState(() => _previewFailed = true);
+    }
+  }
+
+  /// 等视频尺寸 (width/height 均 > 0) 出现, 即 libmpv 已解出视频轨.
+  /// 只靠 playing=true 不够: 音频轨/无帧流也会 playing, 那正是黑屏来源.
+  Future<bool> _waitForVideoSize(Player player) async {
+    final completer = Completer<bool>();
+    int? width;
+    int? height;
+    void check() {
+      if (!completer.isCompleted &&
+          width != null &&
+          width! > 0 &&
+          height != null &&
+          height! > 0) {
+        completer.complete(true);
+      }
+    }
+
+    late final StreamSubscription<int?> widthSub;
+    late final StreamSubscription<int?> heightSub;
+    late final Timer timer;
+    widthSub = player.stream.width.listen((v) {
+      width = v;
+      check();
+    });
+    heightSub = player.stream.height.listen((v) {
+      height = v;
+      check();
+    });
+    timer = Timer(const Duration(seconds: 4), () {
+      if (!completer.isCompleted) completer.complete(false);
+    });
+    try {
+      return await completer.future;
+    } finally {
+      await widthSub.cancel();
+      await heightSub.cancel();
+      timer.cancel();
+    }
   }
 
   @override
@@ -377,7 +447,11 @@ class _TvHeroState extends ConsumerState<_TvHero> {
 
     final channel = widget.channel;
     final onTap = channel == null ? null : () => context.go('/player/${channel.id}');
-    final showVideo = _controller != null && !_previewFailed;
+    // 关键改动: 没拿到首帧尺寸前不渲染 Video. 旧逻辑 controller 一存在
+    // 就渲染 Video, 流还没出帧时那块就是纯黑; 现在先显示台标兜底 +
+    // 加载圈, 出帧后才切到 Video, 出不了帧则永久留在兜底, 不黑屏.
+    final showVideo =
+        _controller != null && _previewReady && !_previewFailed;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -405,8 +479,8 @@ class _TvHeroState extends ConsumerState<_TvHero> {
                     isLoading: widget.isLoading,
                     failed: _previewFailed,
                   ),
-                // 开流完成前显示加载圈 (盖在黑色视频面上).
-                if (showVideo && !_previewReady)
+                // 开流完成前显示加载圈 (盖在台标兜底上, 不再盖在黑视频面上).
+                if (!_previewReady && !_previewFailed)
                   const ColoredBox(
                     color: Color(0x66000000),
                     child: Center(

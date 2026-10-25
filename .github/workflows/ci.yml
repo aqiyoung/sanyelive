@@ -6,14 +6,15 @@ on:
   pull_request:
     branches: [master, main]
 
+permissions:
+  contents: write
+
 jobs:
   analyze-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.IPTV_CI_TOKEN }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -55,7 +56,6 @@ jobs:
             dart format .
             git config user.email "openclaw@threel.site"
             git config user.name "小七 (OpenClaw)"
-            git remote set-url origin https://x-access-token:${{ secrets.IPTV_CI_TOKEN }}@github.com/aqiyoung/sanyelive.git
             git add -A
             if ! git diff --staged --quiet; then
               git commit -m "style: auto-fix dart format"

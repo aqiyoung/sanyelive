@@ -56,8 +56,7 @@ class PosterWallPage extends ConsumerWidget {
                 Expanded(
                   child: fullMode
                       ? ListView(
-                          // Dock 悬浮在内容上, 底部留 120 防最后一行被 Dock 盖住.
-                          padding: const EdgeInsets.only(bottom: 120),
+                                                    padding: const EdgeInsets.only(bottom: 24),
                           children: [
                             const _HeroBanner(),
                             const SizedBox(height: 18),
@@ -106,23 +105,16 @@ class _HomeTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // iOS 27 悬浮顶栏: 品牌 + 搜索 + 模式标签收进一条圆角玻璃条,
-    // 不再是贴顶的平铺行. 搜索框本身已是玻璃, 这里不再内嵌第二层
-    // 玻璃, 只保留文字按钮, 避免双层模糊发灰.
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 10 + MediaQuery.of(context).padding.top, 16, 8),
-      child: LiquidGlassContainer(
-        variant: LiquidGlassVariant.auto,
-        borderRadius: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            // 品牌 icon
-            Image.asset(
-              'assets/icons/app_logo.png',
-              width: 28,
-              height: 28,
-            ),
+      child: Row(
+        children: [
+          // 品牌 icon
+          Image.asset(
+            'assets/icons/app_logo.png',
+            width: 28,
+            height: 28,
+          ),
           const SizedBox(width: 8),
           Text(
             '视界',
@@ -138,14 +130,9 @@ class _HomeTopBar extends StatelessWidget {
             Expanded(
                 child: GestureDetector(
                   onTap: () => context.go('/search'),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withValues(alpha: 0.55),
-                      borderRadius: BorderRadius.circular(19),
-                    ),
+                  child: LiquidGlassContainer(
+                    variant: LiquidGlassVariant.light,
+                    borderRadius: 19,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                     child: Row(
                       children: [
@@ -183,7 +170,6 @@ class _HomeTopBar extends StatelessWidget {
             ),
           ],
         ],
-        ),
       ),
     );
   }
@@ -251,8 +237,7 @@ class _TvLeanbackHome extends ConsumerWidget {
     final movie = ChannelFilter.byCategory(channels, '影视');
 
     return ListView(
-      // Dock 悬浮在内容上, 底部留 120 防最后一行被 Dock 盖住.
-      padding: const EdgeInsets.only(top: 8, bottom: 120),
+            padding: const EdgeInsets.only(top: 8, bottom: 24),
       children: [
         if (isLoading && featured == null)
           const Padding(

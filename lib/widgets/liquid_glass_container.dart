@@ -53,6 +53,13 @@ class LiquidGlassContainer extends StatelessWidget {
   /// 的感觉: 透, 但背后是磨砂的, 不是直接穿透的透明塑料.
   final bool clear;
 
+  /// 贴底全宽底栏用的「加浓玻璃」: 在实色背景 (如宣纸底色) 上,
+  /// 正常浓度 (0.34 / 0.16) 的白玻璃几乎看不出来, 底栏会像
+  /// 恢复成原来的普通底栏. strong 把填充提到 0.92 / 0.80,
+  /// 让底栏在实色背景上也一眼就是一条玻璃栏, 同时仍透光、
+  /// 仍有磨砂模糊, 不是实心白板.
+  final bool strong;
+
   const LiquidGlassContainer({
     super.key,
     required this.child,
@@ -69,6 +76,7 @@ class LiquidGlassContainer extends StatelessWidget {
     this.height,
     this.blurSigma = 20,
     this.clear = false,
+    this.strong = false,
   });
 
   /// 背景模糊强度. iOS 27 的玻璃比旧版更通透: 默认 20, 播放器浮层等
@@ -85,15 +93,15 @@ class LiquidGlassContainer extends StatelessWidget {
     // 玻璃底色: 极低透明度对角渐变, 顶部更亮, 让背景明显透过来并带"折射"光泽.
     // clear 模式 (Dock) 再稀一倍多, 背后内容几乎原样透出.
     final Color fillTop = (tint ?? (dark ? const Color(0xFF3A4654) : Colors.white))
-        .withValues(alpha: clear ? 0.14 : (dark ? 0.30 : 0.34));
+        .withValues(alpha: strong ? (dark ? 0.85 : 0.92) : clear ? 0.14 : (dark ? 0.30 : 0.34));
     final Color fillBottom = (tint ?? (dark ? const Color(0xFF1B2230) : Colors.white))
-        .withValues(alpha: clear ? 0.07 : (dark ? 0.14 : 0.16));
+        .withValues(alpha: strong ? (dark ? 0.70 : 0.80) : clear ? 0.07 : (dark ? 0.14 : 0.16));
 
     final List<BoxShadow>? boxShadow = shadow
         ? <BoxShadow>[
             BoxShadow(
               color: Colors.black.withValues(
-                  alpha: clear ? 0.05 : (dark ? 0.18 : 0.08)),
+                  alpha: strong ? (dark ? 0.25 : 0.14) : clear ? 0.05 : (dark ? 0.18 : 0.08)),
               blurRadius: dark ? 18 : 16,
               offset: const Offset(0, 8),
             ),

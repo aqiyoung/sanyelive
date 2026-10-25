@@ -86,7 +86,8 @@ class GlassDock extends StatelessWidget {
   Widget build(BuildContext context) {
     // 贴底全宽底栏: 占满横向、贴着底部边缘, 不居中、不悬浮,
     // 不留底部 16px 悬空, 避免看起来像飘在屏幕中间.
-    // 玻璃用正常浓度 (非 clear 透模式), 在实色背景上也能看清是一条栏.
+    // 玻璃用 strong 加浓模式: 正常浓度在宣纸实色背景上几乎看不出来,
+    // 会像恢复成原来的普通底栏, 加浓后才一眼就是一条玻璃栏.
     return SafeArea(
       top: false,
       child: SizedBox(
@@ -96,6 +97,7 @@ class GlassDock extends StatelessWidget {
           variant: LiquidGlassVariant.auto,
           borderRadius: 0,
           blurSigma: 20,
+          strong: true,
           child: child,
         ),
       ),

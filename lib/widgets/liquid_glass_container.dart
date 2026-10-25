@@ -3,7 +3,14 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-/// 液态玻璃容器 — 全 app 卡片统一的玻璃视觉语言 (iOS 26 Liquid Glass 风格).
+/// 液态玻璃容器 — 全 app 卡片统一的玻璃视觉语言 (iOS 26/27 Liquid Glass 风格).
+///
+/// iOS 27 redesign 原则 (见 widgets/glass_kit.dart):
+///   - 玻璃只做「控件层」: 导航条、悬浮按钮、播放器浮层、弹窗, 不做内容层.
+///     内容卡片 (频道墙、节目单正文) 保持清晰可读, 不被整面玻璃糊住.
+///   - 半径统一放大: 卡片 24、导航/悬浮条 32、胶囊按钮 999, 贴合圆角硬件.
+///   - 明暗自适应: 新增 [LiquidGlassVariant.auto], 按当前 Theme 亮度选
+///     light/dark, 避免暗色下仍用白玻璃、浅色下仍用深玻璃.
 ///
 /// 视觉构成 (从内到外):
 ///   1. 半透明玻璃底色 (对角渐变, 顶部更亮) —— 让背景透出来;
@@ -40,10 +47,16 @@ class LiquidGlassContainer extends StatelessWidget {
   final double? width;
   final double? height;
 
+  /// iOS 27 Dock / 悬浮底栏用的「透明玻璃」: 底色更稀 (顶部 0.14 /
+  /// 底部 0.07)、投影更淡, 透过它能清楚看到背后内容, 而不是一块
+  /// 半实心白板. 配合强模糊 (建议 blurSigma 28) 才有「清玻璃」
+  /// 的感觉: 透, 但背后是磨砂的, 不是直接穿透的透明塑料.
+  final bool clear;
+
   const LiquidGlassContainer({
     super.key,
     required this.child,
-    this.borderRadius = 16,
+    this.borderRadius = 24,
     this.padding,
     this.margin,
     this.variant = LiquidGlassVariant.light,
@@ -54,23 +67,33 @@ class LiquidGlassContainer extends StatelessWidget {
     this.rim = true,
     this.width,
     this.height,
+    this.blurSigma = 20,
+    this.clear = false,
   });
+
+  /// 背景模糊强度. iOS 27 的玻璃比旧版更通透: 默认 20, 播放器浮层等
+  /// 需要更清晰时可降到 12; TV / 低端机可传 0 关掉模糊只留描边.
+  final double blurSigma;
 
   @override
   Widget build(BuildContext context) {
     final double r = borderRadius;
-    final bool dark = variant == LiquidGlassVariant.dark;
+    final bool dark = variant == LiquidGlassVariant.dark ||
+        (variant == LiquidGlassVariant.auto &&
+            Theme.of(context).brightness == Brightness.dark);
 
     // 玻璃底色: 极低透明度对角渐变, 顶部更亮, 让背景明显透过来并带"折射"光泽.
+    // clear 模式 (Dock) 再稀一倍多, 背后内容几乎原样透出.
     final Color fillTop = (tint ?? (dark ? const Color(0xFF3A4654) : Colors.white))
-        .withValues(alpha: dark ? 0.30 : 0.34);
+        .withValues(alpha: clear ? 0.14 : (dark ? 0.30 : 0.34));
     final Color fillBottom = (tint ?? (dark ? const Color(0xFF1B2230) : Colors.white))
-        .withValues(alpha: dark ? 0.14 : 0.16);
+        .withValues(alpha: clear ? 0.07 : (dark ? 0.14 : 0.16));
 
     final List<BoxShadow>? boxShadow = shadow
         ? <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: dark ? 0.18 : 0.08),
+              color: Colors.black.withValues(
+                  alpha: clear ? 0.05 : (dark ? 0.18 : 0.08)),
               blurRadius: dark ? 18 : 16,
               offset: const Offset(0, 8),
             ),
@@ -153,11 +176,11 @@ class LiquidGlassContainer extends StatelessWidget {
     );
 
     // 背景模糊: 让玻璃背后的内容呈现磨砂感, 是"液态玻璃"认知的核心.
-    if (blur) {
+    if (blur && blurSigma > 0) {
       glass = ClipRRect(
         borderRadius: BorderRadius.circular(r),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
           child: glass,
         ),
       );
@@ -201,7 +224,14 @@ class _GlassRimPainter extends CustomPainter {
       old.radius != radius || old.dark != dark || old.tint != tint;
 }
 
-enum LiquidGlassVariant { light, dark }
+enum LiquidGlassVariant {
+  light,
+  dark,
+
+  /// 按当前 Theme 亮度自动选 light/dark. 导航条、播放器浮层等跨主题
+  /// 控件优先用 auto, 避免硬编码 light 在暗色下过曝.
+  auto,
+}
 
 /// 玻璃对话框 — 与 [AlertDialog] 同接口 (title / content / actions), 但整体
 /// 渲染在一块液态玻璃面板上, 而不是实心 surface. 用于替换全 app 的

@@ -16,12 +16,15 @@ class NextChannelsStrip extends StatelessWidget {
     required this.allChannels,
     required this.onChannelTap,
     this.max = 10,
+    // 默认 auto; 全屏播放器在视频上浮动时传 dark.
+    this.variant = LiquidGlassVariant.auto,
   });
 
   final String currentChannelId;
   final List<Channel> allChannels;
   final void Function(Channel channel) onChannelTap;
   final int max;
+  final LiquidGlassVariant variant;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +82,7 @@ class NextChannelsStrip extends StatelessWidget {
                     channel: ch,
                     isNext: i == 0,
                     onTap: () => onChannelTap(ch),
+                    variant: variant,
                   );
                 },
               ),
@@ -95,20 +99,22 @@ class _ChannelChip extends StatelessWidget {
     required this.channel,
     required this.isNext,
     required this.onTap,
+    this.variant = LiquidGlassVariant.auto,
   });
 
   final Channel channel;
   final bool isNext;
   final VoidCallback onTap;
+  final LiquidGlassVariant variant;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(24),
       child: LiquidGlassContainer(
-        variant: LiquidGlassVariant.light,
-        borderRadius: 16,
+        variant: variant,
+        borderRadius: 24,
         width: 88,
         padding: const EdgeInsets.all(14),
         tint: isNext ? Theme.of(context).colorScheme.primary : null,

@@ -11,6 +11,7 @@ import '../../data/repositories/channel_repository.dart';
 import '../../services/player_service.dart';
 import '../../services/startup_service.dart';
 import 'system_ui_overlay.dart';
+import '../../widgets/liquid_glass_container.dart';
 import 'widgets/next_channels_strip.dart';
 import 'widgets/now_next_program.dart';
 import 'widgets/player_top_bar.dart';
@@ -506,15 +507,24 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                       child: AnimatedOpacity(
                         opacity: _controlsVisible ? 1.0 : 0.0,
                         duration: const Duration(milliseconds: 250),
-                        child: Container(
-                          color: Colors.black.withValues(alpha: 0.85),
-                          child: SafeArea(
-                            bottom: false,
-                            child: TopBar(
-                              channel: channel,
-                              state: state,
-                              onBack: _onTopBarBack,
-                              isFullscreen: true,
+                        child: SafeArea(
+                          bottom: false,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            // iOS 27 播放器顶栏: 原来整条黑底 0.85 改为悬浮
+                            // 深色玻璃胶囊, 视频画面从胶囊周围透出来, 顶栏
+                            // 不再把画面压成一条黑带.
+                            child: LiquidGlassContainer(
+                              variant: LiquidGlassVariant.dark,
+                              borderRadius: 32,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              child: TopBar(
+                                channel: channel,
+                                state: state,
+                                onBack: _onTopBarBack,
+                                isFullscreen: true,
+                              ),
                             ),
                           ),
                         ),
@@ -541,19 +551,26 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                         child: AnimatedOpacity(
                           opacity: _controlsVisible ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 250),
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.55),
-                            padding: const EdgeInsets.only(bottom: 24),
+                          // iOS 27 播放器底部浮层: 原来整条黑底 0.55 拆成
+                          // 两块独立悬浮玻璃卡 (节目卡 + 频道条), 不再套
+                          // 一层大玻璃包两层小玻璃, 避免双层模糊发灰.
+                          // 节目卡/频道条本身用 dark 玻璃, 见下方 variant 传参.
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (channel != null)
-                                  NowNextProgram(channel: channel),
+                                  NowNextProgram(
+                                    channel: channel,
+                                    variant: LiquidGlassVariant.dark,
+                                  ),
                                 if (channel != null)
                                   NextChannelsStrip(
                                     currentChannelId: _currentChannelId,
                                     allChannels: channels,
                                     onChannelTap: _switchTo,
+                                    variant: LiquidGlassVariant.dark,
                                   ),
                               ],
                             ),

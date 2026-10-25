@@ -11,20 +11,39 @@ import '../../../data/repositories/epg_repository.dart';
 /// 数据来源: [epgForChannelProvider]
 /// - 有 EPG 数据: 显示当前节目 (title + 进度条 + 剩余时间) + 下一档
 class NowNextProgram extends ConsumerWidget {
-  const NowNextProgram({super.key, required this.channel});
+  const NowNextProgram({
+    super.key,
+    required this.channel,
+    // 默认 auto: 浅色页面用浅玻璃、暗色用深玻璃. 全屏播放器
+    // 在视频上浮动时传 dark, 不论主题都用深玻璃保证可读.
+    this.variant = LiquidGlassVariant.auto,
+  });
 
   final Channel channel;
+  final LiquidGlassVariant variant;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncEpg = ref.watch(epgForChannelProvider(channel.id));
 
     return asyncEpg.when(
-      loading: () => _EmptyState(channel: channel, isLoading: true),
-      error: (_, __) => _EmptyState(channel: channel, isLoading: false),
+      loading: () => _EmptyState(
+        channel: channel,
+        isLoading: true,
+        variant: variant,
+      ),
+      error: (_, __) => _EmptyState(
+        channel: channel,
+        isLoading: false,
+        variant: variant,
+      ),
       data: (entries) {
         if (entries.isEmpty) {
-          return _EmptyState(channel: channel, isLoading: false);
+          return _EmptyState(
+            channel: channel,
+            isLoading: false,
+            variant: variant,
+          );
         }
         // +163 之前 _findCurrent 跟 _findNext 用 DateTime.now().toUtc(),
         // EpgService._placeholderSchedule 返的 EpgEntry.start/end 是 local time
@@ -39,6 +58,7 @@ class NowNextProgram extends ConsumerWidget {
           current: current,
           next: next,
           now: now,
+          variant: variant,
         );
       },
     );
@@ -67,19 +87,21 @@ class _ProgramCard extends StatelessWidget {
     required this.current,
     required this.next,
     required this.now,
+    this.variant = LiquidGlassVariant.auto,
   });
 
   final EpgEntry? current;
   final EpgEntry? next;
   final DateTime now;
+  final LiquidGlassVariant variant;
 
   @override
   Widget build(BuildContext context) {
     final isPlaceholder = current?.title == '敬请期待';
     final scheme = Theme.of(context).colorScheme;
     return LiquidGlassContainer(
-      variant: LiquidGlassVariant.light,
-      borderRadius: 12,
+      variant: variant,
+      borderRadius: 24,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -217,16 +239,21 @@ class _ProgressBar extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.channel, required this.isLoading});
+  const _EmptyState({
+    required this.channel,
+    required this.isLoading,
+    this.variant = LiquidGlassVariant.auto,
+  });
   final Channel channel;
   final bool isLoading;
+  final LiquidGlassVariant variant;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return LiquidGlassContainer(
-      variant: LiquidGlassVariant.light,
-      borderRadius: 12,
+      variant: variant,
+      borderRadius: 24,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(14),
       child: Row(

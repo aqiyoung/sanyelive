@@ -84,21 +84,41 @@ class GlassDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 贴底全宽底栏: 占满横向、贴着底部边缘, 不居中、不悬浮,
-    // 不留底部 16px 悬空, 避免看起来像飘在屏幕中间.
-    // 玻璃用 strong 加浓模式: 正常浓度在宣纸实色背景上几乎看不出来,
-    // 会像恢复成原来的普通底栏, 加浓后才一眼就是一条玻璃栏.
-    return SafeArea(
-      top: false,
-      child: SizedBox(
-        height: 68,
-        width: double.infinity,
-        child: LiquidGlassContainer(
-          variant: LiquidGlassVariant.auto,
-          borderRadius: 0,
-          blurSigma: 20,
-          strong: true,
-          child: child,
+    // 贴底全宽底栏: 占满横向、贴着底部边缘, 不居中、不悬浮.
+    // 关键教训: 宣纸底色 (#F5F4ED) 本来就接近白色, 白玻璃
+    // (哪怕加浓到 0.92) 铺在上面也几乎看不出来, 截图里就
+    // 像没有栏、只有两个图标. 所以底栏必须有自己的边缘:
+    // 顶部一条深色分界线 + 顶部柔和阴影 + 略深的暖灰底色,
+    // 三者一起才在实色背景上划出一条看得见的栏.
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: Colors.black.withValues(alpha: 0.14),
+            width: 1,
+          ),
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, -6),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 68,
+          width: double.infinity,
+          child: LiquidGlassContainer(
+            variant: LiquidGlassVariant.auto,
+            borderRadius: 0,
+            blurSigma: 20,
+            strong: true,
+            tint: const Color(0xFFE9E7E0),
+            child: child,
+          ),
         ),
       ),
     );

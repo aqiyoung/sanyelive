@@ -178,48 +178,86 @@ class _StreamingBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // iOS 27 液态玻璃 Dock (见 GlassDock): 底部悬浮宽胶囊.
-    // 内部仍是 BottomNavigationBar, TV 遥控焦点、语义、
-    // 选中态逻辑都不变.
-    // 图标文字成组居中: 只有首页、我的两个 tab 时,
-    // BottomNavigationBar 默认会把它们铺满整个胶囊宽度
-    // (分别在 1/4、3/4 处), 看起来像没居中.
-    // 所以把 BottomNavigationBar 收窄居中: 每个 tab 约 130 宽,
-    // 两个 tab 就是 260, 聚在胶囊中间, 像 iPhone Dock 那样
-    // 成组居中; tab 多时宽度随之放宽, 但不超过屏宽 - 64,
-    // 不会溢出胶囊.
+    //
+    // 上下居中: 之前用 BottomNavigationBar 时, 它内部自带
+    // 一层 SafeArea 下垫 (GlassDock 外面又有一层), 图标文字
+    // 块在 72 高的胶囊里被往上顶, 上下不是正中.
+    // 所以这里不用 BottomNavigationBar, 直接用 Row +
+    // Column 做 tab 项, 放在定高 72 的盒子里、交叉轴居中,
+    // 图标 + 文字块就严格落在胶囊正中间.
+    // 左右居中: tab 项成组居中 (每个 tab 宽按屏宽均分后
+    // 钳在 64~110, 两个 tab 就聚在中间), 不铺满胶囊.
     // 注意: 这里用 Row 居中, 不用 Center —— Center 在底栏
     // 槽位里会撑满整屏高 (之前跑到屏幕中间的根因).
+    final screenW = MediaQuery.of(context).size.width;
+    final itemW = ((screenW - 32) / items.length).clamp(64.0, 110.0);
     return GlassDock(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          SizedBox(
-            width: (items.length * 130.0).clamp(
-                260.0, MediaQuery.of(context).size.width - 64),
-            child: BottomNavigationBar(
-          currentIndex: currentIndex,
-          onTap: onTap,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          // 选中=强调色 (赤陶, 主题主色), 未选中=次文字色 (比硬编码灰色深, 看得清)
-          // 两套颜色都走 Theme, 深浅色自动适配.
-          selectedItemColor: context.fgAccent,
-          unselectedItemColor: context.fgSub,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          items: items
-              .map((e) => BottomNavigationBarItem(
-                    icon: Icon(e.icon, size: 24),
-                    activeIcon: e.activeIcon,
-                    label: e.label,
-                  ))
-              .toList(),
-            ),
+      child: SizedBox(
+        height: 72,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            for (int i = 0; i < items.length; i++)
+              _DockTabItem(
+                item: items[i],
+                selected: i == currentIndex,
+                width: itemW,
+                onTap: () => onTap(i),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DockTabItem extends StatelessWidget {
+  const _DockTabItem({
+    required this.item,
+    required this.selected,
+    required this.width,
+    required this.onTap,
+  });
+
+  final _NavItem item;
+  final bool selected;
+  final double width;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? context.fgAccent : context.fgSub;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: item.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          width: width,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              IconTheme(
+                data: IconThemeData(color: color, size: 24),
+                child: selected ? item.activeIcon : Icon(item.icon, size: 24),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight:
+                      selected ? FontWeight.w700 : FontWeight.normal,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

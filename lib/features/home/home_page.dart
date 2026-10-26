@@ -180,8 +180,23 @@ class _StreamingBottomNav extends StatelessWidget {
     // iOS 27 液态玻璃 Dock (见 GlassDock): 底部悬浮宽胶囊.
     // 内部仍是 BottomNavigationBar, TV 遥控焦点、语义、
     // 选中态逻辑都不变.
+    // 图标文字成组居中: 只有首页、我的两个 tab 时,
+    // BottomNavigationBar 默认会把它们铺满整个胶囊宽度
+    // (分别在 1/4、3/4 处), 看起来像没居中.
+    // 所以把 BottomNavigationBar 收窄居中: 每个 tab 约 130 宽,
+    // 两个 tab 就是 260, 聚在胶囊中间, 像 iPhone Dock 那样
+    // 成组居中; tab 多时宽度随之放宽, 但不超过屏宽 - 64,
+    // 不会溢出胶囊.
+    // 注意: 这里用 Row 居中, 不用 Center —— Center 在底栏
+    // 槽位里会撑满整屏高 (之前跑到屏幕中间的根因).
     return GlassDock(
-      child: BottomNavigationBar(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          SizedBox(
+            width: (items.length * 130.0).clamp(
+                260.0, MediaQuery.of(context).size.width - 64),
+            child: BottomNavigationBar(
           currentIndex: currentIndex,
           onTap: onTap,
           backgroundColor: Colors.transparent,
@@ -202,7 +217,10 @@ class _StreamingBottomNav extends StatelessWidget {
                     label: e.label,
                   ))
               .toList(),
-        ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

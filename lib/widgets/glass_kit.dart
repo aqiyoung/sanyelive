@@ -84,40 +84,49 @@ class GlassDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 贴底全宽底栏: 占满横向、贴着底部边缘, 不居中、不悬浮.
-    // 关键教训: 宣纸底色 (#F5F4ED) 本来就接近白色, 白玻璃
-    // (哪怕加浓到 0.92) 铺在上面也几乎看不出来, 截图里就
-    // 像没有栏、只有两个图标. 所以底栏必须有自己的边缘:
-    // 顶部一条深色分界线 + 顶部柔和阴影 + 略深的暖灰底色,
-    // 三者一起才在实色背景上划出一条看得见的栏.
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: Colors.black.withValues(alpha: 0.14),
-            width: 1,
-          ),
-        ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.10),
-            blurRadius: 16,
-            offset: const Offset(0, -6),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 68,
-          width: double.infinity,
-          child: LiquidGlassContainer(
-            variant: LiquidGlassVariant.auto,
-            borderRadius: 0,
-            blurSigma: 20,
-            strong: true,
-            tint: const Color(0xFFE9E7E0),
-            child: child,
+    // iOS 27 液态玻璃 Dock: 底部悬浮胶囊, 不是贴底全宽条, 也不是
+    // 贴着屏幕中间的小药丸.
+    //  - 位置: 贴着底部, 底部留 16px 悬空, 内容从它后面透过去
+    //    (HomePage extendBody=true), 绝不在屏幕中间.
+    //  - 宽度: 屏宽 - 32 (左右各留 16), 不是按 tab 数缩成 160
+    //    的小条, 在手机上就是 iPhone Dock 那种宽胶囊.
+    //  - 玻璃看得见: 强浓度玻璃 + 圆角 32 + 深色描边 + 下方
+    //    投影, 在宣纸实色背景上也有明确的胶囊轮廓, 不会
+    //    像之前那样只剩两个图标.
+    final screenW = MediaQuery.of(context).size.width;
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Center(
+          child: Container(
+            width: screenW - 32,
+            height: 72,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: Colors.black.withValues(alpha: 0.12),
+                width: 1,
+              ),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.16),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: LiquidGlassContainer(
+                variant: LiquidGlassVariant.auto,
+                borderRadius: 32,
+                blurSigma: 28,
+                strong: true,
+                tint: const Color(0xFFE9E7E0),
+                child: child,
+              ),
+            ),
           ),
         ),
       ),

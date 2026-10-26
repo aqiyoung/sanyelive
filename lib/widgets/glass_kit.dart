@@ -123,9 +123,7 @@ class GlassDock extends StatelessWidget {
             child: LiquidGlassContainer(
               variant: LiquidGlassVariant.auto,
               borderRadius: 32,
-              blurSigma: 28,
-              strong: true,
-              tint: const Color(0xFFE9E7E0),
+              blurSigma: 30,
               child: child,
             ),
           ),

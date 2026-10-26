@@ -187,6 +187,11 @@ class _StreamingBottomNav extends StatelessWidget {
     // 图标 + 文字块就严格落在胶囊正中间.
     // 左右居中: tab 项成组居中 (每个 tab 宽按屏宽均分后
     // 钳在 64~110, 两个 tab 就聚在中间), 不铺满胶囊.
+    // 关键: Row 必须用 mainAxisSize.max + 主轴居中.
+    // 上一版用了 min, 而 LiquidGlassContainer 内部是 Stack
+    // (默认左上对齐), Stack 会撑满胶囊宽度、把 min 宽的
+    // Row 贴在左边, 于是整组图标偏左, 左右又不居中了.
+    // max 宽的 Row 占满胶囊宽度、主轴居中, 整组就落在正中.
     // 注意: 这里用 Row 居中, 不用 Center —— Center 在底栏
     // 槽位里会撑满整屏高 (之前跑到屏幕中间的根因).
     final screenW = MediaQuery.of(context).size.width;
@@ -195,7 +200,8 @@ class _StreamingBottomNav extends StatelessWidget {
       child: SizedBox(
         height: 72,
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             for (int i = 0; i < items.length; i++)

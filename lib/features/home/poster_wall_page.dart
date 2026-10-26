@@ -60,7 +60,8 @@ class PosterWallPage extends ConsumerWidget {
                 Expanded(
                   child: fullMode
                       ? ListView(
-                                                    padding: const EdgeInsets.only(bottom: 24),
+                                                    // 悬浮 Dock 在内容上, 底部留 120 防最后一行被盖住.
+                          padding: const EdgeInsets.only(bottom: 120),
                           children: [
                             const _HeroBanner(),
                             const SizedBox(height: 18),
@@ -243,7 +244,8 @@ class _TvLeanbackHome extends ConsumerWidget {
     final movie = ChannelFilter.byCategory(channels, '影视');
 
     return ListView(
-            padding: const EdgeInsets.only(top: 8, bottom: 24),
+      // 悬浮 Dock 在内容上, 底部留 120 防最后一行被盖住.
+      padding: const EdgeInsets.only(top: 8, bottom: 120),
       children: [
         if (isLoading && featured == null)
           const Padding(

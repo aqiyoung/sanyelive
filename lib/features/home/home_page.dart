@@ -121,9 +121,10 @@ class _HomePageState extends ConsumerState<HomePage> {
       value: overlay,
       child: Scaffold(
       backgroundColor: context.bgBase,
-      // 底栏贴底全宽: body 不延伸到底栏后面, 底栏占自己的位置,
-      // 不会悬浮在内容中间, 列表也不需要为悬浮 Dock 留 120px.
-      extendBody: false,
+      // iOS 27 悬浮 Dock: body 延伸到 Dock 后面, 玻璃才能透出
+      // 内容; Dock 贴着底部 (底部留 16), 不在屏幕中间.
+      // 各页列表底部留 120px, 最后一行不会被 Dock 盖住.
+      extendBody: true,
       body: IndexedStack(
         index: safeIndex,
         children: items.map((e) => e.page).toList(),
@@ -176,9 +177,9 @@ class _StreamingBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 贴底全宽玻璃底栏 (见 GlassDock): 贴着屏幕底部, 横向占满,
-    // 不居中悬浮. 内部仍是 BottomNavigationBar, TV 遥控焦点、
-    // 语义、选中态逻辑都不变.
+    // iOS 27 液态玻璃 Dock (见 GlassDock): 底部悬浮宽胶囊.
+    // 内部仍是 BottomNavigationBar, TV 遥控焦点、语义、
+    // 选中态逻辑都不变.
     return GlassDock(
       child: BottomNavigationBar(
           currentIndex: currentIndex,
@@ -218,7 +219,8 @@ class _MinePage extends ConsumerWidget {
         bottom: false,
         top: true,
         child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+            // Dock 高 72 + 底部悬浮 16 + 安全区, 底部留 120 防遮挡.
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
             Stack(
               children: [

@@ -84,48 +84,49 @@ class GlassDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // iOS 27 液态玻璃 Dock: 底部悬浮胶囊, 不是贴底全宽条, 也不是
-    // 贴着屏幕中间的小药丸.
-    //  - 位置: 贴着底部, 底部留 16px 悬空, 内容从它后面透过去
-    //    (HomePage extendBody=true), 绝不在屏幕中间.
-    //  - 宽度: 屏宽 - 32 (左右各留 16), 不是按 tab 数缩成 160
-    //    的小条, 在手机上就是 iPhone Dock 那种宽胶囊.
-    //  - 玻璃看得见: 强浓度玻璃 + 圆角 32 + 深色描边 + 下方
-    //    投影, 在宣纸实色背景上也有明确的胶囊轮廓, 不会
-    //    像之前那样只剩两个图标.
-    final screenW = MediaQuery.of(context).size.width;
+    // iOS 27 液态玻璃 Dock: 底部悬浮宽胶囊.
+    //
+    // 之前几次跑到屏幕中间的根因, 就在这里, 不是 Scaffold、
+    // 不是 extendBody: bottomNavigationBar 槽位给的高度约束
+    // 是松的、上限为整屏高, Center 会撑满这个高度再把胶囊
+    // 在里面垂直居中, 于是胶囊就出现在了屏幕中间.
+    // 而之前贴底全宽的版本没有 Center, 所以老实待在底部.
+    // 修复: 坚决不用 Center/Align (它们都会撑满父级高度),
+    // 只用 Padding 左右各留 16 + 宽度撑满的容器, 高度就是
+    // 胶囊本身的 72, Scaffold 就会把它贴在底部.
+    //  - 位置: 底部悬浮, 底部留 16px, 内容从它后面透过去.
+    //  - 形状: 宽胶囊 (左右各留 16, 高 72, 圆角 32).
+    //  - 玻璃看得见: 强浓度玻璃 + 暖灰底色 + 深色描边 + 下方投影.
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Center(
-          child: Container(
-            width: screenW - 32,
-            height: 72,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(
-                color: Colors.black.withValues(alpha: 0.12),
-                width: 1,
-              ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.16),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+        child: Container(
+          width: double.infinity,
+          height: 72,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: Colors.black.withValues(alpha: 0.12),
+              width: 1,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(32),
-              child: LiquidGlassContainer(
-                variant: LiquidGlassVariant.auto,
-                borderRadius: 32,
-                blurSigma: 28,
-                strong: true,
-                tint: const Color(0xFFE9E7E0),
-                child: child,
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: LiquidGlassContainer(
+              variant: LiquidGlassVariant.auto,
+              borderRadius: 32,
+              blurSigma: 28,
+              strong: true,
+              tint: const Color(0xFFE9E7E0),
+              child: child,
             ),
           ),
         ),
